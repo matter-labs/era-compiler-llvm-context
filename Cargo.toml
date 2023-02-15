@@ -1,0 +1,34 @@
+[package]
+name = "compiler-llvm-context"
+version = "1.3.1"
+authors = [
+    "Alex Zarudnyy <a.zarudnyy@matterlabs.dev>",
+]
+license = "MIT OR Apache-2.0"
+edition = "2021"
+description = "The zkEVM compilers shared LLVM context"
+
+[lib]
+doctest = false
+
+[dependencies]
+anyhow = "1.0"
+semver = "1.0"
+itertools = "0.10"
+regex = "1.7"
+once_cell = "1.17"
+num = "0.4"
+hex = "0.4"
+sha2 = "0.10"
+sha3 = "0.10"
+md5 = "0.7"
+
+zkevm_opcode_defs = { git = "https://github.com/matter-labs/era-zkevm_opcode_defs", branch = "main" }
+zkevm-assembly = { git = "https://github.com/matter-labs/era-zkEVM-assembly", branch = "main" }
+compiler-common = { git = "https://github.com/matter-labs/era-compiler-common", rev = "a6c5b02e4f149f82f1c3821a6f258363308abd2a" }
+
+[dependencies.inkwell]
+git = "https://github.com/matter-labs-forks/inkwell"
+branch = "llvm-15"
+default-features = false
+features = ["llvm15-0", "no-libffi-linking", "target-syncvm"]
