@@ -133,11 +133,14 @@ where
         context.build_unconditional_branch(context.current_function().borrow().return_block());
 
         context.set_basic_block(failure_block);
-        context.build_exit(
-            context.intrinsics().revert,
-            context.field_const(0),
-            context.field_const(0),
-        );
+        if context
+            .functions
+            .contains_key(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
+        {
+            crate::utils::throw(context)?;
+        } else {
+            crate::evm::r#return::revert(context, context.field_const(0), context.field_const(0))?;
+        }
 
         context.set_basic_block(context.current_function().borrow().return_block());
         let result = context.build_load(result_pointer, "keccak256_result");

@@ -504,7 +504,7 @@ where
 
     let function = Runtime::system_request(context);
     Ok(context
-        .build_call(
+        .build_invoke(
             function,
             &[
                 address.as_basic_value_enum(),

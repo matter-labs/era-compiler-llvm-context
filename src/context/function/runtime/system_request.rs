@@ -134,11 +134,14 @@ where
         );
 
         context.set_basic_block(call_error_block);
-        context.build_exit(
-            context.intrinsics().revert,
-            context.field_const(0),
-            context.field_const(0),
-        );
+        if context
+            .functions
+            .contains_key(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
+        {
+            crate::utils::throw(context)?;
+        } else {
+            crate::evm::r#return::revert(context, context.field_const(0), context.field_const(0))?;
+        }
 
         context.set_basic_block(context.current_function().borrow().return_block());
         let child_data_value =

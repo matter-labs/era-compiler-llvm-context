@@ -54,11 +54,7 @@ where
     context.build_conditional_branch(is_copy_out_of_bounds, error_block, join_block);
 
     context.set_basic_block(error_block);
-    context.build_exit(
-        context.intrinsics().revert,
-        context.field_const(0),
-        context.field_const(0),
-    );
+    crate::evm::r#return::revert(context, context.field_const(0), context.field_const(0))?;
 
     context.set_basic_block(join_block);
     let destination = Pointer::new_with_offset(

@@ -72,11 +72,7 @@ where
     );
 
     context.set_basic_block(failure_block);
-    context.build_exit(
-        context.intrinsics().revert,
-        context.field_const(0),
-        context.field_const(0),
-    );
+    crate::evm::r#return::revert(context, context.field_const(0), context.field_const(0))?;
 
     context.set_basic_block(join_block);
     Ok(())
