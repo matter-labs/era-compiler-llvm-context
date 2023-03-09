@@ -45,7 +45,11 @@ where
             1,
             Some(inkwell::module::Linkage::Private),
         )?;
-        Function::set_frontend_runtime_attributes(context.llvm, function.borrow().declaration());
+        Function::set_frontend_runtime_attributes(
+            context.llvm,
+            function.borrow().declaration(),
+            &context.optimizer,
+        );
         Function::set_llvm_runtime_attributes(context.llvm, function.borrow().declaration());
 
         Ok(())

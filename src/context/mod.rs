@@ -159,7 +159,11 @@ where
     ///
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
-    pub fn build(self, contract_path: &str) -> anyhow::Result<Build> {
+    pub fn build(
+        self,
+        contract_path: &str,
+        metadata_hash: [u8; compiler_common::BYTE_LENGTH_FIELD],
+    ) -> anyhow::Result<Build> {
         self.target_machine().set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
@@ -207,8 +211,8 @@ where
             debug_config.dump_assembly(contract_path, assembly_text.as_str())?;
         }
 
-        let assembly =
-            zkevm_assembly::Assembly::try_from(assembly_text.clone()).map_err(|error| {
+        let assembly = zkevm_assembly::Assembly::from_string(assembly_text.clone(), metadata_hash)
+            .map_err(|error| {
                 anyhow::anyhow!(
                     "The contract `{}` assembly parsing error: {}",
                     contract_path,
@@ -228,7 +232,7 @@ where
             )
         })?;
 
-        let hash = match zkevm_assembly::get_encoding_mode() {
+        let bytecode_hash = match zkevm_assembly::get_encoding_mode() {
             zkevm_assembly::RunningVmEncodingMode::Production => {
                 zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
                     8,
@@ -249,7 +253,7 @@ where
 
         let bytecode = bytecode_words.into_iter().flatten().collect();
 
-        Ok(Build::new(assembly_text, assembly, bytecode, hash))
+        Ok(Build::new(assembly_text, assembly, bytecode, bytecode_hash))
     }
 
     ///

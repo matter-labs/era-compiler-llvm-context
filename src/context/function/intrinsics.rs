@@ -87,7 +87,7 @@ impl<'ctx> Intrinsics<'ctx> {
     pub const FUNCTION_META: &'static str = "llvm.syncvm.meta";
 
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_GAS_LEFT: &'static str = "llvm.syncvm.ergsleft";
+    pub const FUNCTION_GAS_LEFT: &'static str = "llvm.syncvm.gasleft";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_GET_U128: &'static str = "llvm.syncvm.getu128";

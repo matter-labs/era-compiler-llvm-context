@@ -16,7 +16,7 @@ pub struct Build {
     /// The zkEVM binary bytecode.
     pub bytecode: Vec<u8>,
     /// The zkEVM bytecode hash.
-    pub hash: String,
+    pub bytecode_hash: String,
     /// The hash-to-full-path mapping of the contract factory dependencies.
     pub factory_dependencies: BTreeMap<String, String>,
 }
@@ -29,13 +29,13 @@ impl Build {
         assembly_text: String,
         assembly: zkevm_assembly::Assembly,
         bytecode: Vec<u8>,
-        hash: String,
+        bytecode_hash: String,
     ) -> Self {
         Self {
             assembly_text,
             assembly,
             bytecode,
-            hash,
+            bytecode_hash,
             factory_dependencies: BTreeMap::new(),
         }
     }

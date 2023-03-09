@@ -185,11 +185,14 @@ impl<'ctx> Function<'ctx> {
     pub fn set_frontend_runtime_attributes(
         llvm: &'ctx inkwell::context::Context,
         declaration: Declaration<'ctx>,
+        optimizer: &Optimizer,
     ) {
-        declaration.value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
-            llvm.create_enum_attribute(Attribute::NoInline as u32, 0),
-        );
+        if optimizer.settings().level_middle_end_size == SizeLevel::Z {
+            declaration.value.add_attribute(
+                inkwell::attributes::AttributeLoc::Function,
+                llvm.create_enum_attribute(Attribute::NoInline as u32, 0),
+            );
+        }
     }
 
     ///
