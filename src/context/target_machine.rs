@@ -8,6 +8,7 @@ use std::sync::MutexGuard;
 
 use once_cell::sync::OnceCell;
 
+use crate::context::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
 use crate::context::optimizer::settings::Settings as OptimizerSettings;
 
 ///
@@ -20,6 +21,8 @@ use crate::context::optimizer::settings::Settings as OptimizerSettings;
 pub struct TargetMachine {
     /// The inner LLVM target machine reference.
     target_machine: Arc<Mutex<inkwell::targets::TargetMachine>>,
+    /// The optimizer settings.
+    optimizer_settings: OptimizerSettings,
 }
 
 unsafe impl Send for TargetMachine {}
@@ -51,8 +54,8 @@ impl TargetMachine {
     ///
     /// A separate instance for every optimization level is created.
     ///
-    pub fn new(settings: &OptimizerSettings) -> anyhow::Result<Self> {
-        TARGET_MACHINES[settings.level_back_end as usize]
+    pub fn new(optimizer_settings: &OptimizerSettings) -> anyhow::Result<Self> {
+        TARGET_MACHINES[optimizer_settings.level_back_end as usize]
             .get_or_try_init(|| {
                 let target_machine = inkwell::targets::Target::from_name(Self::VM_TARGET_NAME)
                     .ok_or_else(|| {
@@ -62,7 +65,7 @@ impl TargetMachine {
                         &inkwell::targets::TargetTriple::create(Self::VM_TARGET_TRIPLE),
                         "",
                         "",
-                        settings.level_back_end,
+                        optimizer_settings.level_back_end,
                         inkwell::targets::RelocMode::Default,
                         inkwell::targets::CodeModel::Default,
                     )
@@ -74,6 +77,7 @@ impl TargetMachine {
                     })?;
                 Ok(Self {
                     target_machine: Arc::new(Mutex::new(target_machine)),
+                    optimizer_settings: optimizer_settings.to_owned(),
                 })
             })
             .cloned()
@@ -84,6 +88,7 @@ impl TargetMachine {
     ///
     pub fn set_target_data(&self, module: &inkwell::module::Module) {
         let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
+
         module.set_triple(&self.lock().get_triple());
         module.set_data_layout(&self.lock().get_target_data().get_data_layout());
     }
@@ -96,6 +101,7 @@ impl TargetMachine {
         module: &inkwell::module::Module,
     ) -> Result<inkwell::memory_buffer::MemoryBuffer, inkwell::support::LLVMString> {
         let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
+
         self.lock()
             .write_to_memory_buffer(module, inkwell::targets::FileType::Assembly)
     }
@@ -109,11 +115,16 @@ impl TargetMachine {
         passes: &str,
     ) -> Result<(), inkwell::support::LLVMString> {
         let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
-        module.run_passes(
-            passes,
-            &self.lock(),
-            inkwell::passes::PassBuilderOptions::create(),
-        )
+
+        let pass_builder_options = inkwell::passes::PassBuilderOptions::create();
+        pass_builder_options.set_verify_each(self.optimizer_settings.is_verify_each_enabled);
+        pass_builder_options.set_debug_logging(self.optimizer_settings.is_debug_logging_enabled);
+        pass_builder_options.set_loop_unrolling(
+            self.optimizer_settings.level_middle_end_size == OptimizerSettingsSizeLevel::Zero,
+        );
+        pass_builder_options.set_merge_functions(true);
+
+        module.run_passes(passes, &self.lock(), pass_builder_options)
     }
 
     ///
@@ -121,6 +132,7 @@ impl TargetMachine {
     ///
     pub fn get_triple(&self) -> inkwell::targets::TargetTriple {
         let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
+
         self.lock().get_triple()
     }
 
@@ -129,6 +141,7 @@ impl TargetMachine {
     ///
     pub fn get_target_data(&self) -> inkwell::targets::TargetData {
         let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
+
         self.lock().get_target_data()
     }
 

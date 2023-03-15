@@ -41,6 +41,12 @@ impl Entry {
         D: Dependency,
     {
         context.set_global(
+            crate::GLOBAL_HEAP_MEMORY_POINTER,
+            context.field_type(),
+            context.field_const(0),
+        );
+
+        context.set_global(
             crate::GLOBAL_CALLDATA_SIZE,
             context.field_type(),
             context.field_const(0),

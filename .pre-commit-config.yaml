@@ -1,9 +1,0 @@
-repos:
-- repo: local
-  hooks:
-    - id: trufflehog
-      name: TruffleHog
-      description: Detecting secrets in the repository
-      entry: bash -c 'trufflehog git file:///$(pwd) --fail'
-      language: system
-      stages: ["commit", "push"]

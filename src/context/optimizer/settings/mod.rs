@@ -19,6 +19,11 @@ pub struct Settings {
     pub level_middle_end_size: SizeLevel,
     /// The back-end optimization level.
     pub level_back_end: inkwell::OptimizationLevel,
+
+    /// Whether the LLVM `verify each` option is enabled.
+    pub is_verify_each_enabled: bool,
+    /// Whether the LLVM `debug logging` option is enabled.
+    pub is_debug_logging_enabled: bool,
 }
 
 impl Settings {
@@ -34,6 +39,30 @@ impl Settings {
             level_middle_end,
             level_middle_end_size,
             level_back_end,
+
+            is_verify_each_enabled: false,
+            is_debug_logging_enabled: false,
+        }
+    }
+
+    ///
+    /// A shortcut constructor with debugging tools.
+    ///
+    pub fn new_debug(
+        level_middle_end: inkwell::OptimizationLevel,
+        level_middle_end_size: SizeLevel,
+        level_back_end: inkwell::OptimizationLevel,
+
+        is_verify_each_enabled: bool,
+        is_debug_logging_enabled: bool,
+    ) -> Self {
+        Self {
+            level_middle_end,
+            level_middle_end_size,
+            level_back_end,
+
+            is_verify_each_enabled,
+            is_debug_logging_enabled,
         }
     }
 
@@ -42,36 +71,36 @@ impl Settings {
     ///
     pub fn try_from_cli(value: char) -> anyhow::Result<Self> {
         Ok(match value {
-            '0' => Self {
-                level_middle_end: inkwell::OptimizationLevel::None,
-                level_middle_end_size: SizeLevel::Zero,
-                level_back_end: inkwell::OptimizationLevel::None,
-            },
-            '1' => Self {
-                level_middle_end: inkwell::OptimizationLevel::Less,
-                level_middle_end_size: SizeLevel::Zero,
-                level_back_end: inkwell::OptimizationLevel::Less,
-            },
-            '2' => Self {
-                level_middle_end: inkwell::OptimizationLevel::Default,
-                level_middle_end_size: SizeLevel::Zero,
-                level_back_end: inkwell::OptimizationLevel::Default,
-            },
-            '3' => Self {
-                level_middle_end: inkwell::OptimizationLevel::Aggressive,
-                level_middle_end_size: SizeLevel::Zero,
-                level_back_end: inkwell::OptimizationLevel::Aggressive,
-            },
-            's' => Self {
-                level_middle_end: inkwell::OptimizationLevel::Default,
-                level_middle_end_size: SizeLevel::S,
-                level_back_end: inkwell::OptimizationLevel::Aggressive,
-            },
-            'z' => Self {
-                level_middle_end: inkwell::OptimizationLevel::Default,
-                level_middle_end_size: SizeLevel::Z,
-                level_back_end: inkwell::OptimizationLevel::Aggressive,
-            },
+            '0' => Self::new(
+                inkwell::OptimizationLevel::None,
+                SizeLevel::Zero,
+                inkwell::OptimizationLevel::None,
+            ),
+            '1' => Self::new(
+                inkwell::OptimizationLevel::Less,
+                SizeLevel::Zero,
+                inkwell::OptimizationLevel::Less,
+            ),
+            '2' => Self::new(
+                inkwell::OptimizationLevel::Default,
+                SizeLevel::Zero,
+                inkwell::OptimizationLevel::Default,
+            ),
+            '3' => Self::new(
+                inkwell::OptimizationLevel::Aggressive,
+                SizeLevel::Zero,
+                inkwell::OptimizationLevel::Aggressive,
+            ),
+            's' => Self::new(
+                inkwell::OptimizationLevel::Default,
+                SizeLevel::S,
+                inkwell::OptimizationLevel::Aggressive,
+            ),
+            'z' => Self::new(
+                inkwell::OptimizationLevel::Default,
+                SizeLevel::Z,
+                inkwell::OptimizationLevel::Aggressive,
+            ),
             char => anyhow::bail!("Unexpected optimization option '{}'", char),
         })
     }
@@ -130,6 +159,8 @@ impl Settings {
 
     ///
     /// Returns all possible combinations of the optimizer settings.
+    ///
+    /// Used only for testing purposes.
     ///
     pub fn combinations() -> Vec<Self> {
         let mut combinations: Vec<Self> = vec![
