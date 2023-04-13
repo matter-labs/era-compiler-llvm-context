@@ -595,8 +595,8 @@ where
     context.build_unconditional_branch(value_join_block);
 
     context.set_basic_block(value_join_block);
-    let address = context.build_load(result_pointer, "contract_call_address_result");
-    Ok(address)
+    let result = context.build_load(result_pointer, "contract_call_address_result");
+    Ok(result)
 }
 
 ///

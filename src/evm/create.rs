@@ -4,6 +4,7 @@
 
 use inkwell::values::BasicValue;
 
+use crate::context::code_type::CodeType;
 use crate::context::function::runtime::Runtime;
 use crate::context::Context;
 use crate::Dependency;
@@ -39,7 +40,7 @@ where
                 signature_hash.as_basic_value_enum(),
                 salt.as_basic_value_enum(),
             ],
-            "event_data_loop_call",
+            "create_deployer_call",
         )
         .expect("Always exists");
 
@@ -78,7 +79,7 @@ where
                 signature_hash.as_basic_value_enum(),
                 salt.as_basic_value_enum(),
             ],
-            "event_data_loop_call",
+            "create2_deployer_call",
         )
         .expect("Always exists");
 
@@ -98,11 +99,25 @@ pub fn contract_hash<'ctx, D>(
 where
     D: Dependency,
 {
+    let code_type = context
+        .code_type()
+        .ok_or_else(|| anyhow::anyhow!("The contract code part type is undefined"))?;
+
     let parent = context.module().get_name().to_str().expect("Always valid");
 
-    let contract_path = context.resolve_path(identifier.as_str())?;
-    if identifier.ends_with("_deployed") || contract_path.as_str() == parent {
+    let contract_path =
+        context
+            .resolve_path(identifier.as_str())
+            .map_err(|error| match code_type {
+                CodeType::Runtime if identifier.ends_with("_deployed") => {
+                    anyhow::anyhow!("type({}).runtimeCode is not supported", identifier)
+                }
+                _ => error,
+            })?;
+    if contract_path.as_str() == parent {
         return Ok(context.field_const(0).as_basic_value_enum());
+    } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
+        anyhow::bail!("type({}).runtimeCode is not supported", identifier);
     }
 
     let hash_value = context
@@ -133,11 +148,25 @@ pub fn header_size<'ctx, D>(
 where
     D: Dependency,
 {
+    let code_type = context
+        .code_type()
+        .ok_or_else(|| anyhow::anyhow!("The contract code part type is undefined"))?;
+
     let parent = context.module().get_name().to_str().expect("Always valid");
 
-    let contract_path = context.resolve_path(identifier.as_str())?;
-    if identifier.ends_with("_deployed") || contract_path.as_str() == parent {
+    let contract_path =
+        context
+            .resolve_path(identifier.as_str())
+            .map_err(|error| match code_type {
+                CodeType::Runtime if identifier.ends_with("_deployed") => {
+                    anyhow::anyhow!("type({}).runtimeCode is not supported", identifier)
+                }
+                _ => error,
+            })?;
+    if contract_path.as_str() == parent {
         return Ok(context.field_const(0).as_basic_value_enum());
+    } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
+        anyhow::bail!("type({}).runtimeCode is not supported", identifier);
     }
 
     Ok(context
