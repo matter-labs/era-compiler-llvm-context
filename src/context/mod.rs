@@ -89,6 +89,8 @@ where
     /// The manager is used to get information about contracts and their dependencies during
     /// the multi-threaded compilation process.
     dependency_manager: Option<Arc<RwLock<D>>>,
+    /// Whether to append the metadata hash at the end of bytecode.
+    include_metadata_hash: bool,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
@@ -125,6 +127,7 @@ where
         module: inkwell::module::Module<'ctx>,
         optimizer: Optimizer,
         dependency_manager: Option<Arc<RwLock<D>>>,
+        include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -146,6 +149,7 @@ where
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
             dependency_manager,
+            include_metadata_hash,
             debug_info,
             debug_config,
 
@@ -162,7 +166,7 @@ where
     pub fn build(
         self,
         contract_path: &str,
-        metadata_hash: [u8; compiler_common::BYTE_LENGTH_FIELD],
+        metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
     ) -> anyhow::Result<Build> {
         self.target_machine().set_target_data(self.module());
 
@@ -485,6 +489,7 @@ where
                         .as_ref()
                         .map(|data| data.is_system_mode())
                         .unwrap_or_default(),
+                    self.include_metadata_hash,
                     self.debug_config.clone(),
                 )
             })
@@ -510,12 +515,11 @@ where
         self.dependency_manager
             .to_owned()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .map(
-                |manager| match manager.read().expect("Sync").resolve_library(path) {
-                    Ok(address) => self.field_const_str_hex(address.as_str()),
-                    Err(_error) => self.field_const(0),
-                },
-            )
+            .and_then(|manager| {
+                let address = manager.read().expect("Sync").resolve_library(path)?;
+                let address = self.field_const_str_hex(address.as_str());
+                Ok(address)
+            })
     }
 
     ///

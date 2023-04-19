@@ -6,6 +6,7 @@ pub(crate) mod r#const;
 pub(crate) mod context;
 pub(crate) mod debug_config;
 pub(crate) mod evm;
+pub(crate) mod metadata_hash;
 pub(crate) mod utils;
 pub(crate) mod zkevm;
 
@@ -59,6 +60,7 @@ pub use self::evm::memory;
 pub use self::evm::r#return;
 pub use self::evm::return_data;
 pub use self::evm::storage;
+pub use self::metadata_hash::MetadataHash;
 pub use self::r#const::*;
 pub use self::utils::*;
 pub use self::zkevm::abi as zkevm_abi;
@@ -126,6 +128,7 @@ pub trait Dependency {
         target_machine: TargetMachine,
         optimizer_settings: OptimizerSettings,
         is_system_mode: bool,
+        include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
     ) -> anyhow::Result<String>;
 

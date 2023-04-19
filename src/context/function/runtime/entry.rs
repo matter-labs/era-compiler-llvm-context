@@ -163,7 +163,6 @@ where
         let extra_abi_data_pointer = context.get_global_ptr(crate::GLOBAL_EXTRA_ABI_DATA)?;
         for (array_index, argument_index) in (Self::MANDATORY_ARGUMENTS_COUNT
             ..Self::MANDATORY_ARGUMENTS_COUNT + crate::EXTRA_ABI_DATA_SIZE)
-            .into_iter()
             .enumerate()
         {
             let array_element_pointer = context.build_gep(
