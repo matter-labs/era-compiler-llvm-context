@@ -19,6 +19,9 @@ pub mod target_machine;
 pub mod vyper_data;
 pub mod yul_data;
 
+#[cfg(test)]
+mod tests;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -211,53 +214,15 @@ where
             })?;
 
         let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
-        if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_assembly(contract_path, assembly_text.as_str())?;
-        }
 
-        let assembly = zkevm_assembly::Assembly::from_string(assembly_text.clone(), metadata_hash)
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` assembly parsing error: {}",
-                    contract_path,
-                    error,
-                )
-            })?;
+        let build = crate::build_assembly_text(
+            contract_path,
+            assembly_text.as_str(),
+            metadata_hash,
+            self.debug_config(),
+        )?;
 
-        let bytecode_words = match zkevm_assembly::get_encoding_mode() {
-            zkevm_assembly::RunningVmEncodingMode::Production => { assembly.clone().compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
-            zkevm_assembly::RunningVmEncodingMode::Testing => { assembly.clone().compile_to_bytecode_for_mode::<16, zkevm_opcode_defs::decoding::EncodingModeTesting>() },
-        }
-            .map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` assembly-to-bytecode conversion error: {}",
-                contract_path,
-                error,
-            )
-        })?;
-
-        let bytecode_hash = match zkevm_assembly::get_encoding_mode() {
-            zkevm_assembly::RunningVmEncodingMode::Production => {
-                zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                    8,
-                    zkevm_opcode_defs::decoding::EncodingModeProduction,
-                >(bytecode_words.as_slice())
-            }
-            zkevm_assembly::RunningVmEncodingMode::Testing => {
-                zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                    16,
-                    zkevm_opcode_defs::decoding::EncodingModeTesting,
-                >(bytecode_words.as_slice())
-            }
-        }
-        .map(hex::encode)
-        .map_err(|_error| {
-            anyhow::anyhow!("The contract `{}` bytecode hashing error", contract_path,)
-        })?;
-
-        let bytecode = bytecode_words.into_iter().flatten().collect();
-
-        Ok(Build::new(assembly_text, assembly, bytecode, bytecode_hash))
+        Ok(build)
     }
 
     ///

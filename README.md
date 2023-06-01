@@ -18,13 +18,17 @@ This library is distributed under the terms of either
 
 at your option.
 
+## Resources
+
+[zkSync Era compiler toolchain documentation](https://era.zksync.io/docs/api/compiler-toolchain)
+
 ## Official Links
 
 - [Website](https://zksync.io/)
 - [GitHub](https://github.com/matter-labs)
 - [Twitter](https://twitter.com/zksync)
 - [Twitter for Devs](https://twitter.com/zkSyncDevs)
-- [Discord](https://discord.gg/nMaPGrDDwk)
+- [Discord](https://join.zksync.dev/)
 
 ## Disclaimer
 

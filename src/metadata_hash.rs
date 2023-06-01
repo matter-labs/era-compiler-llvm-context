@@ -15,6 +15,9 @@ pub enum MetadataHash {
     /// Do not include bytecode hash.
     #[serde(rename = "none")]
     None,
+    /// The default keccak256 hash.
+    #[serde(rename = "keccak256")]
+    Keccak256,
 }
 
 impl FromStr for MetadataHash {
@@ -23,6 +26,7 @@ impl FromStr for MetadataHash {
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         match string {
             "none" => Ok(Self::None),
+            "keccak256" => Ok(Self::Keccak256),
             _ => anyhow::bail!("Unknown bytecode hash mode: `{}`", string),
         }
     }

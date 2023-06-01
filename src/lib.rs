@@ -79,6 +79,69 @@ pub fn initialize_target() {
 }
 
 ///
+/// Builds zkEVM assembly text.
+///
+pub fn build_assembly_text(
+    contract_path: &str,
+    assembly_text: &str,
+    metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
+    debug_config: Option<&DebugConfig>,
+) -> anyhow::Result<Build> {
+    if let Some(debug_config) = debug_config {
+        debug_config.dump_assembly(contract_path, assembly_text)?;
+    }
+
+    let assembly = zkevm_assembly::Assembly::from_string(assembly_text.to_owned(), metadata_hash)
+        .map_err(|error| {
+        anyhow::anyhow!(
+            "The contract `{}` assembly parsing error: {}",
+            contract_path,
+            error,
+        )
+    })?;
+
+    let bytecode_words = match zkevm_assembly::get_encoding_mode() {
+        zkevm_assembly::RunningVmEncodingMode::Production => { assembly.clone().compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
+        zkevm_assembly::RunningVmEncodingMode::Testing => { assembly.clone().compile_to_bytecode_for_mode::<16, zkevm_opcode_defs::decoding::EncodingModeTesting>() },
+    }
+        .map_err(|error| {
+            anyhow::anyhow!(
+                "The contract `{}` assembly-to-bytecode conversion error: {}",
+                contract_path,
+                error,
+            )
+        })?;
+
+    let bytecode_hash = match zkevm_assembly::get_encoding_mode() {
+        zkevm_assembly::RunningVmEncodingMode::Production => {
+            zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+                8,
+                zkevm_opcode_defs::decoding::EncodingModeProduction,
+            >(bytecode_words.as_slice())
+        }
+        zkevm_assembly::RunningVmEncodingMode::Testing => {
+            zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+                16,
+                zkevm_opcode_defs::decoding::EncodingModeTesting,
+            >(bytecode_words.as_slice())
+        }
+    }
+    .map(hex::encode)
+    .map_err(|_error| {
+        anyhow::anyhow!("The contract `{}` bytecode hashing error", contract_path,)
+    })?;
+
+    let bytecode = bytecode_words.into_iter().flatten().collect();
+
+    Ok(Build::new(
+        assembly_text.to_owned(),
+        assembly,
+        bytecode,
+        bytecode_hash,
+    ))
+}
+
+///
 /// Implemented by items which are translated into LLVM IR.
 ///
 #[allow(clippy::upper_case_acronyms)]
@@ -141,4 +204,38 @@ pub trait Dependency {
     /// Resolves a library address.
     ///
     fn resolve_library(&self, path: &str) -> anyhow::Result<String>;
+}
+
+///
+/// The dummy dependency entity.
+///
+#[derive(Debug, Default)]
+pub struct DummyDependency {}
+
+impl Dependency for DummyDependency {
+    fn compile(
+        _dependency: Arc<RwLock<Self>>,
+        _path: &str,
+        _target_machine: TargetMachine,
+        _optimizer_settings: OptimizerSettings,
+        _is_system_mode: bool,
+        _include_metadata_hash: bool,
+        _debug_config: Option<DebugConfig>,
+    ) -> anyhow::Result<String> {
+        Ok(String::new())
+    }
+
+    ///
+    /// Resolves a full contract path.
+    ///
+    fn resolve_path(&self, _identifier: &str) -> anyhow::Result<String> {
+        Ok(String::new())
+    }
+
+    ///
+    /// Resolves a library address.
+    ///
+    fn resolve_library(&self, _path: &str) -> anyhow::Result<String> {
+        Ok(String::new())
+    }
 }
