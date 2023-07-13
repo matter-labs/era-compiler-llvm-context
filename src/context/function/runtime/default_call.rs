@@ -74,7 +74,7 @@ impl DefaultCall {
     ///
     fn inner_function<'ctx, D>(&self, context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         match self.inner_name.as_str() {
             name if name == LLVMRuntime::FUNCTION_FARCALL => context.llvm_runtime().far_call,
@@ -89,7 +89,7 @@ impl DefaultCall {
 
 impl<D> WriteLLVM<D> for DefaultCall
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let function_type = context.function_type(

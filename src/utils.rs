@@ -19,7 +19,7 @@ pub fn clamp<'ctx, D>(
     name: &str,
 ) -> anyhow::Result<inkwell::values::IntValue<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let in_bounds_block = context.append_basic_block(format!("{name}_is_bounds_block").as_str());
     let join_block = context.append_basic_block(format!("{name}_join_block").as_str());
@@ -49,7 +49,7 @@ where
 ///
 pub fn throw<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     context.build_call(
         context.llvm_runtime().cxa_throw,
@@ -77,7 +77,7 @@ pub fn external_call_arguments<'ctx, D>(
     mimic: Option<inkwell::values::IntValue<'ctx>>,
 ) -> Vec<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let mut result = Vec::with_capacity(
         crate::context::function::runtime::entry::Entry::MANDATORY_ARGUMENTS_COUNT
@@ -111,7 +111,7 @@ pub fn abi_data<'ctx, D>(
     is_system_call: bool,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let input_offset = crate::utils::clamp(
         context,
@@ -200,7 +200,7 @@ pub fn pad_extra_abi_data<'ctx, D>(
     initial_data: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> [inkwell::values::IntValue<'ctx>; crate::EXTRA_ABI_DATA_SIZE]
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let mut padded_data = initial_data;
     padded_data.extend(vec![

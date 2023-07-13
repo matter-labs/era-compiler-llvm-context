@@ -19,7 +19,7 @@ pub fn r#return<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     match context.code_type() {
         None => {
@@ -89,7 +89,7 @@ pub fn revert<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     context.build_exit(context.intrinsics().revert, offset, length);
     Ok(())
@@ -102,7 +102,7 @@ where
 ///
 pub fn stop<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     r#return(context, context.field_const(0), context.field_const(0))
 }
@@ -114,7 +114,7 @@ where
 ///
 pub fn invalid<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     revert(context, context.field_const(0), context.field_const(0))
 }

@@ -18,7 +18,7 @@ pub fn get_extra_abi_data<'ctx, D>(
     index: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let extra_abi_data_pointer = context.get_global_ptr(crate::GLOBAL_EXTRA_ABI_DATA)?;
     let extra_abi_data_element_pointer = context.build_gep(
@@ -41,7 +41,7 @@ pub fn calldata_ptr_to_active<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let calldata_pointer = context.get_global(crate::GLOBAL_CALLDATA_POINTER)?;
     context.set_global(
@@ -59,7 +59,7 @@ pub fn return_data_ptr_to_active<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let calldata_pointer = context.get_global(crate::GLOBAL_RETURN_DATA_POINTER)?;
     context.set_global(
@@ -78,7 +78,7 @@ pub fn active_ptr_add_assign<'ctx, D>(
     offset: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let active_pointer = context.get_global(crate::GLOBAL_ACTIVE_POINTER)?;
     let active_pointer_shifted = context.build_gep(
@@ -107,7 +107,7 @@ pub fn active_ptr_shrink_assign<'ctx, D>(
     offset: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let active_pointer = context.get_global(crate::GLOBAL_ACTIVE_POINTER)?;
     let active_pointer_shrunken = context
@@ -133,7 +133,7 @@ pub fn active_ptr_pack_assign<'ctx, D>(
     data: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let active_pointer = context.get_global(crate::GLOBAL_ACTIVE_POINTER)?;
     let active_pointer_packed = context

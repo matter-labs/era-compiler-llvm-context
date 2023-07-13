@@ -38,7 +38,7 @@ impl Entry {
     ///
     pub fn initialize_globals<D>(context: &mut Context<D>) -> anyhow::Result<()>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         context.set_global(
             crate::GLOBAL_HEAP_MEMORY_POINTER,
@@ -79,7 +79,7 @@ impl Entry {
 
 impl<D> WriteLLVM<D> for Entry
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let mut entry_arguments =

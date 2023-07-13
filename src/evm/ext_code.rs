@@ -13,7 +13,7 @@ pub fn size<'ctx, D>(
     address: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     crate::evm::call::request(
         context,
@@ -31,7 +31,7 @@ pub fn hash<'ctx, D>(
     address: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     crate::evm::call::request(
         context,

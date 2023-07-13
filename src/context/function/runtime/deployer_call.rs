@@ -56,7 +56,7 @@ impl DeployerCall {
 
 impl<D> WriteLLVM<D> for DeployerCall
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let function_type = context.function_type(

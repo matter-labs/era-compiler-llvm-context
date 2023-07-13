@@ -2,42 +2,19 @@
 //! The LLVM target machine.
 //!
 
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::sync::MutexGuard;
-
-use once_cell::sync::OnceCell;
-
 use crate::context::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
 use crate::context::optimizer::settings::Settings as OptimizerSettings;
 
 ///
 /// The LLVM target machine.
 ///
-/// The inner target machine reference is wrapped into a mutex, since inside of the LLVM framework
-/// it is completely unsafe and causes data races in multi-threaded environments.
-///
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TargetMachine {
     /// The inner LLVM target machine reference.
-    target_machine: Arc<Mutex<inkwell::targets::TargetMachine>>,
+    target_machine: inkwell::targets::TargetMachine,
     /// The optimizer settings.
     optimizer_settings: OptimizerSettings,
 }
-
-unsafe impl Send for TargetMachine {}
-unsafe impl Sync for TargetMachine {}
-
-/// The array of singletons for every optimization level.
-static TARGET_MACHINES: [OnceCell<TargetMachine>; 4] = [
-    OnceCell::new(),
-    OnceCell::new(),
-    OnceCell::new(),
-    OnceCell::new(),
-];
-
-/// The mutex to allow simultaneous access to only one target machine.
-static TARGET_MACHINE_LOCK: Mutex<()> = Mutex::new(());
 
 impl TargetMachine {
     /// The LLVM target name.
@@ -55,42 +32,37 @@ impl TargetMachine {
     /// A separate instance for every optimization level is created.
     ///
     pub fn new(optimizer_settings: &OptimizerSettings) -> anyhow::Result<Self> {
-        TARGET_MACHINES[optimizer_settings.level_back_end as usize]
-            .get_or_try_init(|| {
-                let target_machine = inkwell::targets::Target::from_name(Self::VM_TARGET_NAME)
-                    .ok_or_else(|| {
-                        anyhow::anyhow!("LLVM target machine `{}` not found", Self::VM_TARGET_NAME)
-                    })?
-                    .create_target_machine(
-                        &inkwell::targets::TargetTriple::create(Self::VM_TARGET_TRIPLE),
-                        "",
-                        "",
-                        optimizer_settings.level_back_end,
-                        inkwell::targets::RelocMode::Default,
-                        inkwell::targets::CodeModel::Default,
-                    )
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "LLVM target machine `{}` initialization error",
-                            Self::VM_TARGET_NAME
-                        )
-                    })?;
-                Ok(Self {
-                    target_machine: Arc::new(Mutex::new(target_machine)),
-                    optimizer_settings: optimizer_settings.to_owned(),
-                })
-            })
-            .cloned()
+        let target_machine = inkwell::targets::Target::from_name(Self::VM_TARGET_NAME)
+            .ok_or_else(|| {
+                anyhow::anyhow!("LLVM target machine `{}` not found", Self::VM_TARGET_NAME)
+            })?
+            .create_target_machine(
+                &inkwell::targets::TargetTriple::create(Self::VM_TARGET_TRIPLE),
+                "",
+                "",
+                optimizer_settings.level_back_end,
+                inkwell::targets::RelocMode::Default,
+                inkwell::targets::CodeModel::Default,
+            )
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "LLVM target machine `{}` initialization error",
+                    Self::VM_TARGET_NAME
+                )
+            })?;
+
+        Ok(Self {
+            target_machine,
+            optimizer_settings: optimizer_settings.to_owned(),
+        })
     }
 
     ///
     /// Sets the target-specific data in the module.
     ///
     pub fn set_target_data(&self, module: &inkwell::module::Module) {
-        let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
-
-        module.set_triple(&self.lock().get_triple());
-        module.set_data_layout(&self.lock().get_target_data().get_data_layout());
+        module.set_triple(&self.target_machine.get_triple());
+        module.set_data_layout(&self.target_machine.get_target_data().get_data_layout());
     }
 
     ///
@@ -100,9 +72,7 @@ impl TargetMachine {
         &self,
         module: &inkwell::module::Module,
     ) -> Result<inkwell::memory_buffer::MemoryBuffer, inkwell::support::LLVMString> {
-        let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
-
-        self.lock()
+        self.target_machine
             .write_to_memory_buffer(module, inkwell::targets::FileType::Assembly)
     }
 
@@ -114,8 +84,6 @@ impl TargetMachine {
         module: &inkwell::module::Module,
         passes: &str,
     ) -> Result<(), inkwell::support::LLVMString> {
-        let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
-
         let pass_builder_options = inkwell::passes::PassBuilderOptions::create();
         pass_builder_options.set_verify_each(self.optimizer_settings.is_verify_each_enabled);
         pass_builder_options.set_debug_logging(self.optimizer_settings.is_debug_logging_enabled);
@@ -124,31 +92,20 @@ impl TargetMachine {
         );
         pass_builder_options.set_merge_functions(true);
 
-        module.run_passes(passes, &self.lock(), pass_builder_options)
+        module.run_passes(passes, &self.target_machine, pass_builder_options)
     }
 
     ///
     /// Returns the target triple.
     ///
     pub fn get_triple(&self) -> inkwell::targets::TargetTriple {
-        let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
-
-        self.lock().get_triple()
+        self.target_machine.get_triple()
     }
 
     ///
     /// Returns the target data.
     ///
     pub fn get_target_data(&self) -> inkwell::targets::TargetData {
-        let _guard = TARGET_MACHINE_LOCK.lock().expect("Sync");
-
-        self.lock().get_target_data()
-    }
-
-    ///
-    /// Returns the synchronized target machine reference.
-    ///
-    fn lock(&self) -> MutexGuard<inkwell::targets::TargetMachine> {
-        self.target_machine.lock().expect("Sync")
+        self.target_machine.get_target_data()
     }
 }

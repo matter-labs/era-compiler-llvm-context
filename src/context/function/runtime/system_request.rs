@@ -34,7 +34,7 @@ impl SystemRequest {
 
 impl<D> WriteLLVM<D> for SystemRequest
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let function_type = context.function_type(

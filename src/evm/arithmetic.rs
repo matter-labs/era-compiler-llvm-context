@@ -18,7 +18,7 @@ pub fn addition<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     Ok(context
         .builder()
@@ -37,7 +37,7 @@ pub fn subtraction<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     Ok(context
         .builder()
@@ -56,7 +56,7 @@ pub fn multiplication<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     Ok(context
         .builder()
@@ -76,7 +76,7 @@ pub fn division<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let zero_block = context.append_basic_block("division_zero");
     let non_zero_block = context.append_basic_block("division_non_zero");
@@ -120,7 +120,7 @@ pub fn remainder<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let zero_block = context.append_basic_block("remainder_zero");
     let non_zero_block = context.append_basic_block("remainder_non_zero");
@@ -165,7 +165,7 @@ pub fn division_signed<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let zero_block = context.append_basic_block("division_signed_zero");
     let non_zero_block = context.append_basic_block("division_signed_non_zero");
@@ -239,7 +239,7 @@ pub fn remainder_signed<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let zero_block = context.append_basic_block("remainder_signed_zero");
     let non_zero_block = context.append_basic_block("remainder_signed_non_zero");

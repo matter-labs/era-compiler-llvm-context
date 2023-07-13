@@ -12,7 +12,7 @@ pub fn gas<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     Ok(context
         .build_call(context.intrinsics().gas_left, &[], "gas_left")
@@ -26,7 +26,7 @@ pub fn value<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     Ok(context
         .build_call(context.intrinsics().get_u128, &[], "get_u128_value")
@@ -41,7 +41,7 @@ pub fn balance<'ctx, D>(
     address: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     crate::evm::call::request(
         context,

@@ -41,7 +41,7 @@ impl Exit {
         return_function: FunctionDeclaration<'ctx>,
     ) -> Self
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         Self {
             return_function: return_function
@@ -61,7 +61,7 @@ impl Exit {
         return_function: FunctionDeclaration<'ctx>,
     ) -> String
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         let suffix = match return_function {
             return_function if return_function == context.intrinsics().r#return => "return",
@@ -79,7 +79,7 @@ impl Exit {
     ///
     fn inner_function<'ctx, D>(&self, context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         match self.return_function.as_str() {
             name if name == Intrinsics::FUNCTION_RETURN => context.intrinsics().r#return,
@@ -91,7 +91,7 @@ impl Exit {
 
 impl<D> WriteLLVM<D> for Exit
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let function_type = context.function_type(

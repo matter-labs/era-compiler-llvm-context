@@ -16,7 +16,7 @@ pub fn or<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     Ok(context
         .builder()
@@ -33,7 +33,7 @@ pub fn xor<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     Ok(context
         .builder()
@@ -50,7 +50,7 @@ pub fn and<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     Ok(context
         .builder()
@@ -70,7 +70,7 @@ pub fn shift_left<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let overflow_block = context.append_basic_block("shift_left_overflow");
     let non_overflow_block = context.append_basic_block("shift_left_non_overflow");
@@ -114,7 +114,7 @@ pub fn shift_right<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let overflow_block = context.append_basic_block("shift_right_overflow");
     let non_overflow_block = context.append_basic_block("shift_right_non_overflow");
@@ -160,7 +160,7 @@ pub fn shift_right_arithmetic<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let overflow_block = context.append_basic_block("shift_right_arithmetic_overflow");
     let overflow_positive_block =
@@ -232,7 +232,7 @@ pub fn byte<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let overflow_block = context.append_basic_block("byte_overflow");
     let non_overflow_block = context.append_basic_block("byte_non_overflow");

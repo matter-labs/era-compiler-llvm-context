@@ -4,6 +4,9 @@
 
 pub mod size_level;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use itertools::Itertools;
 
 use self::size_level::SizeLevel;
@@ -11,7 +14,7 @@ use self::size_level::SizeLevel;
 ///
 /// The LLVM optimizer settings.
 ///
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Settings {
     /// The middle-end optimization level.
     pub level_middle_end: inkwell::OptimizationLevel,
@@ -163,7 +166,7 @@ impl Settings {
     /// Used only for testing purposes.
     ///
     pub fn combinations() -> Vec<Self> {
-        let mut combinations: Vec<Self> = vec![
+        let performance_combinations: Vec<Self> = vec![
             inkwell::OptimizationLevel::None,
             inkwell::OptimizationLevel::Less,
             inkwell::OptimizationLevel::Default,
@@ -184,12 +187,27 @@ impl Settings {
             )
         })
         .collect();
-        combinations.push(Self::new(
-            inkwell::OptimizationLevel::Default,
-            SizeLevel::S,
-            inkwell::OptimizationLevel::Aggressive,
-        ));
-        combinations.push(Self::size());
+
+        let size_combinations: Vec<Self> = vec![SizeLevel::S, SizeLevel::Z]
+            .into_iter()
+            .cartesian_product(vec![
+                inkwell::OptimizationLevel::None,
+                inkwell::OptimizationLevel::Less,
+                inkwell::OptimizationLevel::Default,
+                inkwell::OptimizationLevel::Aggressive,
+            ])
+            .map(|(size_level, optimization_level_back)| {
+                Self::new(
+                    inkwell::OptimizationLevel::Default,
+                    size_level,
+                    optimization_level_back,
+                )
+            })
+            .collect();
+
+        let mut combinations = performance_combinations;
+        combinations.extend(size_combinations);
+
         combinations
     }
 }

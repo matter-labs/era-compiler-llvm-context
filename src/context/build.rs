@@ -4,15 +4,18 @@
 
 use std::collections::BTreeMap;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 ///
 /// The LLVM module build.
 ///
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Build {
     /// The zkEVM text assembly.
     pub assembly_text: String,
-    /// The zkEVM binary assembly.
-    pub assembly: zkevm_assembly::Assembly,
+    /// The metadata hash.
+    pub metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
     /// The zkEVM binary bytecode.
     pub bytecode: Vec<u8>,
     /// The zkEVM bytecode hash.
@@ -27,13 +30,13 @@ impl Build {
     ///
     pub fn new(
         assembly_text: String,
-        assembly: zkevm_assembly::Assembly,
+        metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
         bytecode: Vec<u8>,
         bytecode_hash: String,
     ) -> Self {
         Self {
             assembly_text,
-            assembly,
+            metadata_hash,
             bytecode,
             bytecode_hash,
             factory_dependencies: BTreeMap::new(),

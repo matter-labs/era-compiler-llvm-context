@@ -57,7 +57,7 @@ impl Runtime {
     ///
     pub fn exponent<'ctx, D>(context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         context
             .get_function(Exponent::FUNCTION_NAME)
@@ -74,7 +74,7 @@ impl Runtime {
         call_function: FunctionDeclaration<'ctx>,
     ) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         context
             .get_function(DefaultCall::name(call_function).as_str())
@@ -88,7 +88,7 @@ impl Runtime {
     ///
     pub fn keccak256<'ctx, D>(context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         context
             .get_function(Keccak256::FUNCTION_NAME)
@@ -102,7 +102,7 @@ impl Runtime {
     ///
     pub fn system_request<'ctx, D>(context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         context
             .get_function(SystemRequest::FUNCTION_NAME)
@@ -116,7 +116,7 @@ impl Runtime {
     ///
     pub fn deployer_call<'ctx, D>(context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         context
             .get_function(DeployerCall::FUNCTION_NAME)
@@ -133,7 +133,7 @@ impl Runtime {
         return_function: FunctionDeclaration<'ctx>,
     ) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         context
             .get_function(Exit::name(context, return_function).as_str())
@@ -145,7 +145,7 @@ impl Runtime {
 
 impl<D> WriteLLVM<D> for Runtime
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         Exponent::default().declare(context)?;

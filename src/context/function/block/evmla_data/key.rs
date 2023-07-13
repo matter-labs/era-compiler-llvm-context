@@ -28,6 +28,14 @@ impl Key {
 
 impl std::fmt::Display for Key {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}_{}", self.code_type, self.tag)
+        write!(
+            f,
+            "{}_{}",
+            match self.code_type {
+                CodeType::Deploy => "dt",
+                CodeType::Runtime => "rt",
+            },
+            self.tag
+        )
     }
 }

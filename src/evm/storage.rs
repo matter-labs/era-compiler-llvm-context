@@ -15,7 +15,7 @@ pub fn load<'ctx, D>(
     position: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let value = context
         .build_call(
@@ -38,7 +38,7 @@ pub fn store<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     context.build_invoke(
         context.intrinsics().storage_store,

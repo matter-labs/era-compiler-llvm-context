@@ -32,7 +32,7 @@ pub fn default<'ctx, D>(
     simulation_address: Option<u16>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     if context.is_system_mode() {
         match simulation_address {
@@ -442,7 +442,7 @@ pub fn linker_symbol<'ctx, D>(
     mut arguments: [Argument<'ctx>; 1],
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let path = arguments[0]
         .original
@@ -464,7 +464,7 @@ pub fn request<'ctx, D>(
     arguments: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let input_offset = context.field_const(crate::HEAP_AUX_OFFSET_EXTERNAL_CALL);
     let input_length = context.field_const(
@@ -533,7 +533,7 @@ fn default_wrapped<'ctx, D>(
     output_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let value_zero_block = context.append_basic_block("contract_call_value_zero_block");
     let value_non_zero_block = context.append_basic_block("contract_call_value_non_zero_block");
@@ -609,7 +609,7 @@ fn identity<'ctx, D>(
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let destination = Pointer::new_with_offset(
         context,

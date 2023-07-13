@@ -25,8 +25,6 @@ mod tests;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::sync::RwLock;
 
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
@@ -63,7 +61,7 @@ use self::yul_data::YulData;
 ///
 pub struct Context<'ctx, D>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     /// The inner LLVM context.
     llvm: &'ctx inkwell::context::Context,
@@ -91,7 +89,7 @@ where
     /// The project dependency manager. It can be any entity implementing the trait.
     /// The manager is used to get information about contracts and their dependencies during
     /// the multi-threaded compilation process.
-    dependency_manager: Option<Arc<RwLock<D>>>,
+    dependency_manager: Option<D>,
     /// Whether to append the metadata hash at the end of bytecode.
     include_metadata_hash: bool,
     /// The debug info of the current module.
@@ -111,7 +109,7 @@ where
 
 impl<'ctx, D> Context<'ctx, D>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
@@ -129,7 +127,7 @@ where
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
         optimizer: Optimizer,
-        dependency_manager: Option<Arc<RwLock<D>>>,
+        dependency_manager: Option<D>,
         include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
     ) -> Self {
@@ -171,7 +169,8 @@ where
         contract_path: &str,
         metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
     ) -> anyhow::Result<Build> {
-        self.target_machine().set_target_data(self.module());
+        let target_machine = TargetMachine::new(self.optimizer.settings())?;
+        target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(contract_path, self.module())?;
@@ -184,13 +183,15 @@ where
             )
         })?;
 
-        self.optimizer.run(self.module()).map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` optimizing error: {}",
-                contract_path,
-                error
-            )
-        })?;
+        self.optimizer
+            .run(&target_machine, self.module())
+            .map_err(|error| {
+                anyhow::anyhow!(
+                    "The contract `{}` optimizing error: {}",
+                    contract_path,
+                    error
+                )
+            })?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(contract_path, self.module())?;
         }
@@ -202,8 +203,7 @@ where
             )
         })?;
 
-        let buffer = self
-            .target_machine()
+        let buffer = target_machine
             .write_to_memory_buffer(self.module())
             .map_err(|error| {
                 anyhow::anyhow!(
@@ -239,13 +239,6 @@ where
     ///
     pub fn builder(&self) -> &inkwell::builder::Builder<'ctx> {
         &self.builder
-    }
-
-    ///
-    /// Returns the LLVM target machine reference.
-    ///
-    pub fn target_machine(&self) -> &TargetMachine {
-        self.optimizer.target_machine()
     }
 
     ///
@@ -441,6 +434,9 @@ where
     /// Compiles a contract dependency, if the dependency manager is set.
     ///
     pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
+        if let Some(vyper_data) = self.vyper_data.as_mut() {
+            vyper_data.set_is_forwarder_used();
+        }
         self.dependency_manager
             .to_owned()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
@@ -448,7 +444,6 @@ where
                 Dependency::compile(
                     manager,
                     name,
-                    self.optimizer.target_machine().to_owned(),
                     self.optimizer.settings().to_owned(),
                     self.yul_data
                         .as_ref()
@@ -468,7 +463,7 @@ where
             .to_owned()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
-                let full_path = manager.read().expect("Sync").resolve_path(identifier)?;
+                let full_path = manager.resolve_path(identifier)?;
                 Ok(full_path)
             })
     }
@@ -481,10 +476,19 @@ where
             .to_owned()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
-                let address = manager.read().expect("Sync").resolve_library(path)?;
+                let address = manager.resolve_library(path)?;
                 let address = self.field_const_str_hex(address.as_str());
                 Ok(address)
             })
+    }
+
+    ///
+    /// Extracts the dependency manager.
+    ///
+    pub fn take_dependency_manager(&mut self) -> D {
+        self.dependency_manager
+            .take()
+            .expect("The dependency manager is unset")
     }
 
     ///

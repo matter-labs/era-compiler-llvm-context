@@ -6,12 +6,15 @@ pub mod ir_type;
 
 use std::path::PathBuf;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use self::ir_type::IRType;
 
 ///
 /// The debug configuration.
 ///
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct DebugConfig {
     /// The directory to dump the IRs to.
     pub output_directory: PathBuf,

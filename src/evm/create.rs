@@ -3,7 +3,9 @@
 //!
 
 use inkwell::values::BasicValue;
+use num::Zero;
 
+use crate::context::argument::Argument;
 use crate::context::code_type::CodeType;
 use crate::context::function::runtime::Runtime;
 use crate::context::Context;
@@ -21,7 +23,7 @@ pub fn create<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let signature_hash_string =
         crate::utils::keccak256(crate::DEPLOYER_SIGNATURE_CREATE.as_bytes());
@@ -60,7 +62,7 @@ pub fn create2<'ctx, D>(
     salt: Option<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let signature_hash_string =
         crate::utils::keccak256(crate::DEPLOYER_SIGNATURE_CREATE2.as_bytes());
@@ -95,9 +97,9 @@ where
 pub fn contract_hash<'ctx, D>(
     context: &mut Context<'ctx, D>,
     identifier: String,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+) -> anyhow::Result<Argument<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let code_type = context
         .code_type()
@@ -115,16 +117,19 @@ where
                 _ => error,
             })?;
     if contract_path.as_str() == parent {
-        return Ok(context.field_const(0).as_basic_value_enum());
+        return Ok(Argument::new_with_constant(
+            context.field_const(0).as_basic_value_enum(),
+            num::BigUint::zero(),
+        ));
     } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
         anyhow::bail!("type({}).runtimeCode is not supported", identifier);
     }
 
+    let hash_string = context.compile_dependency(identifier.as_str())?;
     let hash_value = context
-        .compile_dependency(identifier.as_str())
-        .map(|hash| context.field_const_str_hex(hash.as_str()))
-        .map(inkwell::values::BasicValueEnum::IntValue)?;
-    Ok(hash_value)
+        .field_const_str_hex(hash_string.as_str())
+        .as_basic_value_enum();
+    Ok(Argument::new_with_original(hash_value, hash_string))
 }
 
 ///
@@ -144,9 +149,9 @@ where
 pub fn header_size<'ctx, D>(
     context: &mut Context<'ctx, D>,
     identifier: String,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+) -> anyhow::Result<Argument<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let code_type = context
         .code_type()
@@ -164,12 +169,17 @@ where
                 _ => error,
             })?;
     if contract_path.as_str() == parent {
-        return Ok(context.field_const(0).as_basic_value_enum());
+        return Ok(Argument::new_with_constant(
+            context.field_const(0).as_basic_value_enum(),
+            num::BigUint::zero(),
+        ));
     } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
         anyhow::bail!("type({}).runtimeCode is not supported", identifier);
     }
 
-    Ok(context
+    let size_bigint = num::BigUint::from(crate::DEPLOYER_CALL_HEADER_SIZE);
+    let size_value = context
         .field_const(crate::DEPLOYER_CALL_HEADER_SIZE as u64)
-        .as_basic_value_enum())
+        .as_basic_value_enum();
+    Ok(Argument::new_with_constant(size_value, size_bigint))
 }

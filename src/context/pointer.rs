@@ -49,7 +49,7 @@ impl<'ctx> Pointer<'ctx> {
         value: inkwell::values::PointerValue<'ctx>,
     ) -> Self
     where
-        D: Dependency,
+        D: Dependency + Clone,
     {
         Self {
             r#type: context.field_type().as_basic_type_enum(),
@@ -69,7 +69,7 @@ impl<'ctx> Pointer<'ctx> {
         name: &str,
     ) -> Self
     where
-        D: Dependency,
+        D: Dependency + Clone,
         T: BasicType<'ctx>,
     {
         assert_ne!(

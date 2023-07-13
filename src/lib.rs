@@ -68,9 +68,6 @@ pub use self::zkevm::call as zkevm_call;
 pub use self::zkevm::general as zkevm_general;
 pub use self::zkevm::math as zkevm_math;
 
-use std::sync::Arc;
-use std::sync::RwLock;
-
 ///
 /// Initializes the zkEVM target machine.
 ///
@@ -91,18 +88,20 @@ pub fn build_assembly_text(
         debug_config.dump_assembly(contract_path, assembly_text)?;
     }
 
-    let assembly = zkevm_assembly::Assembly::from_string(assembly_text.to_owned(), metadata_hash)
-        .map_err(|error| {
-        anyhow::anyhow!(
-            "The contract `{}` assembly parsing error: {}",
-            contract_path,
-            error,
-        )
-    })?;
+    let mut assembly =
+        zkevm_assembly::Assembly::from_string(assembly_text.to_owned(), metadata_hash).map_err(
+            |error| {
+                anyhow::anyhow!(
+                    "The contract `{}` assembly parsing error: {}",
+                    contract_path,
+                    error,
+                )
+            },
+        )?;
 
     let bytecode_words = match zkevm_assembly::get_encoding_mode() {
-        zkevm_assembly::RunningVmEncodingMode::Production => { assembly.clone().compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
-        zkevm_assembly::RunningVmEncodingMode::Testing => { assembly.clone().compile_to_bytecode_for_mode::<16, zkevm_opcode_defs::decoding::EncodingModeTesting>() },
+        zkevm_assembly::RunningVmEncodingMode::Production => { assembly.compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
+        zkevm_assembly::RunningVmEncodingMode::Testing => { assembly.compile_to_bytecode_for_mode::<16, zkevm_opcode_defs::decoding::EncodingModeTesting>() },
     }
         .map_err(|error| {
             anyhow::anyhow!(
@@ -135,7 +134,7 @@ pub fn build_assembly_text(
 
     Ok(Build::new(
         assembly_text.to_owned(),
-        assembly,
+        metadata_hash,
         bytecode,
         bytecode_hash,
     ))
@@ -147,7 +146,7 @@ pub fn build_assembly_text(
 #[allow(clippy::upper_case_acronyms)]
 pub trait WriteLLVM<D>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     ///
     /// Declares the entity in the LLVM IR.
@@ -166,12 +165,12 @@ where
 ///
 /// The dummy LLVM writable entity.
 ///
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct DummyLLVMWritable {}
 
 impl<D> WriteLLVM<D> for DummyLLVMWritable
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     fn into_llvm(self, _context: &mut Context<D>) -> anyhow::Result<()> {
         Ok(())
@@ -186,9 +185,8 @@ pub trait Dependency {
     /// Compiles a project dependency.
     ///
     fn compile(
-        dependency: Arc<RwLock<Self>>,
+        dependency: Self,
         path: &str,
-        target_machine: TargetMachine,
         optimizer_settings: OptimizerSettings,
         is_system_mode: bool,
         include_metadata_hash: bool,
@@ -209,14 +207,13 @@ pub trait Dependency {
 ///
 /// The dummy dependency entity.
 ///
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct DummyDependency {}
 
 impl Dependency for DummyDependency {
     fn compile(
-        _dependency: Arc<RwLock<Self>>,
+        _dependency: Self,
         _path: &str,
-        _target_machine: TargetMachine,
         _optimizer_settings: OptimizerSettings,
         _is_system_mode: bool,
         _include_metadata_hash: bool,

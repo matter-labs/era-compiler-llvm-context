@@ -17,7 +17,7 @@ pub fn to_l1<'ctx, D>(
     in_1: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let join_block = context.append_basic_block("contract_call_toL1_join_block");
 
@@ -79,7 +79,7 @@ pub fn code_source<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let result = context
         .build_call(
@@ -100,7 +100,7 @@ pub fn precompile<'ctx, D>(
     gas_left: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let result = context
         .build_call(
@@ -119,7 +119,7 @@ pub fn meta<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     let result = context
         .build_call(
@@ -139,7 +139,7 @@ pub fn set_context_value<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     context.build_call(
         context.intrinsics().set_u128,
@@ -157,7 +157,7 @@ pub fn set_pubdata_price<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     context.build_call(
         context.intrinsics().set_pubdata_price,
@@ -174,7 +174,7 @@ pub fn increment_tx_counter<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     context.build_call(
         context.intrinsics().increment_tx_counter,
@@ -194,7 +194,7 @@ pub fn event<'ctx, D>(
     is_initializer: bool,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency,
+    D: Dependency + Clone,
 {
     context.build_call(
         context.intrinsics().event,

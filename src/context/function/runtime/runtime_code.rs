@@ -19,7 +19,7 @@ use crate::WriteLLVM;
 pub struct RuntimeCode<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency,
+    D: Dependency + Clone,
 {
     /// The runtime code AST representation.
     inner: B,
@@ -30,7 +30,7 @@ where
 impl<B, D> RuntimeCode<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency,
+    D: Dependency + Clone,
 {
     ///
     /// A shortcut constructor.
@@ -46,7 +46,7 @@ where
 impl<B, D> WriteLLVM<D> for RuntimeCode<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency,
+    D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let function_type =
