@@ -34,7 +34,7 @@ impl IRType {
             Self::EVMLA => compiler_common::EXTENSION_EVMLA,
             Self::LLL => compiler_common::EXTENSION_LLL,
             Self::LLVM => compiler_common::EXTENSION_LLVM_SOURCE,
-            Self::Assembly => compiler_common::EXTENSION_ZKEVM_ASSEMBLY,
+            Self::Assembly => compiler_common::EXTENSION_ERAVM_ASSEMBLY,
         }
     }
 }

@@ -2,237 +2,81 @@
 //! The LLVM context library.
 //!
 
-pub(crate) mod r#const;
-pub(crate) mod context;
 pub(crate) mod debug_config;
-pub(crate) mod evm;
-pub(crate) mod metadata_hash;
-pub(crate) mod utils;
-pub(crate) mod zkevm;
+pub(crate) mod eravm;
+pub(crate) mod optimizer;
+pub(crate) mod target_machine;
 
-pub use self::context::address_space::AddressSpace;
-pub use self::context::argument::Argument;
-pub use self::context::attribute::Attribute;
-pub use self::context::build::Build;
-pub use self::context::code_type::CodeType;
-pub use self::context::evmla_data::EVMLAData as ContextEVMLAData;
-pub use self::context::function::block::evmla_data::key::Key as FunctionBlockKey;
-pub use self::context::function::block::evmla_data::EVMLAData as FunctionBlockEVMLAData;
-pub use self::context::function::block::Block as FunctionBlock;
-pub use self::context::function::declaration::Declaration as FunctionDeclaration;
-pub use self::context::function::evmla_data::EVMLAData as FunctionEVMLAData;
-pub use self::context::function::intrinsics::Intrinsics as IntrinsicFunction;
-pub use self::context::function::llvm_runtime::LLVMRuntime;
-pub use self::context::function::r#return::Return as FunctionReturn;
-pub use self::context::function::runtime::deploy_code::DeployCode as DeployCodeFunction;
-pub use self::context::function::runtime::entry::Entry as EntryFunction;
-pub use self::context::function::runtime::runtime_code::RuntimeCode as RuntimeCodeFunction;
-pub use self::context::function::runtime::Runtime;
-pub use self::context::function::vyper_data::VyperData as FunctionVyperData;
-pub use self::context::function::yul_data::YulData as FunctionYulData;
-pub use self::context::function::Function;
-pub use self::context::global::Global;
-pub use self::context::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
-pub use self::context::optimizer::settings::Settings as OptimizerSettings;
-pub use self::context::optimizer::Optimizer;
-pub use self::context::pointer::Pointer;
-pub use self::context::r#loop::Loop;
-pub use self::context::solidity_data::SolidityData as ContextSolidityData;
-pub use self::context::target_machine::TargetMachine;
-pub use self::context::vyper_data::VyperData as ContextVyperData;
-pub use self::context::yul_data::YulData as ContextYulData;
-pub use self::context::Context;
 pub use self::debug_config::ir_type::IRType as DebugConfigIR;
 pub use self::debug_config::DebugConfig;
-pub use self::evm::arithmetic;
-pub use self::evm::bitwise;
-pub use self::evm::call;
-pub use self::evm::calldata;
-pub use self::evm::comparison;
-pub use self::evm::context as contract_context;
-pub use self::evm::create;
-pub use self::evm::ether_gas;
-pub use self::evm::event;
-pub use self::evm::ext_code;
-pub use self::evm::immutable;
-pub use self::evm::math;
-pub use self::evm::memory;
-pub use self::evm::r#return;
-pub use self::evm::return_data;
-pub use self::evm::storage;
-pub use self::metadata_hash::MetadataHash;
-pub use self::r#const::*;
-pub use self::utils::*;
-pub use self::zkevm::abi as zkevm_abi;
-pub use self::zkevm::call as zkevm_call;
-pub use self::zkevm::general as zkevm_general;
-pub use self::zkevm::math as zkevm_math;
+pub use self::eravm::build_assembly_text as eravm_build_assembly_text;
+pub use self::eravm::context::address_space::AddressSpace as EraVMAddressSpace;
+pub use self::eravm::context::argument::Argument as EraVMArgument;
+pub use self::eravm::context::attribute::Attribute as EraVMAttribute;
+pub use self::eravm::context::build::Build as EraVMBuild;
+pub use self::eravm::context::code_type::CodeType as EraVMCodeType;
+pub use self::eravm::context::evmla_data::EVMLAData as EraVMContextEVMLAData;
+pub use self::eravm::context::function::block::evmla_data::key::Key as EraVMFunctionBlockKey;
+pub use self::eravm::context::function::block::evmla_data::EVMLAData as EraVMFunctionBlockEVMLAData;
+pub use self::eravm::context::function::block::Block as EraVMFunctionBlock;
+pub use self::eravm::context::function::declaration::Declaration as EraVMFunctionDeclaration;
+pub use self::eravm::context::function::evmla_data::EVMLAData as EraVMFunctionEVMLAData;
+pub use self::eravm::context::function::intrinsics::Intrinsics as EraVMIntrinsicFunction;
+pub use self::eravm::context::function::llvm_runtime::LLVMRuntime as EraVMLLVMRuntime;
+pub use self::eravm::context::function::r#return::Return as EraVMFunctionReturn;
+pub use self::eravm::context::function::runtime::deploy_code::DeployCode as EraVMDeployCodeFunction;
+pub use self::eravm::context::function::runtime::entry::Entry as EraVMEntryFunction;
+pub use self::eravm::context::function::runtime::runtime_code::RuntimeCode as EraVMRuntimeCodeFunction;
+pub use self::eravm::context::function::runtime::Runtime as EraVMRuntime;
+pub use self::eravm::context::function::vyper_data::VyperData as EraVMFunctionVyperData;
+pub use self::eravm::context::function::yul_data::YulData as EraVMFunctionYulData;
+pub use self::eravm::context::function::Function as EraVMFunction;
+pub use self::eravm::context::global::Global as EraVMGlobal;
+pub use self::eravm::context::pointer::Pointer as EraVMPointer;
+pub use self::eravm::context::r#loop::Loop as EraVMLoop;
+pub use self::eravm::context::solidity_data::SolidityData as EraVMContextSolidityData;
+pub use self::eravm::context::vyper_data::VyperData as EraVMContextVyperData;
+pub use self::eravm::context::yul_data::YulData as EraVMContextYulData;
+pub use self::eravm::context::Context as EraVMContext;
+pub use self::eravm::evm::arithmetic as eravm_evm_arithmetic;
+pub use self::eravm::evm::bitwise as eravm_evm_bitwise;
+pub use self::eravm::evm::call as eravm_evm_call;
+pub use self::eravm::evm::calldata as eravm_evm_calldata;
+pub use self::eravm::evm::comparison as eravm_evm_comparison;
+pub use self::eravm::evm::context as eravm_evm_contract_context;
+pub use self::eravm::evm::create as eravm_evm_create;
+pub use self::eravm::evm::ether_gas as eravm_evm_ether_gas;
+pub use self::eravm::evm::event as eravm_evm_event;
+pub use self::eravm::evm::ext_code as eravm_evm_ext_code;
+pub use self::eravm::evm::immutable as eravm_evm_immutable;
+pub use self::eravm::evm::math as eravm_evm_math;
+pub use self::eravm::evm::memory as eravm_evm_memory;
+pub use self::eravm::evm::r#return as eravm_evm_return;
+pub use self::eravm::evm::return_data as eravm_evm_return_data;
+pub use self::eravm::evm::storage as eravm_evm_storage;
+pub use self::eravm::extensions::abi as eravm_abi;
+pub use self::eravm::extensions::call as eravm_call;
+pub use self::eravm::extensions::general as eravm_general;
+pub use self::eravm::extensions::math as eravm_math;
+pub use self::eravm::metadata_hash::MetadataHash as EraVMMetadataHash;
+pub use self::eravm::r#const as eravm_const;
+pub use self::eravm::utils as eravm_utils;
+pub use self::eravm::Dependency as EraVMDependency;
+pub use self::eravm::DummyDependency as EraVMDummyDependency;
+pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
+pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
+pub use self::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
+pub use self::optimizer::settings::Settings as OptimizerSettings;
+pub use self::optimizer::Optimizer;
+pub use self::target_machine::target::Target;
+pub use self::target_machine::TargetMachine;
 
 ///
-/// Initializes the zkEVM target machine.
+/// Initializes the target machine.
 ///
-pub fn initialize_target() {
-    inkwell::targets::Target::initialize_syncvm(&inkwell::targets::InitializationConfig::default());
-}
-
-///
-/// Builds zkEVM assembly text.
-///
-pub fn build_assembly_text(
-    contract_path: &str,
-    assembly_text: &str,
-    metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
-    debug_config: Option<&DebugConfig>,
-) -> anyhow::Result<Build> {
-    if let Some(debug_config) = debug_config {
-        debug_config.dump_assembly(contract_path, assembly_text)?;
-    }
-
-    let mut assembly =
-        zkevm_assembly::Assembly::from_string(assembly_text.to_owned(), metadata_hash).map_err(
-            |error| {
-                anyhow::anyhow!(
-                    "The contract `{}` assembly parsing error: {}",
-                    contract_path,
-                    error,
-                )
-            },
-        )?;
-
-    let bytecode_words = match zkevm_assembly::get_encoding_mode() {
-        zkevm_assembly::RunningVmEncodingMode::Production => { assembly.compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
-        zkevm_assembly::RunningVmEncodingMode::Testing => { assembly.compile_to_bytecode_for_mode::<16, zkevm_opcode_defs::decoding::EncodingModeTesting>() },
-    }
-        .map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` assembly-to-bytecode conversion error: {}",
-                contract_path,
-                error,
-            )
-        })?;
-
-    let bytecode_hash = match zkevm_assembly::get_encoding_mode() {
-        zkevm_assembly::RunningVmEncodingMode::Production => {
-            zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                8,
-                zkevm_opcode_defs::decoding::EncodingModeProduction,
-            >(bytecode_words.as_slice())
-        }
-        zkevm_assembly::RunningVmEncodingMode::Testing => {
-            zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                16,
-                zkevm_opcode_defs::decoding::EncodingModeTesting,
-            >(bytecode_words.as_slice())
-        }
-    }
-    .map(hex::encode)
-    .map_err(|_error| {
-        anyhow::anyhow!("The contract `{}` bytecode hashing error", contract_path,)
-    })?;
-
-    let bytecode = bytecode_words.into_iter().flatten().collect();
-
-    Ok(Build::new(
-        assembly_text.to_owned(),
-        metadata_hash,
-        bytecode,
-        bytecode_hash,
-    ))
-}
-
-///
-/// Implemented by items which are translated into LLVM IR.
-///
-#[allow(clippy::upper_case_acronyms)]
-pub trait WriteLLVM<D>
-where
-    D: Dependency + Clone,
-{
-    ///
-    /// Declares the entity in the LLVM IR.
-    /// Is usually performed in order to use the item before defining it.
-    ///
-    fn declare(&mut self, _context: &mut Context<D>) -> anyhow::Result<()> {
-        Ok(())
-    }
-
-    ///
-    /// Translates the entity into LLVM IR.
-    ///
-    fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()>;
-}
-
-///
-/// The dummy LLVM writable entity.
-///
-#[derive(Debug, Default, Clone)]
-pub struct DummyLLVMWritable {}
-
-impl<D> WriteLLVM<D> for DummyLLVMWritable
-where
-    D: Dependency + Clone,
-{
-    fn into_llvm(self, _context: &mut Context<D>) -> anyhow::Result<()> {
-        Ok(())
-    }
-}
-
-///
-/// Implemented by items managing project dependencies.
-///
-pub trait Dependency {
-    ///
-    /// Compiles a project dependency.
-    ///
-    fn compile(
-        dependency: Self,
-        path: &str,
-        optimizer_settings: OptimizerSettings,
-        is_system_mode: bool,
-        include_metadata_hash: bool,
-        debug_config: Option<DebugConfig>,
-    ) -> anyhow::Result<String>;
-
-    ///
-    /// Resolves a full contract path.
-    ///
-    fn resolve_path(&self, identifier: &str) -> anyhow::Result<String>;
-
-    ///
-    /// Resolves a library address.
-    ///
-    fn resolve_library(&self, path: &str) -> anyhow::Result<String>;
-}
-
-///
-/// The dummy dependency entity.
-///
-#[derive(Debug, Default, Clone)]
-pub struct DummyDependency {}
-
-impl Dependency for DummyDependency {
-    fn compile(
-        _dependency: Self,
-        _path: &str,
-        _optimizer_settings: OptimizerSettings,
-        _is_system_mode: bool,
-        _include_metadata_hash: bool,
-        _debug_config: Option<DebugConfig>,
-    ) -> anyhow::Result<String> {
-        Ok(String::new())
-    }
-
-    ///
-    /// Resolves a full contract path.
-    ///
-    fn resolve_path(&self, _identifier: &str) -> anyhow::Result<String> {
-        Ok(String::new())
-    }
-
-    ///
-    /// Resolves a library address.
-    ///
-    fn resolve_library(&self, _path: &str) -> anyhow::Result<String> {
-        Ok(String::new())
+pub fn initialize_target(target: Target) {
+    match target {
+        Target::EraVM => self::eravm::initialize_target(),
+        Target::EVM => todo!(),
     }
 }
