@@ -472,50 +472,36 @@ pub fn request<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let input_offset = context.field_const(crate::eravm::HEAP_AUX_OFFSET_EXTERNAL_CALL);
-    let input_length = context.field_const(
+    let signature_hash = crate::eravm::utils::keccak256(signature.as_bytes());
+    let signature_value = context.field_const_str_hex(signature_hash.as_str());
+
+    let calldata_size = context.field_const(
         (compiler_common::BYTE_LENGTH_X32 + (compiler_common::BYTE_LENGTH_FIELD * arguments.len()))
             as u64,
     );
 
-    let signature_hash = crate::eravm::utils::keccak256(signature.as_bytes());
-    let signature_pointer = Pointer::new_with_offset(
-        context,
-        AddressSpace::HeapAuxiliary,
-        context.field_type(),
-        input_offset,
-        "call_signature_pointer",
-    );
-    let signature_value = context.field_const_str_hex(signature_hash.as_str());
-    context.build_store(signature_pointer, signature_value);
-
-    for (index, argument) in arguments.into_iter().enumerate() {
-        let arguments_offset = context.builder().build_int_add(
-            input_offset,
-            context.field_const(
-                (compiler_common::BYTE_LENGTH_X32 + index * compiler_common::BYTE_LENGTH_FIELD)
-                    as u64,
-            ),
-            format!("call_argument_{index}_offset").as_str(),
-        );
-        let arguments_pointer = Pointer::new_with_offset(
-            context,
-            AddressSpace::HeapAuxiliary,
-            context.field_type(),
-            arguments_offset,
-            format!("call_argument_{index}_pointer").as_str(),
-        );
-        context.build_store(arguments_pointer, argument);
-    }
-
     let function = Runtime::system_request(context);
+    let calldata_array_pointer = context.build_alloca(
+        context.array_type(context.field_type(), arguments.len()),
+        "system_request_calldata_array_pointer",
+    );
+    for (index, argument) in arguments.into_iter().enumerate() {
+        let argument_pointer = context.build_gep(
+            calldata_array_pointer,
+            &[context.field_const(0), context.field_const(index as u64)],
+            context.field_type(),
+            "system_request_calldata_array_pointer",
+        );
+        context.build_store(argument_pointer, argument);
+    }
     Ok(context
         .build_invoke(
             function,
             &[
                 address.as_basic_value_enum(),
-                input_offset.as_basic_value_enum(),
-                input_length.as_basic_value_enum(),
+                signature_value.as_basic_value_enum(),
+                calldata_size.as_basic_value_enum(),
+                calldata_array_pointer.value.as_basic_value_enum(),
             ],
             "system_request_call",
         )

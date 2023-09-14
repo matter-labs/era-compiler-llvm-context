@@ -4,8 +4,10 @@
 
 use std::marker::PhantomData;
 
+use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::code_type::CodeType;
 use crate::eravm::context::function::runtime::Runtime;
+use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 use crate::eravm::WriteLLVM;
@@ -66,6 +68,23 @@ where
 
         context.set_basic_block(context.current_function().borrow().entry_block());
         context.set_code_type(CodeType::Deploy);
+        if let Some(vyper) = context.vyper_data.as_ref() {
+            for index in 0..vyper.immutables_size() / compiler_common::BYTE_LENGTH_FIELD {
+                let offset = (crate::eravm::r#const::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA
+                    as usize)
+                    + (1 + index) * 2 * compiler_common::BYTE_LENGTH_FIELD;
+                let value = index * compiler_common::BYTE_LENGTH_FIELD;
+                let pointer = Pointer::new_with_offset(
+                    context,
+                    AddressSpace::HeapAuxiliary,
+                    context.field_type(),
+                    context.field_const(offset as u64),
+                    "immutable_index_initializer",
+                );
+                context.build_store(pointer, context.field_const(value as u64));
+            }
+        }
+
         self.inner.into_llvm(context)?;
         match context
             .basic_block()
