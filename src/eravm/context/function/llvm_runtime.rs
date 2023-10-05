@@ -5,6 +5,7 @@
 use inkwell::types::BasicType;
 
 use crate::eravm::context::address_space::AddressSpace;
+use crate::eravm::context::attribute::Attribute;
 use crate::eravm::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::eravm::context::function::Function;
 use crate::optimizer::Optimizer;
@@ -22,11 +23,37 @@ pub struct LLVMRuntime<'ctx> {
     pub cxa_throw: FunctionDeclaration<'ctx>,
 
     /// The corresponding LLVM runtime function.
+    pub div: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub sdiv: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub r#mod: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub smod: FunctionDeclaration<'ctx>,
+
+    /// The corresponding LLVM runtime function.
+    pub shl: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub shr: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub sar: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub byte: FunctionDeclaration<'ctx>,
+
+    /// The corresponding LLVM runtime function.
     pub add_mod: FunctionDeclaration<'ctx>,
     /// The corresponding LLVM runtime function.
     pub mul_mod: FunctionDeclaration<'ctx>,
     /// The corresponding LLVM runtime function.
+    pub exp: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
     pub sign_extend: FunctionDeclaration<'ctx>,
+
+    /// The corresponding LLVM runtime function.
+    pub mstore8: FunctionDeclaration<'ctx>,
+
+    /// The corresponding LLVM runtime function.
+    pub sha3: FunctionDeclaration<'ctx>,
 
     /// The corresponding LLVM runtime function.
     pub far_call: FunctionDeclaration<'ctx>,
@@ -47,6 +74,11 @@ pub struct LLVMRuntime<'ctx> {
     pub mimic_call: FunctionDeclaration<'ctx>,
     /// The corresponding LLVM runtime function.
     pub mimic_call_byref: FunctionDeclaration<'ctx>,
+
+    /// The corresponding LLVM runtime function.
+    pub r#return: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub revert: FunctionDeclaration<'ctx>,
 }
 
 impl<'ctx> LLVMRuntime<'ctx> {
@@ -57,13 +89,46 @@ impl<'ctx> LLVMRuntime<'ctx> {
     pub const FUNCTION_CXA_THROW: &'static str = "__cxa_throw";
 
     /// The corresponding runtime function name.
+    pub const FUNCTION_DIV: &'static str = "__div";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_SDIV: &'static str = "__sdiv";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_MOD: &'static str = "__mod";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_SMOD: &'static str = "__smod";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_SHL: &'static str = "__shl";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_SHR: &'static str = "__shr";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_SAR: &'static str = "__sar";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_BYTE: &'static str = "__byte";
+
+    /// The corresponding runtime function name.
     pub const FUNCTION_ADDMOD: &'static str = "__addmod";
 
     /// The corresponding runtime function name.
     pub const FUNCTION_MULMOD: &'static str = "__mulmod";
 
     /// The corresponding runtime function name.
+    pub const FUNCTION_EXP: &'static str = "__exp";
+
+    /// The corresponding runtime function name.
     pub const FUNCTION_SIGNEXTEND: &'static str = "__signextend";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_MSTORE8: &'static str = "__mstore8";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_SHA3: &'static str = "__sha3";
 
     /// The corresponding runtime function name.
     pub const FUNCTION_FARCALL: &'static str = "__farcall";
@@ -88,6 +153,12 @@ impl<'ctx> LLVMRuntime<'ctx> {
 
     /// The corresponding runtime function name.
     pub const FUNCTION_MIMICCALL_BYREF: &'static str = "__mimiccall_byref";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_RETURN: &'static str = "__return";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_REVERT: &'static str = "__revert";
 
     ///
     /// A shortcut constructor.
@@ -122,6 +193,158 @@ impl<'ctx> LLVMRuntime<'ctx> {
         );
         Function::set_cxa_throw_attributes(llvm, cxa_throw);
 
+        let div = Self::declare(
+            module,
+            Self::FUNCTION_DIV,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, div, optimizer);
+        Function::set_pure_function_attributes(llvm, div);
+
+        let r#mod = Self::declare(
+            module,
+            Self::FUNCTION_MOD,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, r#mod, optimizer);
+        Function::set_pure_function_attributes(llvm, r#mod);
+
+        let sdiv = Self::declare(
+            module,
+            Self::FUNCTION_SDIV,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, sdiv, optimizer);
+        Function::set_pure_function_attributes(llvm, sdiv);
+
+        let smod = Self::declare(
+            module,
+            Self::FUNCTION_SMOD,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, smod, optimizer);
+        Function::set_pure_function_attributes(llvm, smod);
+
+        let shl = Self::declare(
+            module,
+            Self::FUNCTION_SHL,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, shl, optimizer);
+        Function::set_pure_function_attributes(llvm, shl);
+
+        let shr = Self::declare(
+            module,
+            Self::FUNCTION_SHR,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, shr, optimizer);
+        Function::set_pure_function_attributes(llvm, shr);
+
+        let sar = Self::declare(
+            module,
+            Self::FUNCTION_SAR,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, sar, optimizer);
+        Function::set_pure_function_attributes(llvm, sar);
+
+        let byte = Self::declare(
+            module,
+            Self::FUNCTION_BYTE,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, byte, optimizer);
+        Function::set_pure_function_attributes(llvm, byte);
+
         let add_mod = Self::declare(
             module,
             Self::FUNCTION_ADDMOD,
@@ -139,7 +362,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, add_mod, optimizer);
-        Function::set_llvm_runtime_attributes(llvm, add_mod);
+        Function::set_pure_function_attributes(llvm, add_mod);
 
         let mul_mod = Self::declare(
             module,
@@ -158,7 +381,26 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, mul_mod, optimizer);
-        Function::set_llvm_runtime_attributes(llvm, mul_mod);
+        Function::set_pure_function_attributes(llvm, mul_mod);
+
+        let exp = Self::declare(
+            module,
+            Self::FUNCTION_EXP,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into();
+                        2
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, exp, optimizer);
+        Function::set_pure_function_attributes(llvm, exp);
 
         let sign_extend = Self::declare(
             module,
@@ -177,7 +419,65 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, sign_extend, optimizer);
-        Function::set_llvm_runtime_attributes(llvm, sign_extend);
+        Function::set_pure_function_attributes(llvm, sign_extend);
+
+        let mstore8 = Self::declare(
+            module,
+            Self::FUNCTION_MSTORE8,
+            llvm.void_type().fn_type(
+                vec![
+                    llvm.custom_width_int_type(compiler_common::BIT_LENGTH_BYTE as u32)
+                        .ptr_type(AddressSpace::Heap.into())
+                        .as_basic_type_enum()
+                        .into(),
+                    llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                        .as_basic_type_enum()
+                        .into(),
+                ]
+                .as_slice(),
+                false,
+            ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, mstore8, optimizer);
+        Function::set_function_attributes(
+            llvm,
+            mstore8,
+            vec![
+                Attribute::MustProgress,
+                Attribute::NoUnwind,
+                Attribute::WillReturn,
+            ],
+        );
+
+        let sha3 = Self::declare(
+            module,
+            Self::FUNCTION_SHA3,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_BYTE as u32)
+                            .ptr_type(AddressSpace::Heap.into())
+                            .as_basic_type_enum()
+                            .into(),
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into(),
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_BOOLEAN as u32)
+                            .as_basic_type_enum()
+                            .into(),
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, sha3, optimizer);
+        Function::set_function_attributes(
+            llvm,
+            sha3,
+            vec![Attribute::ArgMemOnly, Attribute::ReadOnly],
+        );
 
         let external_call_arguments: Vec<inkwell::types::BasicMetadataTypeEnum> = vec![
                 llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
@@ -287,14 +587,61 @@ impl<'ctx> LLVMRuntime<'ctx> {
         );
         Function::set_default_attributes(llvm, mimic_call_byref, optimizer);
 
+        let r#return = Self::declare(
+            module,
+            Self::FUNCTION_RETURN,
+            llvm.void_type().fn_type(
+                vec![
+                    llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                        .as_basic_type_enum()
+                        .into();
+                    3
+                ]
+                .as_slice(),
+                false,
+            ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, r#return, optimizer);
+        let revert = Self::declare(
+            module,
+            Self::FUNCTION_REVERT,
+            llvm.void_type().fn_type(
+                vec![
+                    llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                        .as_basic_type_enum()
+                        .into();
+                    3
+                ]
+                .as_slice(),
+                false,
+            ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, revert, optimizer);
+
         Self {
             personality,
             cxa_throw,
 
+            div,
+            sdiv,
+            r#mod,
+            smod,
+
+            shl,
+            shr,
+            sar,
+            byte,
+
             add_mod,
             mul_mod,
-
+            exp,
             sign_extend,
+
+            mstore8,
+
+            sha3,
 
             far_call,
             static_call,
@@ -305,6 +652,9 @@ impl<'ctx> LLVMRuntime<'ctx> {
             static_call_byref,
             delegate_call_byref,
             mimic_call_byref,
+
+            r#return,
+            revert,
         }
     }
 

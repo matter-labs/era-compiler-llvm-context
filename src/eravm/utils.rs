@@ -47,7 +47,7 @@ where
 ///
 /// Generates an exception.
 ///
-pub fn throw<D>(context: &mut Context<D>) -> anyhow::Result<()>
+pub fn throw<D>(context: &Context<D>)
 where
     D: Dependency + Clone,
 {
@@ -56,12 +56,11 @@ where
         &[context
             .byte_type()
             .ptr_type(AddressSpace::Stack.into())
-            .const_null()
+            .get_undef()
             .as_basic_value_enum(); 3],
         LLVMRuntime::FUNCTION_CXA_THROW,
     );
     context.build_unreachable();
-    Ok(())
 }
 
 ///

@@ -24,10 +24,10 @@ pub struct TargetMachine {
 
 impl TargetMachine {
     /// The LLVM target name.
-    pub const VM_TARGET_NAME: &'static str = "syncvm";
+    pub const VM_TARGET_NAME: &'static str = "eravm";
 
     /// The LLVM target triple.
-    pub const VM_TARGET_TRIPLE: &'static str = "syncvm-unknown-unknown";
+    pub const VM_TARGET_TRIPLE: &'static str = "eravm-unknown-unknown";
 
     /// The actual production VM name.
     pub const VM_PRODUCTION_NAME: &'static str = "EraVM";

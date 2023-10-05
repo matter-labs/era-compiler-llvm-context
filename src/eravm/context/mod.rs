@@ -7,7 +7,7 @@ pub mod argument;
 pub mod attribute;
 pub mod build;
 pub mod code_type;
-pub mod debug_info;
+// pub mod debug_info;
 pub mod evmla_data;
 pub mod function;
 pub mod global;
@@ -37,13 +37,12 @@ use self::address_space::AddressSpace;
 use self::attribute::Attribute;
 use self::build::Build;
 use self::code_type::CodeType;
-use self::debug_info::DebugInfo;
+// use self::debug_info::DebugInfo;
 use self::evmla_data::EVMLAData;
 use self::function::declaration::Declaration as FunctionDeclaration;
 use self::function::intrinsics::Intrinsics;
 use self::function::llvm_runtime::LLVMRuntime;
 use self::function::r#return::Return as FunctionReturn;
-use self::function::runtime::Runtime;
 use self::function::Function;
 use self::global::Global;
 use self::pointer::Pointer;
@@ -92,7 +91,7 @@ where
     /// Whether to append the metadata hash at the end of bytecode.
     include_metadata_hash: bool,
     /// The debug info of the current module.
-    debug_info: DebugInfo<'ctx>,
+    // debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
     debug_config: Option<DebugConfig>,
 
@@ -133,7 +132,7 @@ where
         let builder = llvm.create_builder();
         let intrinsics = Intrinsics::new(llvm, &module);
         let llvm_runtime = LLVMRuntime::new(llvm, &module, &optimizer);
-        let debug_info = DebugInfo::new(&module);
+        // let debug_info = DebugInfo::new(&module);
 
         Self {
             llvm,
@@ -150,7 +149,7 @@ where
 
             dependency_manager,
             include_metadata_hash,
-            debug_info,
+            // debug_info,
             debug_config,
 
             solidity_data: None,
@@ -491,13 +490,6 @@ where
     }
 
     ///
-    /// Returns the debug info reference.
-    ///
-    pub fn debug_info(&self) -> &DebugInfo<'ctx> {
-        &self.debug_info
-    }
-
-    ///
     /// Returns the debug config reference.
     ///
     pub fn debug_config(&self) -> Option<&DebugConfig> {
@@ -721,16 +713,7 @@ where
             false,
             "invoke_catch_landing",
         );
-        self.build_call(
-            self.llvm_runtime.cxa_throw,
-            &[self
-                .byte_type()
-                .ptr_type(AddressSpace::Stack.into())
-                .const_null()
-                .as_basic_value_enum(); 3],
-            LLVMRuntime::FUNCTION_CXA_THROW,
-        );
-        self.build_unreachable();
+        crate::eravm::utils::throw(self);
 
         self.set_basic_block(current_block);
         let call_site_value = self.builder.build_indirect_invoke(
@@ -980,25 +963,21 @@ where
         offset: inkwell::values::IntValue<'ctx>,
         length: inkwell::values::IntValue<'ctx>,
     ) {
-        let auxiliary_heap_marker = if self.code_type() == Some(CodeType::Deploy)
-            && return_function == self.intrinsics.r#return
+        let return_forward_mode = if self.code_type() == Some(CodeType::Deploy)
+            && return_function == self.llvm_runtime().r#return
         {
-            self.builder().build_left_shift(
-                self.field_const(zkevm_opcode_defs::RetForwardPageType::UseAuxHeap as u64),
-                self.field_const((compiler_common::BIT_LENGTH_X32 * 7) as u64),
-                "contract_exit_abi_data_heap_auxiliary_marker_shifted",
-            )
+            zkevm_opcode_defs::RetForwardPageType::UseAuxHeap
         } else {
-            self.field_const(0)
+            zkevm_opcode_defs::RetForwardPageType::UseHeap
         };
 
-        let function = Runtime::exit(self, return_function);
         self.build_call(
-            function,
+            return_function,
             &[
                 offset.as_basic_value_enum(),
                 length.as_basic_value_enum(),
-                auxiliary_heap_marker.as_basic_value_enum(),
+                self.field_const(return_forward_mode as u64)
+                    .as_basic_value_enum(),
             ],
             "exit_call",
         );
@@ -1214,6 +1193,20 @@ where
                     inkwell::attributes::AttributeLoc::Param(index as u32),
                     self.llvm.create_enum_attribute(Attribute::NoFree as u32, 0),
                 );
+                if function == self.llvm_runtime().mstore8 {
+                    call_site_value.add_attribute(
+                        inkwell::attributes::AttributeLoc::Param(index as u32),
+                        self.llvm
+                            .create_enum_attribute(Attribute::WriteOnly as u32, 0),
+                    );
+                }
+                if function == self.llvm_runtime().sha3 {
+                    call_site_value.add_attribute(
+                        inkwell::attributes::AttributeLoc::Param(index as u32),
+                        self.llvm
+                            .create_enum_attribute(Attribute::ReadOnly as u32, 0),
+                    );
+                }
                 if Some(argument.get_type()) == function.r#type.get_return_type() {
                     if function
                         .r#type

@@ -21,7 +21,7 @@ impl Target {
     ///
     pub fn name(&self) -> &str {
         match self {
-            Self::EraVM => "syncvm",
+            Self::EraVM => "eravm",
             Self::EVM => "evm",
         }
     }
@@ -31,7 +31,7 @@ impl Target {
     ///
     pub fn triple(&self) -> &str {
         match self {
-            Self::EraVM => "syncvm-unknown-unknown",
+            Self::EraVM => "eravm-unknown-unknown",
             Self::EVM => "evm-unknown-unknown",
         }
     }

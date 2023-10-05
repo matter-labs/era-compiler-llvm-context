@@ -20,18 +20,18 @@ pub fn get_extra_abi_data<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let extra_abi_data_pointer = context.get_global_ptr(crate::eravm::GLOBAL_EXTRA_ABI_DATA)?;
-    let extra_abi_data_element_pointer = context.build_gep(
-        extra_abi_data_pointer,
+    let extra_active_data_pointer = context.get_global_ptr(crate::eravm::GLOBAL_EXTRA_ABI_DATA)?;
+    let extra_active_data_element_pointer = context.build_gep(
+        extra_active_data_pointer,
         &[context.field_const(0), index],
         context.field_type().as_basic_type_enum(),
-        "extra_abi_data_element_pointer",
+        "extra_active_data_element_pointer",
     );
-    let extra_abi_data_element = context.build_load(
-        extra_abi_data_element_pointer,
-        "extra_abi_data_element_value",
+    let extra_active_data_element = context.build_load(
+        extra_active_data_element_pointer,
+        "extra_active_data_element_value",
     );
-    Ok(extra_abi_data_element)
+    Ok(extra_active_data_element)
 }
 
 ///
@@ -148,5 +148,102 @@ where
         context.byte_type().ptr_type(AddressSpace::Generic.into()),
         active_pointer_packed,
     );
+    Ok(context.field_const(1).as_basic_value_enum())
+}
+
+///
+/// Loads a single word from the active pointer to the stack.
+///
+pub fn active_ptr_data_load<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    offset: inkwell::values::IntValue<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let active_pointer = context.get_global(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let active_pointer = context.build_gep(
+        Pointer::new(
+            context.byte_type(),
+            AddressSpace::Generic,
+            active_pointer.into_pointer_value(),
+        ),
+        &[offset],
+        context.field_type().as_basic_type_enum(),
+        "active_pointer_with_offset",
+    );
+    let value = context.build_load(active_pointer, "active_pointer_value");
+    Ok(value)
+}
+
+///
+/// Returns the active pointer data size.
+///
+pub fn active_ptr_data_size<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let active_pointer = context.get_global(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let active_pointer_value = context.builder().build_ptr_to_int(
+        active_pointer.into_pointer_value(),
+        context.field_type(),
+        "active_pointer_value",
+    );
+    let active_pointer_value_shifted = context.builder().build_right_shift(
+        active_pointer_value,
+        context.field_const((compiler_common::BIT_LENGTH_X32 * 3) as u64),
+        false,
+        "active_pointer_value_shifted",
+    );
+    let active_pointer_length = context.builder().build_and(
+        active_pointer_value_shifted,
+        context.field_const(u32::MAX as u64),
+        "active_pointer_length",
+    );
+    Ok(active_pointer_length.as_basic_value_enum())
+}
+
+///
+/// Copies a chunk of data from the active pointer to the heap.
+///
+pub fn active_ptr_data_copy<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    destination_offset: inkwell::values::IntValue<'ctx>,
+    source_offset: inkwell::values::IntValue<'ctx>,
+    size: inkwell::values::IntValue<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let destination = Pointer::new_with_offset(
+        context,
+        AddressSpace::Heap,
+        context.byte_type(),
+        destination_offset,
+        "active_pointer_data_copy_destination_pointer",
+    );
+
+    let active_pointer = context.get_global(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let source = context.build_gep(
+        Pointer::new(
+            context.byte_type(),
+            AddressSpace::Generic,
+            active_pointer.into_pointer_value(),
+        ),
+        &[source_offset],
+        context.byte_type().as_basic_type_enum(),
+        "active_pointer_data_copy_source_pointer",
+    );
+
+    context.build_memcpy(
+        context.intrinsics().memory_copy_from_generic,
+        destination,
+        source,
+        size,
+        "active_pointer_data_copy_memcpy_from_child",
+    );
+
     Ok(context.field_const(1).as_basic_value_enum())
 }

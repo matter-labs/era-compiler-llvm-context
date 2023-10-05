@@ -9,6 +9,7 @@ pub mod calldata;
 pub mod comparison;
 pub mod context;
 pub mod create;
+pub mod crypto;
 pub mod ether_gas;
 pub mod event;
 pub mod ext_code;

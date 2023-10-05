@@ -375,6 +375,44 @@ where
 
                 return crate::eravm::extensions::abi::get_extra_abi_data(context, index);
             }
+            Some(compiler_common::ERAVM_ADDRESS_ACTIVE_PTR_DATA_LOAD) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "active_ptr_data_load",
+                )?;
+
+                let offset = gas;
+
+                return crate::eravm::extensions::abi::active_ptr_data_load(context, offset);
+            }
+            Some(compiler_common::ERAVM_ADDRESS_ACTIVE_PTR_DATA_SIZE) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "active_ptr_data_size",
+                )?;
+
+                return crate::eravm::extensions::abi::active_ptr_data_size(context);
+            }
+            Some(compiler_common::ERAVM_ADDRESS_ACTIVE_PTR_DATA_COPY) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "active_ptr_data_copy",
+                )?;
+
+                let destination_offset = gas;
+                let source_offset = input_offset;
+                let size = input_length;
+
+                return crate::eravm::extensions::abi::active_ptr_data_copy(
+                    context,
+                    destination_offset,
+                    source_offset,
+                    size,
+                );
+            }
             _ => {}
         }
     }

@@ -250,7 +250,7 @@ where
             .functions
             .contains_key(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
         {
-            crate::eravm::utils::throw(context)?;
+            crate::eravm::utils::throw(context);
         } else {
             crate::eravm::evm::r#return::revert(
                 context,

@@ -67,13 +67,13 @@ where
             );
 
             context.build_exit(
-                context.intrinsics().r#return,
+                context.llvm_runtime().r#return,
                 context.field_const(crate::eravm::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA),
                 return_data_length,
             );
         }
         Some(CodeType::Runtime) => {
-            context.build_exit(context.intrinsics().r#return, offset, length);
+            context.build_exit(context.llvm_runtime().r#return, offset, length);
         }
     }
 
@@ -91,7 +91,7 @@ pub fn revert<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    context.build_exit(context.intrinsics().revert, offset, length);
+    context.build_exit(context.llvm_runtime().revert, offset, length);
     Ok(())
 }
 
@@ -110,11 +110,18 @@ where
 ///
 /// Translates the `invalid` instruction.
 ///
-/// Is the same as `revert(0, 0)`.
+/// Burns all gas using an out-of-bounds memory store, causing a panic.
 ///
 pub fn invalid<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
     D: Dependency + Clone,
 {
-    revert(context, context.field_const(0), context.field_const(0))
+    crate::eravm::evm::memory::store(
+        context,
+        context.field_type().const_all_ones(),
+        context.field_const(0),
+    )?;
+    context.build_call(context.intrinsics().trap, &[], "invalid_trap");
+    context.build_unreachable();
+    Ok(())
 }

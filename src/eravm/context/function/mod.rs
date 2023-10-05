@@ -209,9 +209,9 @@ impl<'ctx> Function<'ctx> {
     }
 
     ///
-    /// Sets the LLVM runtime attributes.
+    /// Sets the pure function attributes.
     ///
-    pub fn set_llvm_runtime_attributes(
+    pub fn set_pure_function_attributes(
         llvm: &'ctx inkwell::context::Context,
         declaration: Declaration<'ctx>,
     ) {
@@ -223,6 +223,22 @@ impl<'ctx> Function<'ctx> {
         ]
         .into_iter()
         {
+            declaration.value.add_attribute(
+                inkwell::attributes::AttributeLoc::Function,
+                llvm.create_enum_attribute(attribute_kind as u32, 0),
+            );
+        }
+    }
+
+    ///
+    /// Sets the memory writer function attributes.
+    ///
+    pub fn set_function_attributes(
+        llvm: &'ctx inkwell::context::Context,
+        declaration: Declaration<'ctx>,
+        attributes: Vec<Attribute>,
+    ) {
+        for attribute_kind in attributes.into_iter() {
             declaration.value.add_attribute(
                 inkwell::attributes::AttributeLoc::Function,
                 llvm.create_enum_attribute(attribute_kind as u32, 0),

@@ -15,6 +15,10 @@ pub enum AddressSpace {
     HeapAuxiliary,
     /// The generic memory page.
     Generic,
+    /// The code area.
+    Code,
+    /// The storage.
+    Storage,
 }
 
 impl From<AddressSpace> for inkwell::AddressSpace {
@@ -24,6 +28,8 @@ impl From<AddressSpace> for inkwell::AddressSpace {
             AddressSpace::Heap => Self::from(1),
             AddressSpace::HeapAuxiliary => Self::from(2),
             AddressSpace::Generic => Self::from(3),
+            AddressSpace::Code => Self::from(4),
+            AddressSpace::Storage => Self::from(5),
         }
     }
 }

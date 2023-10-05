@@ -147,8 +147,7 @@ impl Settings {
     pub fn middle_end_as_string(&self) -> String {
         match self.level_middle_end_size {
             SizeLevel::Zero => (self.level_middle_end as u8).to_string(),
-            SizeLevel::S => 's'.to_string(),
-            SizeLevel::Z => 'z'.to_string(),
+            size_level => size_level.to_string(),
         }
     }
 

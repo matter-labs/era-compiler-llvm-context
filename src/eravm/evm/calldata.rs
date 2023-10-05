@@ -77,7 +77,7 @@ where
             calldata_pointer.into_pointer_value(),
         ),
         &[source_offset],
-        context.field_type().as_basic_type_enum(),
+        context.byte_type().as_basic_type_enum(),
         "calldata_source_pointer",
     );
 

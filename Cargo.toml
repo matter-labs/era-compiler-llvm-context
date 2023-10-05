@@ -1,12 +1,12 @@
 [package]
 name = "compiler-llvm-context"
-version = "1.3.2"
+version = "1.3.3"
 authors = [
     "Oleksandr Zarudnyi <a.zarudnyy@matterlabs.dev>",
 ]
 license = "MIT OR Apache-2.0"
 edition = "2021"
-description = "The zkEVM compilers shared LLVM context"
+description = "Shared LLVM context of the compilers for EraVM"
 
 [lib]
 doctest = false
@@ -32,4 +32,4 @@ compiler-common = { git = "https://github.com/matter-labs/era-compiler-common", 
 git = "https://github.com/matter-labs-forks/inkwell"
 branch = "llvm-15"
 default-features = false
-features = ["llvm15-0", "no-libffi-linking", "target-syncvm"]
+features = ["llvm15-0", "no-libffi-linking", "target-eravm"]

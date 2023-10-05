@@ -14,6 +14,13 @@ use crate::eravm::context::function::declaration::Declaration as FunctionDeclara
 ///
 #[derive(Debug)]
 pub struct Intrinsics<'ctx> {
+    /// The trap.
+    pub trap: FunctionDeclaration<'ctx>,
+    /// The memory copy within the heap.
+    pub memory_copy: FunctionDeclaration<'ctx>,
+    /// The memory copy from a generic page.
+    pub memory_copy_from_generic: FunctionDeclaration<'ctx>,
+
     /// The event emitting.
     pub event: FunctionDeclaration<'ctx>,
     /// The L1 interactor.
@@ -44,86 +51,62 @@ pub struct Intrinsics<'ctx> {
     pub pointer_shrink: FunctionDeclaration<'ctx>,
     /// The pointer pack.
     pub pointer_pack: FunctionDeclaration<'ctx>,
-
-    /// The storage load.
-    pub storage_load: FunctionDeclaration<'ctx>,
-    /// The storage store.
-    pub storage_store: FunctionDeclaration<'ctx>,
-
-    /// The long return.
-    pub r#return: FunctionDeclaration<'ctx>,
-    /// The long revert.
-    pub revert: FunctionDeclaration<'ctx>,
-
-    /// The memory copy within the heap.
-    pub memory_copy: FunctionDeclaration<'ctx>,
-    /// The memory copy from a generic page.
-    pub memory_copy_from_generic: FunctionDeclaration<'ctx>,
 }
 
 impl<'ctx> Intrinsics<'ctx> {
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_EVENT: &'static str = "llvm.syncvm.event";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_L1: &'static str = "llvm.syncvm.tol1";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_PRECOMPILE: &'static str = "llvm.syncvm.precompile";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_NEAR_CALL: &'static str = "llvm.syncvm.nearcall";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_ADDRESS: &'static str = "llvm.syncvm.this";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_CALLER: &'static str = "llvm.syncvm.caller";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_CODE_SOURCE: &'static str = "llvm.syncvm.codesource";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_META: &'static str = "llvm.syncvm.meta";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_GAS_LEFT: &'static str = "llvm.syncvm.gasleft";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_GET_U128: &'static str = "llvm.syncvm.getu128";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_SET_U128: &'static str = "llvm.syncvm.setu128";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_SET_PUBDATA_PRICE: &'static str = "llvm.syncvm.setpubdataprice";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_INCREMENT_TX_COUNTER: &'static str = "llvm.syncvm.inctx";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_POINTER_SHRINK: &'static str = "llvm.syncvm.ptr.shrink";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_POINTER_PACK: &'static str = "llvm.syncvm.ptr.pack";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_STORAGE_LOAD: &'static str = "llvm.syncvm.sload";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_STORAGE_STORE: &'static str = "llvm.syncvm.sstore";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_RETURN: &'static str = "llvm.syncvm.return";
-
-    /// The corresponding intrinsic function name.
-    pub const FUNCTION_REVERT: &'static str = "llvm.syncvm.revert";
+    pub const FUNCTION_TRAP: &'static str = "llvm.trap";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_MEMORY_COPY: &'static str = "llvm.memcpy.p1.p1.i256";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_MEMORY_COPY_FROM_GENERIC: &'static str = "llvm.memcpy.p3.p1.i256";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_EVENT: &'static str = "llvm.eravm.event";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_L1: &'static str = "llvm.eravm.tol1";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_PRECOMPILE: &'static str = "llvm.eravm.precompile";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_NEAR_CALL: &'static str = "llvm.eravm.nearcall";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_ADDRESS: &'static str = "llvm.eravm.this";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_CALLER: &'static str = "llvm.eravm.caller";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_CODE_SOURCE: &'static str = "llvm.eravm.codesource";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_META: &'static str = "llvm.eravm.meta";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_GAS_LEFT: &'static str = "llvm.eravm.gasleft";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_GET_U128: &'static str = "llvm.eravm.getu128";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_SET_U128: &'static str = "llvm.eravm.setu128";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_SET_PUBDATA_PRICE: &'static str = "llvm.eravm.setpubdataprice";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_INCREMENT_TX_COUNTER: &'static str = "llvm.eravm.inctx";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_POINTER_SHRINK: &'static str = "llvm.eravm.ptr.shrink";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_POINTER_PACK: &'static str = "llvm.eravm.ptr.pack";
 
     ///
     /// A shortcut constructor.
@@ -139,6 +122,41 @@ impl<'ctx> Intrinsics<'ctx> {
         let stack_field_pointer_type = field_type.ptr_type(AddressSpace::Stack.into());
         let heap_field_pointer_type = byte_type.ptr_type(AddressSpace::Heap.into());
         let generic_byte_pointer_type = byte_type.ptr_type(AddressSpace::Generic.into());
+
+        let trap = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_TRAP,
+            void_type.fn_type(&[], false),
+        );
+        let memory_copy = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_MEMORY_COPY,
+            void_type.fn_type(
+                &[
+                    heap_field_pointer_type.as_basic_type_enum().into(),
+                    heap_field_pointer_type.as_basic_type_enum().into(),
+                    field_type.as_basic_type_enum().into(),
+                    bool_type.as_basic_type_enum().into(),
+                ],
+                false,
+            ),
+        );
+        let memory_copy_from_generic = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_MEMORY_COPY_FROM_GENERIC,
+            void_type.fn_type(
+                &[
+                    heap_field_pointer_type.as_basic_type_enum().into(),
+                    generic_byte_pointer_type.as_basic_type_enum().into(),
+                    field_type.as_basic_type_enum().into(),
+                    bool_type.as_basic_type_enum().into(),
+                ],
+                false,
+            ),
+        );
 
         let event = Self::declare(
             llvm,
@@ -269,68 +287,11 @@ impl<'ctx> Intrinsics<'ctx> {
             ),
         );
 
-        let storage_load = Self::declare(
-            llvm,
-            module,
-            Self::FUNCTION_STORAGE_LOAD,
-            field_type.fn_type(&[field_type.as_basic_type_enum().into()], false),
-        );
-        let storage_store = Self::declare(
-            llvm,
-            module,
-            Self::FUNCTION_STORAGE_STORE,
-            void_type.fn_type(
-                &[
-                    field_type.as_basic_type_enum().into(),
-                    field_type.as_basic_type_enum().into(),
-                ],
-                false,
-            ),
-        );
-
-        let r#return = Self::declare(
-            llvm,
-            module,
-            Self::FUNCTION_RETURN,
-            void_type.fn_type(&[field_type.as_basic_type_enum().into()], false),
-        );
-        let revert = Self::declare(
-            llvm,
-            module,
-            Self::FUNCTION_REVERT,
-            void_type.fn_type(&[field_type.as_basic_type_enum().into()], false),
-        );
-
-        let memory_copy = Self::declare(
-            llvm,
-            module,
-            Self::FUNCTION_MEMORY_COPY,
-            void_type.fn_type(
-                &[
-                    heap_field_pointer_type.as_basic_type_enum().into(),
-                    heap_field_pointer_type.as_basic_type_enum().into(),
-                    field_type.as_basic_type_enum().into(),
-                    bool_type.as_basic_type_enum().into(),
-                ],
-                false,
-            ),
-        );
-        let memory_copy_from_generic = Self::declare(
-            llvm,
-            module,
-            Self::FUNCTION_MEMORY_COPY_FROM_GENERIC,
-            void_type.fn_type(
-                &[
-                    heap_field_pointer_type.as_basic_type_enum().into(),
-                    generic_byte_pointer_type.as_basic_type_enum().into(),
-                    field_type.as_basic_type_enum().into(),
-                    bool_type.as_basic_type_enum().into(),
-                ],
-                false,
-            ),
-        );
-
         Self {
+            trap,
+            memory_copy,
+            memory_copy_from_generic,
+
             event,
             to_l1,
             precompile,
@@ -346,15 +307,6 @@ impl<'ctx> Intrinsics<'ctx> {
             increment_tx_counter,
             pointer_shrink,
             pointer_pack,
-
-            storage_load,
-            storage_store,
-
-            r#return,
-            revert,
-
-            memory_copy,
-            memory_copy_from_generic,
         }
     }
 

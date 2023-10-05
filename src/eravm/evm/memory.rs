@@ -2,6 +2,8 @@
 //! Translates the heap memory operations.
 //!
 
+use inkwell::values::BasicValue;
+
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
@@ -67,42 +69,20 @@ pub fn store_byte<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let pointer = Pointer::new_with_offset(
+    let offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
-        context.field_type(),
+        context.byte_type(),
         offset,
-        "memory_store_byte_original_value_pointer",
+        "mstore8_offset_pointer",
     );
-
-    let original_value = context
-        .build_load(pointer, "memory_store_byte_original_value")
-        .into_int_value();
-    let original_value_shifted_left = context.builder().build_left_shift(
-        original_value,
-        context.field_const(compiler_common::BIT_LENGTH_BYTE as u64),
-        "memory_store_byte_original_value_shifted_left",
+    context.build_call(
+        context.llvm_runtime().mstore8,
+        &[
+            offset_pointer.value.as_basic_value_enum(),
+            value.as_basic_value_enum(),
+        ],
+        "mstore8_call",
     );
-    let original_value_shifted_right = context.builder().build_right_shift(
-        original_value_shifted_left,
-        context.field_const(compiler_common::BIT_LENGTH_BYTE as u64),
-        false,
-        "memory_store_byte_original_value_shifted_right",
-    );
-
-    let value_shifted = context.builder().build_left_shift(
-        value,
-        context.field_const(
-            ((compiler_common::BYTE_LENGTH_FIELD - 1) * compiler_common::BIT_LENGTH_BYTE) as u64,
-        ),
-        "memory_store_byte_value_shifted",
-    );
-    let result = context.builder().build_or(
-        original_value_shifted_right,
-        value_shifted,
-        "memory_store_byte_result",
-    );
-
-    context.build_store(pointer, result);
     Ok(())
 }

@@ -2,8 +2,8 @@
 //! Translates the contract storage operations.
 //!
 
-use inkwell::values::BasicValue;
-
+use crate::eravm::context::address_space::AddressSpace;
+use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -17,20 +17,19 @@ pub fn load<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let value = context
-        .build_call(
-            context.intrinsics().storage_load,
-            &[position.as_basic_value_enum()],
-            "storage_load",
-        )
-        .expect("Contract storage always returns a value");
+    let position_pointer = Pointer::new_with_offset(
+        context,
+        AddressSpace::Storage,
+        context.field_type(),
+        position,
+        "storage_load_position_pointer",
+    );
+    let value = context.build_load(position_pointer, "storage_load_value");
     Ok(value)
 }
 
 ///
 /// Translates the contract storage store.
-///
-/// Beware that the `position` and `value` arguments have different order in Yul and LLVM IR.
 ///
 pub fn store<'ctx, D>(
     context: &mut Context<'ctx, D>,
@@ -40,10 +39,13 @@ pub fn store<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    context.build_invoke(
-        context.intrinsics().storage_store,
-        &[position.as_basic_value_enum(), value.as_basic_value_enum()],
-        "storage_store",
+    let position_pointer = Pointer::new_with_offset(
+        context,
+        AddressSpace::Storage,
+        context.field_type(),
+        position,
+        "storage_store_position_pointer",
     );
+    context.build_store(position_pointer, value);
     Ok(())
 }

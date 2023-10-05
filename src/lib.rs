@@ -45,6 +45,7 @@ pub use self::eravm::evm::calldata as eravm_evm_calldata;
 pub use self::eravm::evm::comparison as eravm_evm_comparison;
 pub use self::eravm::evm::context as eravm_evm_contract_context;
 pub use self::eravm::evm::create as eravm_evm_create;
+pub use self::eravm::evm::crypto as eravm_evm_crypto;
 pub use self::eravm::evm::ether_gas as eravm_evm_ether_gas;
 pub use self::eravm::evm::event as eravm_evm_event;
 pub use self::eravm::evm::ext_code as eravm_evm_ext_code;

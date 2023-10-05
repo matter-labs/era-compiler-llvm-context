@@ -40,7 +40,7 @@ where
     pub fn new(inner: B) -> Self {
         Self {
             inner,
-            _pd: PhantomData::default(),
+            _pd: PhantomData,
         }
     }
 }

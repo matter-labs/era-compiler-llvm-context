@@ -21,7 +21,7 @@ use self::context::Context;
 /// Initializes the EraVM target machine.
 ///
 pub fn initialize_target() {
-    inkwell::targets::Target::initialize_syncvm(&inkwell::targets::InitializationConfig::default());
+    inkwell::targets::Target::initialize_eravm(&inkwell::targets::InitializationConfig::default());
 }
 
 ///
