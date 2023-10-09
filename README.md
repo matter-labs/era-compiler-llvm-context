@@ -7,7 +7,7 @@ or decentralization. As it's EVM-compatible (with Solidity/Vyper), 99% of Ethere
 needing to refactor or re-audit any code. zkSync Era also uses an LLVM-based compiler that will eventually enable
 developers to write smart contracts in popular languages such as C++ and Rust.
 
-This repository contains the shared LLVM front-end code.
+This repository contains shared front end code of the EraVM compilers.
 
 ## License
 
