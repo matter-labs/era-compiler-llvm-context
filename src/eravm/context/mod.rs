@@ -270,9 +270,9 @@ where
     ///
     /// Returns the pointer to a global variable.
     ///
-    pub fn get_global_ptr(&self, name: &str) -> anyhow::Result<Pointer<'ctx>> {
+    pub fn get_global(&self, name: &str) -> anyhow::Result<Global<'ctx>> {
         match self.globals.get(name) {
-            Some(global) => Ok((*global).into()),
+            Some(global) => Ok(*global),
             None => anyhow::bail!("Global variable {} is not declared", name),
         }
     }
@@ -280,25 +280,32 @@ where
     ///
     /// Returns the value of a global variable.
     ///
-    pub fn get_global(&self, name: &str) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
-        let pointer = self.get_global_ptr(name)?;
-        Ok(self.build_load(pointer, name))
+    pub fn get_global_value(
+        &self,
+        name: &str,
+    ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
+        let global = self.get_global(name)?;
+        Ok(self.build_load(global.into(), name))
     }
 
     ///
     /// Sets the value to a global variable.
     ///
-    pub fn set_global<T, V>(&mut self, name: &str, r#type: T, value: V)
+    pub fn set_global<T, V>(&mut self, name: &str, r#type: T, address_space: AddressSpace, value: V)
     where
         T: BasicType<'ctx> + Clone + Copy,
         V: BasicValue<'ctx> + Clone + Copy,
     {
-        let global = match self.globals.get(name) {
-            Some(global) => *global,
-            None => Global::new(&self.module, r#type, name),
-        };
-        self.globals.insert(name.to_owned(), global);
-        self.build_store(global.into(), value);
+        match self.globals.get(name) {
+            Some(global) => {
+                let global = *global;
+                self.build_store(global.into(), value);
+            }
+            None => {
+                let global = Global::new(self, r#type, address_space, value, name);
+                self.globals.insert(name.to_owned(), global);
+            }
+        }
     }
 
     ///
@@ -998,6 +1005,7 @@ where
         self.set_global(
             global_name,
             self.byte_type().ptr_type(AddressSpace::Generic.into()),
+            AddressSpace::Stack,
             pointer.value,
         );
     }
@@ -1020,7 +1028,12 @@ where
             self.field_const(u32::MAX as u64),
             "abi_length_value",
         );
-        self.set_global(global_name, self.field_type(), abi_length_value);
+        self.set_global(
+            global_name,
+            self.field_type(),
+            AddressSpace::Stack,
+            abi_length_value,
+        );
     }
 
     ///

@@ -19,7 +19,7 @@ pub fn size<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    match context.get_global(crate::eravm::GLOBAL_RETURN_DATA_SIZE) {
+    match context.get_global_value(crate::eravm::GLOBAL_RETURN_DATA_SIZE) {
         Ok(global) => Ok(global),
         Err(_error) => Ok(context.field_const(0).as_basic_value_enum()),
     }
@@ -66,12 +66,14 @@ where
     );
 
     let return_data_pointer_global =
-        context.get_global_ptr(crate::eravm::GLOBAL_RETURN_DATA_POINTER)?;
-    let return_data_pointer = context.build_load(return_data_pointer_global, "return_data_pointer");
+        context.get_global(crate::eravm::GLOBAL_RETURN_DATA_POINTER)?;
+    let return_data_pointer_pointer = return_data_pointer_global.into();
+    let return_data_pointer =
+        context.build_load(return_data_pointer_pointer, "return_data_pointer");
     let source = context.build_gep(
         Pointer::new(
             context.byte_type(),
-            return_data_pointer_global.address_space,
+            return_data_pointer_pointer.address_space,
             return_data_pointer.into_pointer_value(),
         ),
         &[source_offset],

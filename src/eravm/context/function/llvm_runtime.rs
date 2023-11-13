@@ -56,6 +56,9 @@ pub struct LLVMRuntime<'ctx> {
     pub sha3: FunctionDeclaration<'ctx>,
 
     /// The corresponding LLVM runtime function.
+    pub system_request: FunctionDeclaration<'ctx>,
+
+    /// The corresponding LLVM runtime function.
     pub far_call: FunctionDeclaration<'ctx>,
     /// The corresponding LLVM runtime function.
     pub far_call_byref: FunctionDeclaration<'ctx>,
@@ -129,6 +132,9 @@ impl<'ctx> LLVMRuntime<'ctx> {
 
     /// The corresponding runtime function name.
     pub const FUNCTION_SHA3: &'static str = "__sha3";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_SYSTEM_REQUEST: &'static str = "__system_request";
 
     /// The corresponding runtime function name.
     pub const FUNCTION_FARCALL: &'static str = "__farcall";
@@ -479,6 +485,38 @@ impl<'ctx> LLVMRuntime<'ctx> {
             vec![Attribute::ArgMemOnly, Attribute::ReadOnly],
         );
 
+        let system_request = Self::declare(
+            module,
+            Self::FUNCTION_SYSTEM_REQUEST,
+            llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                .fn_type(
+                    vec![
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into(),
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into(),
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .as_basic_type_enum()
+                            .into(),
+                        llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+                            .ptr_type(AddressSpace::Stack.into())
+                            .as_basic_type_enum()
+                            .into(),
+                    ]
+                    .as_slice(),
+                    false,
+                ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, system_request, optimizer);
+        Function::set_function_attributes(
+            llvm,
+            system_request,
+            vec![Attribute::ArgMemOnly, Attribute::ReadOnly],
+        );
+
         let external_call_arguments: Vec<inkwell::types::BasicMetadataTypeEnum> = vec![
                 llvm.custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
                     .as_basic_type_enum()
@@ -642,6 +680,8 @@ impl<'ctx> LLVMRuntime<'ctx> {
             mstore8,
 
             sha3,
+
+            system_request,
 
             far_call,
             static_call,

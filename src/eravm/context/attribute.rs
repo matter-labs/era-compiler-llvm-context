@@ -196,6 +196,13 @@ impl TryFrom<&str> for Attribute {
             "MinSize" => Ok(Attribute::MinSize),
             "OptimizeForSize" => Ok(Attribute::OptimizeForSize),
             "NoInline" => Ok(Attribute::NoInline),
+            "WillReturn" => Ok(Attribute::WillReturn),
+            "WriteOnly" => Ok(Attribute::WriteOnly),
+            "ReadNone" => Ok(Attribute::ReadNone),
+            "ReadOnly" => Ok(Attribute::ReadOnly),
+            "NoReturn" => Ok(Attribute::NoReturn),
+            "InaccessibleMemOnly" => Ok(Attribute::InaccessibleMemOnly),
+            "MustProgress" => Ok(Attribute::MustProgress),
             _ => Err(value.to_owned()),
         }
     }

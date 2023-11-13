@@ -3,6 +3,7 @@
 //!
 
 use inkwell::values::BasicValue;
+use num::ToPrimitive;
 
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::argument::Argument;
@@ -29,12 +30,22 @@ pub fn default<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-    simulation_address: Option<u16>,
+    mut constants: Vec<Option<num::BigUint>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency + Clone,
 {
     if context.is_system_mode() {
+        let simulation_address = match constants.get_mut(1).and_then(|option| option.take()) {
+            Some(value) => Some(value.to_u16().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Simulation address must fit into 16 bits, but found value `{}`",
+                    value
+                )
+            })?),
+            None => None,
+        };
+
         match simulation_address {
             Some(compiler_common::ERAVM_ADDRESS_TO_L1) => {
                 crate::eravm::extensions::call::validate_call_type(
@@ -112,7 +123,7 @@ where
             Some(compiler_common::ERAVM_ADDRESS_MIMIC_CALL_BYREF) => {
                 let address = gas;
                 let mimic = input_length;
-                let abi_data = context.get_global(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+                let abi_data = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
 
                 return crate::eravm::extensions::call::mimic(
                     context,
@@ -126,7 +137,7 @@ where
             Some(compiler_common::ERAVM_ADDRESS_SYSTEM_MIMIC_CALL_BYREF) => {
                 let address = gas;
                 let mimic = input_length;
-                let abi_data = context.get_global(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+                let abi_data = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
                 let extra_value_1 = output_offset;
                 let extra_value_2 = output_length;
 
@@ -154,7 +165,7 @@ where
             }
             Some(compiler_common::ERAVM_ADDRESS_RAW_FAR_CALL_BYREF) => {
                 let address = gas;
-                let abi_data = context.get_global(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+                let abi_data = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
 
                 return crate::eravm::extensions::call::raw_far(
                     context,
@@ -185,7 +196,7 @@ where
             }
             Some(compiler_common::ERAVM_ADDRESS_SYSTEM_CALL_BYREF) => {
                 let address = gas;
-                let abi_data = context.get_global(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+                let abi_data = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
                 let extra_value_1 = value.expect("Always exists");
                 let extra_value_2 = input_offset;
                 let extra_value_3 = output_offset;
@@ -239,7 +250,7 @@ where
                     "get_global_ptr_calldata",
                 )?;
 
-                let pointer = context.get_global(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
+                let pointer = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
                 let value = context.builder().build_ptr_to_int(
                     pointer.into_pointer_value(),
                     context.field_type(),
@@ -254,7 +265,7 @@ where
                     "get_global_call_flags",
                 )?;
 
-                return context.get_global(crate::eravm::GLOBAL_CALL_FLAGS);
+                return context.get_global_value(crate::eravm::GLOBAL_CALL_FLAGS);
             }
             Some(compiler_common::ERAVM_ADDRESS_GET_GLOBAL_PTR_RETURN_DATA) => {
                 crate::eravm::extensions::call::validate_call_type(
@@ -263,7 +274,7 @@ where
                     "get_global_ptr_return_data",
                 )?;
 
-                let pointer = context.get_global(crate::eravm::GLOBAL_RETURN_DATA_POINTER)?;
+                let pointer = context.get_global_value(crate::eravm::GLOBAL_RETURN_DATA_POINTER)?;
                 let value = context.builder().build_ptr_to_int(
                     pointer.into_pointer_value(),
                     context.field_type(),
@@ -413,6 +424,87 @@ where
                     size,
                 );
             }
+            Some(compiler_common::ERAVM_ADDRESS_CONST_ARRAY_DECLARE) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "const_array_declare",
+                )?;
+
+                let index = constants
+                    .get_mut(0)
+                    .and_then(|option| option.take())
+                    .ok_or_else(|| anyhow::anyhow!("Const array index is missing"))?
+                    .to_u8()
+                    .ok_or_else(|| anyhow::anyhow!("Const array index must fit into 8 bits"))?;
+                let size = constants
+                    .get_mut(2)
+                    .and_then(|option| option.take())
+                    .ok_or_else(|| anyhow::anyhow!("Const array size is missing"))?
+                    .to_u16()
+                    .ok_or_else(|| anyhow::anyhow!("Const array size must fit into 16 bits"))?;
+
+                return crate::eravm::extensions::const_array::declare(context, index, size);
+            }
+            Some(compiler_common::ERAVM_ADDRESS_CONST_ARRAY_SET) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "const_array_set",
+                )?;
+
+                let index = constants
+                    .get_mut(0)
+                    .and_then(|option| option.take())
+                    .ok_or_else(|| anyhow::anyhow!("Const array index is missing"))?
+                    .to_u8()
+                    .ok_or_else(|| anyhow::anyhow!("Const array index must fit into 8 bits"))?;
+                let offset = constants
+                    .get_mut(2)
+                    .and_then(|option| option.take())
+                    .ok_or_else(|| anyhow::anyhow!("Const array offset is missing"))?
+                    .to_u16()
+                    .ok_or_else(|| anyhow::anyhow!("Const array offset must fit into 16 bits"))?;
+                let value = constants
+                    .get_mut(4)
+                    .and_then(|option| option.take())
+                    .ok_or_else(|| anyhow::anyhow!("Const array assigned value is missing"))?;
+
+                return crate::eravm::extensions::const_array::set(context, index, offset, value);
+            }
+            Some(compiler_common::ERAVM_ADDRESS_CONST_ARRAY_FINALIZE) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "const_array_finalize",
+                )?;
+
+                let index = constants
+                    .get_mut(0)
+                    .and_then(|option| option.take())
+                    .ok_or_else(|| anyhow::anyhow!("Const array index is missing"))?
+                    .to_u8()
+                    .ok_or_else(|| anyhow::anyhow!("Const array index must fit into 8 bits"))?;
+
+                return crate::eravm::extensions::const_array::finalize(context, index);
+            }
+            Some(compiler_common::ERAVM_ADDRESS_CONST_ARRAY_GET) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "const_array_get",
+                )?;
+
+                let index = constants
+                    .get_mut(0)
+                    .and_then(|option| option.take())
+                    .ok_or_else(|| anyhow::anyhow!("Const array index is missing"))?
+                    .to_u8()
+                    .ok_or_else(|| anyhow::anyhow!("Const array index must fit into 8 bits"))?;
+                let offset = input_offset;
+
+                return crate::eravm::extensions::const_array::get(context, index, offset);
+            }
             _ => {}
         }
     }
@@ -518,7 +610,6 @@ where
             as u64,
     );
 
-    let function = Runtime::system_request(context);
     let calldata_array_pointer = context.build_alloca(
         context.array_type(context.field_type(), arguments.len()),
         "system_request_calldata_array_pointer",
@@ -534,7 +625,7 @@ where
     }
     Ok(context
         .build_invoke(
-            function,
+            context.llvm_runtime().system_request,
             &[
                 address.as_basic_value_enum(),
                 signature_value.as_basic_value_enum(),

@@ -18,12 +18,13 @@ pub fn load<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let calldata_pointer_global = context.get_global_ptr(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
-    let calldata_pointer = context.build_load(calldata_pointer_global, "calldata_pointer");
+    let calldata_pointer_global = context.get_global(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
+    let calldata_pointer_pointer = calldata_pointer_global.into();
+    let calldata_pointer = context.build_load(calldata_pointer_pointer, "calldata_pointer");
     let calldata_pointer = context.build_gep(
         Pointer::new(
             context.byte_type(),
-            calldata_pointer_global.address_space,
+            calldata_pointer_pointer.address_space,
             calldata_pointer.into_pointer_value(),
         ),
         &[offset],
@@ -43,7 +44,7 @@ pub fn size<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let value = context.get_global(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
+    let value = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
 
     Ok(value)
 }
@@ -68,12 +69,13 @@ where
         "calldata_copy_destination_pointer",
     );
 
-    let calldata_pointer_global = context.get_global_ptr(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
-    let calldata_pointer = context.build_load(calldata_pointer_global, "calldata_pointer");
+    let calldata_pointer_global = context.get_global(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
+    let calldata_pointer_pointer = calldata_pointer_global.into();
+    let calldata_pointer = context.build_load(calldata_pointer_pointer, "calldata_pointer");
     let source = context.build_gep(
         Pointer::new(
             context.byte_type(),
-            calldata_pointer_global.address_space,
+            calldata_pointer_pointer.address_space,
             calldata_pointer.into_pointer_value(),
         ),
         &[source_offset],

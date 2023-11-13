@@ -7,7 +7,6 @@ pub mod deploy_code;
 pub mod deployer_call;
 pub mod entry;
 pub mod runtime_code;
-pub mod system_request;
 
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::declaration::Declaration as FunctionDeclaration;
@@ -17,7 +16,6 @@ use crate::eravm::WriteLLVM;
 
 use self::default_call::DefaultCall;
 use self::deployer_call::DeployerCall;
-use self::system_request::SystemRequest;
 
 ///
 /// The front-end runtime functions.
@@ -66,20 +64,6 @@ impl Runtime {
     ///
     /// Returns the corresponding runtime function.
     ///
-    pub fn system_request<'ctx, D>(context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
-    where
-        D: Dependency + Clone,
-    {
-        context
-            .get_function(SystemRequest::FUNCTION_NAME)
-            .expect("Always exists")
-            .borrow()
-            .declaration()
-    }
-
-    ///
-    /// Returns the corresponding runtime function.
-    ///
     pub fn deployer_call<'ctx, D>(context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
     where
         D: Dependency + Clone,
@@ -100,7 +84,6 @@ where
         DefaultCall::new(context.llvm_runtime().far_call).declare(context)?;
         DefaultCall::new(context.llvm_runtime().static_call).declare(context)?;
         DefaultCall::new(context.llvm_runtime().delegate_call).declare(context)?;
-        SystemRequest::default().declare(context)?;
         DeployerCall::new(self.address_space).declare(context)?;
 
         Ok(())
@@ -110,7 +93,6 @@ where
         DefaultCall::new(context.llvm_runtime().far_call).into_llvm(context)?;
         DefaultCall::new(context.llvm_runtime().static_call).into_llvm(context)?;
         DefaultCall::new(context.llvm_runtime().delegate_call).into_llvm(context)?;
-        SystemRequest::default().into_llvm(context)?;
         DeployerCall::new(self.address_space).into_llvm(context)?;
 
         Ok(())

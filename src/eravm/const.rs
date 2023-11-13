@@ -32,6 +32,9 @@ pub static GLOBAL_EXTRA_ABI_DATA: &str = "extra_abi_data";
 /// The active pointer global variable name.
 pub static GLOBAL_ACTIVE_POINTER: &str = "ptr_active";
 
+/// The constant array global variable name prefix.
+pub static GLOBAL_CONST_ARRAY_PREFIX: &str = "const_array_";
+
 /// The global verbatim getter identifier prefix.
 pub static GLOBAL_VERBATIM_GETTER_PREFIX: &str = "get_global::";
 

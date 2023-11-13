@@ -43,23 +43,27 @@ impl Entry {
         context.set_global(
             crate::eravm::GLOBAL_HEAP_MEMORY_POINTER,
             context.field_type(),
+            AddressSpace::Stack,
             context.field_const(0),
         );
 
         context.set_global(
             crate::eravm::GLOBAL_CALLDATA_SIZE,
             context.field_type(),
+            AddressSpace::Stack,
             context.field_const(0),
         );
         context.set_global(
             crate::eravm::GLOBAL_RETURN_DATA_SIZE,
             context.field_type(),
+            AddressSpace::Stack,
             context.field_const(0),
         );
 
         context.set_global(
             crate::eravm::GLOBAL_CALL_FLAGS,
             context.field_type(),
+            AddressSpace::Stack,
             context.field_const(0),
         );
 
@@ -70,6 +74,7 @@ impl Entry {
         context.set_global(
             crate::eravm::GLOBAL_EXTRA_ABI_DATA,
             extra_abi_data_type,
+            AddressSpace::Stack,
             extra_abi_data_type.const_zero(),
         );
 
@@ -137,7 +142,7 @@ where
         );
         context.write_abi_pointer(calldata_abi_pointer, crate::eravm::GLOBAL_CALLDATA_POINTER);
         context.write_abi_data_size(calldata_abi_pointer, crate::eravm::GLOBAL_CALLDATA_SIZE);
-        let calldata_length = context.get_global(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
+        let calldata_length = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
         let calldata_end_pointer = context.build_gep(
             calldata_abi_pointer,
             &[calldata_length.into_int_value()],
@@ -160,16 +165,17 @@ where
         context.set_global(
             crate::eravm::GLOBAL_CALL_FLAGS,
             call_flags.get_type(),
+            AddressSpace::Stack,
             call_flags.into_int_value(),
         );
 
-        let extra_abi_data_pointer = context.get_global_ptr(crate::eravm::GLOBAL_EXTRA_ABI_DATA)?;
+        let extra_abi_data_global = context.get_global(crate::eravm::GLOBAL_EXTRA_ABI_DATA)?;
         for (array_index, argument_index) in (Self::MANDATORY_ARGUMENTS_COUNT
             ..Self::MANDATORY_ARGUMENTS_COUNT + crate::eravm::EXTRA_ABI_DATA_SIZE)
             .enumerate()
         {
             let array_element_pointer = context.build_gep(
-                extra_abi_data_pointer,
+                extra_abi_data_global.into(),
                 &[
                     context.field_const(0),
                     context
