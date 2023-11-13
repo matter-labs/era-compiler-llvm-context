@@ -233,6 +233,13 @@ where
     }
 
     ///
+    /// Returns the inner LLVM context.
+    ///
+    pub fn llvm(&self) -> &'ctx inkwell::context::Context {
+        self.llvm
+    }
+
+    ///
     /// Returns the LLVM IR builder.
     ///
     pub fn builder(&self) -> &inkwell::builder::Builder<'ctx> {

@@ -2,13 +2,16 @@
 //! The LLVM attribute.
 //!
 
+use serde::Deserialize;
+use serde::Serialize;
+
 ///
 /// The LLVM attribute.
 ///
 /// In order to check the real order in a new major version of LLVM, find the `Attribute.inc` file
 /// inside of the LLVM build directory. This order is actually generated during the building.
 ///
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Attribute {
     /// Unused.
     Unused,
@@ -180,4 +183,20 @@ pub enum Attribute {
     UWTable,
     /// The eponymous LLVM attribute.
     VScaleRange,
+}
+
+impl TryFrom<&str> for Attribute {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "AlwaysInline" => Ok(Attribute::AlwaysInline),
+            "Cold" => Ok(Attribute::Cold),
+            "Hot" => Ok(Attribute::Hot),
+            "MinSize" => Ok(Attribute::MinSize),
+            "OptimizeForSize" => Ok(Attribute::OptimizeForSize),
+            "NoInline" => Ok(Attribute::NoInline),
+            _ => Err(value.to_owned()),
+        }
+    }
 }
