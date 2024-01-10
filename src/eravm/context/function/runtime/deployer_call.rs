@@ -29,7 +29,7 @@ pub struct DeployerCall {
 
 impl DeployerCall {
     /// The default function name.
-    pub const FUNCTION_NAME: &str = "__deployer_call";
+    pub const FUNCTION_NAME: &'static str = "__deployer_call";
 
     /// The value argument index.
     pub const ARGUMENT_INDEX_VALUE: usize = 0;

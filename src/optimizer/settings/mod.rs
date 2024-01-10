@@ -14,7 +14,7 @@ use self::size_level::SizeLevel;
 ///
 /// The LLVM optimizer settings.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq)]
 pub struct Settings {
     /// The middle-end optimization level.
     pub level_middle_end: inkwell::OptimizationLevel,
@@ -22,6 +22,9 @@ pub struct Settings {
     pub level_middle_end_size: SizeLevel,
     /// The back-end optimization level.
     pub level_back_end: inkwell::OptimizationLevel,
+
+    /// Fallback to optimizing for size if the bytecode is too large.
+    pub has_fallback_to_size_enabled: bool,
 
     /// Whether the LLVM `verify each` option is enabled.
     pub is_verify_each_enabled: bool,
@@ -43,6 +46,8 @@ impl Settings {
             level_middle_end_size,
             level_back_end,
 
+            has_fallback_to_size_enabled: false,
+
             is_verify_each_enabled: false,
             is_debug_logging_enabled: false,
         }
@@ -63,6 +68,8 @@ impl Settings {
             level_middle_end,
             level_middle_end_size,
             level_back_end,
+
+            has_fallback_to_size_enabled: false,
 
             is_verify_each_enabled,
             is_debug_logging_enabled,
@@ -174,8 +181,6 @@ impl Settings {
         .into_iter()
         .cartesian_product(vec![
             inkwell::OptimizationLevel::None,
-            inkwell::OptimizationLevel::Less,
-            inkwell::OptimizationLevel::Default,
             inkwell::OptimizationLevel::Aggressive,
         ])
         .map(|(optimization_level_middle, optimization_level_back)| {
@@ -191,8 +196,6 @@ impl Settings {
             .into_iter()
             .cartesian_product(vec![
                 inkwell::OptimizationLevel::None,
-                inkwell::OptimizationLevel::Less,
-                inkwell::OptimizationLevel::Default,
                 inkwell::OptimizationLevel::Aggressive,
             ])
             .map(|(size_level, optimization_level_back)| {
@@ -208,6 +211,28 @@ impl Settings {
         combinations.extend(size_combinations);
 
         combinations
+    }
+
+    ///
+    /// Sets the fallback to optimizing for size if the bytecode is too large.
+    ///
+    pub fn set_fallback_to_size(&mut self) {
+        self.has_fallback_to_size_enabled = true;
+    }
+
+    ///
+    /// Gets the fallback to optimizing for size if the bytecode is too large.
+    ///
+    pub fn has_fallback_to_size(&self) -> bool {
+        self.has_fallback_to_size_enabled
+    }
+}
+
+impl PartialEq for Settings {
+    fn eq(&self, other: &Self) -> bool {
+        self.level_middle_end == other.level_middle_end
+            && self.level_middle_end_size == other.level_middle_end_size
+            && self.level_back_end == other.level_back_end
     }
 }
 

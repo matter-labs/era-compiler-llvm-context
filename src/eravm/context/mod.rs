@@ -29,6 +29,7 @@ use inkwell::values::BasicValue;
 
 use crate::eravm::DebugConfig;
 use crate::eravm::Dependency;
+use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
 use crate::target_machine::target::Target;
 use crate::target_machine::TargetMachine;
@@ -163,10 +164,12 @@ where
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
     pub fn build(
-        self,
+        mut self,
         contract_path: &str,
         metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
     ) -> anyhow::Result<Build> {
+        let module_clone = self.module.clone();
+
         let target_machine = TargetMachine::new(Target::EraVM, self.optimizer.settings())?;
         target_machine.set_target_data(self.module());
 
@@ -213,12 +216,23 @@ where
 
         let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
 
-        let build = crate::eravm::build_assembly_text(
+        let build = match crate::eravm::build_assembly_text(
             contract_path,
             assembly_text.as_str(),
             metadata_hash,
             self.debug_config(),
-        )?;
+        ) {
+            Ok(build) => build,
+            Err(_error)
+                if self.optimizer.settings() != &OptimizerSettings::size()
+                    && self.optimizer.settings().has_fallback_to_size() =>
+            {
+                self.optimizer = Optimizer::new(OptimizerSettings::size());
+                self.module = module_clone;
+                self.build(contract_path, metadata_hash)?
+            }
+            Err(error) => Err(error)?,
+        };
 
         Ok(build)
     }

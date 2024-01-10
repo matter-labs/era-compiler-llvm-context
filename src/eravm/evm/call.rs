@@ -36,15 +36,10 @@ where
     D: Dependency + Clone,
 {
     if context.is_system_mode() {
-        let simulation_address = match constants.get_mut(1).and_then(|option| option.take()) {
-            Some(value) => Some(value.to_u16().ok_or_else(|| {
-                anyhow::anyhow!(
-                    "Simulation address must fit into 16 bits, but found value `{}`",
-                    value
-                )
-            })?),
-            None => None,
-        };
+        let simulation_address = constants
+            .get_mut(1)
+            .and_then(|option| option.take())
+            .and_then(|value| value.to_u16());
 
         match simulation_address {
             Some(compiler_common::ERAVM_ADDRESS_TO_L1) => {
