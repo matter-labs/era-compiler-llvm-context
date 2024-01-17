@@ -4,22 +4,14 @@
 
 pub mod address_space;
 pub mod build;
-// pub mod debug_info;
+pub mod debug_info;
 pub mod evmla_data;
 pub mod function;
-pub mod global;
 pub mod r#loop;
 pub mod pointer;
-pub mod solidity_data;
-pub mod vyper_data;
-pub mod yul_data;
-
-#[cfg(test)]
-mod tests;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::rc::Rc;
 
 use inkwell::types::BasicType;
@@ -27,27 +19,22 @@ use inkwell::values::BasicValue;
 
 use crate::attribute::Attribute;
 use crate::code_type::CodeType;
-use crate::eravm::DebugConfig;
-use crate::eravm::Dependency;
+use crate::evm::DebugConfig;
+use crate::evm::Dependency;
 use crate::optimizer::Optimizer;
 use crate::target_machine::target::Target;
 use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
 use self::build::Build;
-// use self::debug_info::DebugInfo;
+use self::debug_info::DebugInfo;
 use self::evmla_data::EVMLAData;
 use self::function::declaration::Declaration as FunctionDeclaration;
 use self::function::intrinsics::Intrinsics;
-use self::function::llvm_runtime::LLVMRuntime;
 use self::function::r#return::Return as FunctionReturn;
 use self::function::Function;
-use self::global::Global;
 use self::pointer::Pointer;
 use self::r#loop::Loop;
-use self::solidity_data::SolidityData;
-use self::vyper_data::VyperData;
-use self::yul_data::YulData;
 
 ///
 /// The LLVM IR generator context.
@@ -68,13 +55,9 @@ where
     /// The current module.
     module: inkwell::module::Module<'ctx>,
     /// The current contract code type, which can be deploy or runtime.
-    code_type: Option<CodeType>,
-    /// The global variables.
-    globals: HashMap<String, Global<'ctx>>,
+    code_type: CodeType,
     /// The LLVM intrinsic functions, defined on the LLVM side.
     intrinsics: Intrinsics<'ctx>,
-    /// The LLVM runtime functions, defined on the LLVM side.
-    llvm_runtime: LLVMRuntime<'ctx>,
     /// The declared functions.
     functions: HashMap<String, Rc<RefCell<Function<'ctx>>>>,
     /// The current active function.
@@ -89,18 +72,12 @@ where
     /// Whether to append the metadata hash at the end of bytecode.
     include_metadata_hash: bool,
     /// The debug info of the current module.
-    // debug_info: DebugInfo<'ctx>,
+    debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
     debug_config: Option<DebugConfig>,
 
-    /// The Solidity data.
-    solidity_data: Option<SolidityData>,
-    /// The Yul data.
-    yul_data: Option<YulData>,
     /// The EVM legacy assembly data.
     evmla_data: Option<EVMLAData<'ctx>>,
-    /// The Vyper data.
-    vyper_data: Option<VyperData>,
 }
 
 impl<'ctx, D> Context<'ctx, D>
@@ -109,9 +86,6 @@ where
 {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
-
-    /// The globals hashmap default capacity.
-    const GLOBALS_HASHMAP_INITIAL_CAPACITY: usize = 4;
 
     /// The loop stack default capacity.
     const LOOP_STACK_INITIAL_CAPACITY: usize = 16;
@@ -122,6 +96,7 @@ where
     pub fn new(
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
+        code_type: CodeType,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
         include_metadata_hash: bool,
@@ -129,31 +104,25 @@ where
     ) -> Self {
         let builder = llvm.create_builder();
         let intrinsics = Intrinsics::new(llvm, &module);
-        let llvm_runtime = LLVMRuntime::new(llvm, &module, &optimizer);
-        // let debug_info = DebugInfo::new(&module);
+        let debug_info = DebugInfo::new(&module);
 
         Self {
             llvm,
             builder,
             optimizer,
             module,
-            code_type: None,
-            globals: HashMap::with_capacity(Self::GLOBALS_HASHMAP_INITIAL_CAPACITY),
+            code_type,
             intrinsics,
-            llvm_runtime,
             functions: HashMap::with_capacity(Self::FUNCTIONS_HASHMAP_INITIAL_CAPACITY),
             current_function: None,
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
             dependency_manager,
             include_metadata_hash,
-            // debug_info,
+            debug_info,
             debug_config,
 
-            solidity_data: None,
-            yul_data: None,
             evmla_data: None,
-            vyper_data: None,
         }
     }
 
@@ -161,20 +130,25 @@ where
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
     pub fn build(
-        mut self,
+        self,
         contract_path: &str,
         metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
     ) -> anyhow::Result<Build> {
-        let target_machine = TargetMachine::new(Target::EraVM, self.optimizer.settings())?;
+        let target_machine = TargetMachine::new(Target::EVM, self.optimizer.settings())?;
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_unoptimized(contract_path, None, self.module())?;
+            debug_config.dump_llvm_ir_unoptimized(
+                contract_path,
+                Some(self.code_type),
+                self.module(),
+            )?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` unoptimized LLVM IR verification error: {}",
+                "The contract `{}` {} code unoptimized LLVM IR verification error: {}",
                 contract_path,
+                self.code_type,
                 error
             )
         })?;
@@ -183,18 +157,24 @@ where
             .run(&target_machine, self.module())
             .map_err(|error| {
                 anyhow::anyhow!(
-                    "The contract `{}` optimizing error: {}",
+                    "The contract `{}` {} code optimizing error: {}",
                     contract_path,
+                    self.code_type,
                     error
                 )
             })?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(contract_path, None, self.module())?;
+            debug_config.dump_llvm_ir_optimized(
+                contract_path,
+                Some(self.code_type),
+                self.module(),
+            )?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` optimized LLVM IR verification error: {}",
+                "The contract `{}` {} code optimized LLVM IR verification error: {}",
                 contract_path,
+                self.code_type,
                 error
             )
         })?;
@@ -203,28 +183,18 @@ where
             .write_to_memory_buffer(self.module())
             .map_err(|error| {
                 anyhow::anyhow!(
-                    "The contract `{}` assembly generating error: {}",
+                    "The contract `{}` {} code assembly generating error: {}",
                     contract_path,
+                    self.code_type,
                     error
                 )
             })?;
 
-        let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
-
-        let missing_libraries = match self.solidity_data.as_mut() {
-            Some(solidity_data) => solidity_data.take_missing_libraries(),
-            None => HashSet::new(),
-        };
-
-        let build = crate::eravm::build_assembly_text(
-            contract_path,
-            assembly_text.as_str(),
+        Ok(Build::new(
+            String::new(),
             metadata_hash,
-            missing_libraries,
-            self.debug_config(),
-        )?;
-
-        Ok(build)
+            buffer.as_slice().to_vec(),
+        ))
     }
 
     ///
@@ -234,13 +204,6 @@ where
         self.module()
             .verify()
             .map_err(|error| anyhow::anyhow!(error.to_string()))
-    }
-
-    ///
-    /// Returns the inner LLVM context.
-    ///
-    pub fn llvm(&self) -> &'ctx inkwell::context::Context {
-        self.llvm
     }
 
     ///
@@ -258,72 +221,10 @@ where
     }
 
     ///
-    /// Sets the current code type (deploy or runtime).
-    ///
-    pub fn set_code_type(&mut self, code_type: CodeType) {
-        self.code_type = Some(code_type);
-    }
-
-    ///
-    /// Returns the current code type (deploy or runtime).
-    ///
-    pub fn code_type(&self) -> Option<CodeType> {
-        self.code_type.to_owned()
-    }
-
-    ///
-    /// Returns the pointer to a global variable.
-    ///
-    pub fn get_global(&self, name: &str) -> anyhow::Result<Global<'ctx>> {
-        match self.globals.get(name) {
-            Some(global) => Ok(*global),
-            None => anyhow::bail!("Global variable {} is not declared", name),
-        }
-    }
-
-    ///
-    /// Returns the value of a global variable.
-    ///
-    pub fn get_global_value(
-        &self,
-        name: &str,
-    ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
-        let global = self.get_global(name)?;
-        Ok(self.build_load(global.into(), name))
-    }
-
-    ///
-    /// Sets the value to a global variable.
-    ///
-    pub fn set_global<T, V>(&mut self, name: &str, r#type: T, address_space: AddressSpace, value: V)
-    where
-        T: BasicType<'ctx> + Clone + Copy,
-        V: BasicValue<'ctx> + Clone + Copy,
-    {
-        match self.globals.get(name) {
-            Some(global) => {
-                let global = *global;
-                self.build_store(global.into(), value);
-            }
-            None => {
-                let global = Global::new(self, r#type, address_space, value, name);
-                self.globals.insert(name.to_owned(), global);
-            }
-        }
-    }
-
-    ///
     /// Returns the LLVM intrinsics collection reference.
     ///
     pub fn intrinsics(&self) -> &Intrinsics<'ctx> {
         &self.intrinsics
-    }
-
-    ///
-    /// Returns the LLVM runtime function collection reference.
-    ///
-    pub fn llvm_runtime(&self) -> &LLVMRuntime<'ctx> {
-        &self.llvm_runtime
     }
 
     ///
@@ -334,18 +235,12 @@ where
         name: &str,
         r#type: inkwell::types::FunctionType<'ctx>,
         return_values_length: usize,
-        mut linkage: Option<inkwell::module::Linkage>,
+        linkage: Option<inkwell::module::Linkage>,
     ) -> anyhow::Result<Rc<RefCell<Function<'ctx>>>> {
-        if Function::is_near_call_abi(name) && self.is_system_mode() {
-            linkage = Some(inkwell::module::Linkage::External);
-        }
-
         let value = self.module().add_function(name, r#type, linkage);
 
         let entry_block = self.llvm.append_basic_block(value, "entry");
         let return_block = self.llvm.append_basic_block(value, "return");
-
-        value.set_personality_function(self.llvm_runtime.personality.value);
 
         let r#return = match return_values_length {
             0 => FunctionReturn::none(),
@@ -353,12 +248,6 @@ where
                 self.set_basic_block(entry_block);
                 let pointer = self.build_alloca(self.field_type(), "return_pointer");
                 FunctionReturn::primitive(pointer)
-            }
-            size if name.starts_with(Function::ZKSYNC_NEAR_CALL_ABI_PREFIX) => {
-                let first_argument = value.get_first_param().expect("Always exists");
-                let r#type = self.structure_type(vec![self.field_type(); size].as_slice());
-                let pointer = first_argument.into_pointer_value();
-                FunctionReturn::compound(Pointer::new(r#type, AddressSpace::Stack, pointer), size)
             }
             size => {
                 self.set_basic_block(entry_block);
@@ -380,9 +269,6 @@ where
             return_block,
         );
         Function::set_default_attributes(self.llvm, function.declaration(), &self.optimizer);
-        if Function::is_near_call_abi(function.name()) && self.is_system_mode() {
-            Function::set_exception_handler_attributes(self.llvm, function.declaration());
-        }
 
         let function = Rc::new(RefCell::new(function));
         self.functions.insert(name.to_string(), function.clone());
@@ -450,9 +336,6 @@ where
     /// Compiles a contract dependency, if the dependency manager is set.
     ///
     pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
-        if let Some(vyper_data) = self.vyper_data.as_mut() {
-            vyper_data.set_is_forwarder_used();
-        }
         self.dependency_manager
             .to_owned()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
@@ -461,10 +344,6 @@ where
                     manager,
                     name,
                     self.optimizer.settings().to_owned(),
-                    self.yul_data
-                        .as_ref()
-                        .map(|data| data.is_system_mode())
-                        .unwrap_or_default(),
                     self.include_metadata_hash,
                     self.debug_config.clone(),
                 )
@@ -487,22 +366,14 @@ where
     ///
     /// Gets a deployed library address from the dependency manager.
     ///
-    pub fn resolve_library(
-        &mut self,
-        path: &str,
-    ) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
+    pub fn resolve_library(&self, path: &str) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
         self.dependency_manager
             .to_owned()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .map(|manager| match manager.resolve_library(path) {
-                Ok(address) => {
-                    let address = self.field_const_str_hex(address.as_str());
-                    address
-                }
-                Err(_) => {
-                    self.solidity_mut().push_missing_library(path);
-                    self.field_const(0)
-                }
+            .and_then(|manager| {
+                let address = manager.resolve_library(path)?;
+                let address = self.field_const_str_hex(address.as_str());
+                Ok(address)
             })
     }
 
@@ -513,6 +384,13 @@ where
         self.dependency_manager
             .take()
             .expect("The dependency manager is unset")
+    }
+
+    ///
+    /// Returns the debug info reference.
+    ///
+    pub fn debug_info(&self) -> &DebugInfo<'ctx> {
+        &self.debug_info
     }
 
     ///
@@ -691,187 +569,6 @@ where
     }
 
     ///
-    /// Builds an invoke.
-    ///
-    /// Is defaulted to a call if there is no global exception handler.
-    ///
-    pub fn build_invoke(
-        &self,
-        function: FunctionDeclaration<'ctx>,
-        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
-        name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
-        if !self
-            .functions
-            .contains_key(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
-        {
-            return self.build_call(function, arguments, name);
-        }
-
-        let return_pointer = if let Some(r#type) = function.r#type.get_return_type() {
-            let pointer = self.build_alloca(r#type, "invoke_return_pointer");
-            self.build_store(pointer, r#type.const_zero());
-            Some(pointer)
-        } else {
-            None
-        };
-
-        let success_block = self.append_basic_block("invoke_success_block");
-        let catch_block = self.append_basic_block("invoke_catch_block");
-        let current_block = self.basic_block();
-
-        self.set_basic_block(catch_block);
-        let landing_pad_type = self.structure_type(&[
-            self.byte_type()
-                .ptr_type(AddressSpace::Stack.into())
-                .as_basic_type_enum(),
-            self.integer_type(compiler_common::BIT_LENGTH_X32)
-                .as_basic_type_enum(),
-        ]);
-        self.builder.build_landing_pad(
-            landing_pad_type,
-            self.llvm_runtime.personality.value,
-            &[self
-                .byte_type()
-                .ptr_type(AddressSpace::Stack.into())
-                .const_zero()
-                .as_basic_value_enum()],
-            false,
-            "invoke_catch_landing",
-        );
-        crate::eravm::utils::throw(self);
-
-        self.set_basic_block(current_block);
-        let call_site_value = self.builder.build_indirect_invoke(
-            function.r#type,
-            function.value.as_global_value().as_pointer_value(),
-            arguments,
-            success_block,
-            catch_block,
-            name,
-        );
-        self.modify_call_site_value(arguments, call_site_value, function);
-
-        self.set_basic_block(success_block);
-        if let (Some(return_pointer), Some(mut return_value)) =
-            (return_pointer, call_site_value.try_as_basic_value().left())
-        {
-            if let Some(return_type) = function.r#type.get_return_type() {
-                if return_type.is_pointer_type() {
-                    return_value = self
-                        .builder()
-                        .build_int_to_ptr(
-                            return_value.into_int_value(),
-                            return_type.into_pointer_type(),
-                            format!("{name}_invoke_return_pointer_casted").as_str(),
-                        )
-                        .as_basic_value_enum();
-                }
-            }
-            self.build_store(return_pointer, return_value);
-        }
-        return_pointer.map(|pointer| self.build_load(pointer, "invoke_result"))
-    }
-
-    ///
-    /// Builds an invoke of local call covered with an exception handler.
-    ///
-    /// Yul does not the exception handling, so the user can declare a special handling function
-    /// called (see constant `ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER`. If the enclosed function
-    /// panics, the control flow will be transferred to the exception handler.
-    ///
-    pub fn build_invoke_near_call_abi(
-        &self,
-        function: FunctionDeclaration<'ctx>,
-        arguments: Vec<inkwell::values::BasicValueEnum<'ctx>>,
-        name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
-        let join_block = self.append_basic_block("near_call_join_block");
-
-        let return_pointer = if let Some(r#type) = function.r#type.get_return_type() {
-            let pointer = self.build_alloca(r#type, "near_call_return_pointer");
-            self.build_store(pointer, r#type.const_zero());
-            Some(pointer)
-        } else {
-            None
-        };
-
-        let call_site_value = if let Some(handler) = self
-            .functions
-            .get(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
-        {
-            let success_block = self.append_basic_block("near_call_success_block");
-            let catch_block = self.append_basic_block("near_call_catch_block");
-            let current_block = self.basic_block();
-
-            self.set_basic_block(catch_block);
-            let landing_pad_type = self.structure_type(&[
-                self.byte_type()
-                    .ptr_type(AddressSpace::Stack.into())
-                    .as_basic_type_enum(),
-                self.integer_type(compiler_common::BIT_LENGTH_X32)
-                    .as_basic_type_enum(),
-            ]);
-            self.builder.build_landing_pad(
-                landing_pad_type,
-                self.llvm_runtime.personality.value,
-                &[self
-                    .byte_type()
-                    .ptr_type(AddressSpace::Stack.into())
-                    .const_zero()
-                    .as_basic_value_enum()],
-                false,
-                "near_call_catch_landing",
-            );
-            self.build_call(handler.borrow().declaration(), &[], "near_call_catch_call");
-            self.build_unconditional_branch(join_block);
-
-            self.set_basic_block(current_block);
-            let call_site_value = self.builder.build_indirect_invoke(
-                self.intrinsics.near_call.r#type,
-                self.intrinsics
-                    .near_call
-                    .value
-                    .as_global_value()
-                    .as_pointer_value(),
-                arguments.as_slice(),
-                success_block,
-                catch_block,
-                name,
-            );
-            self.modify_call_site_value(
-                arguments.as_slice(),
-                call_site_value,
-                self.intrinsics.near_call,
-            );
-            self.set_basic_block(success_block);
-            call_site_value.try_as_basic_value().left()
-        } else {
-            self.build_call(self.intrinsics.near_call, arguments.as_slice(), name)
-        };
-
-        if let (Some(return_pointer), Some(mut return_value)) = (return_pointer, call_site_value) {
-            if let Some(return_type) = function.r#type.get_return_type() {
-                if return_type.is_pointer_type() {
-                    return_value = self
-                        .builder()
-                        .build_int_to_ptr(
-                            return_value.into_int_value(),
-                            return_type.into_pointer_type(),
-                            format!("{name}_near_call_return_pointer_casted").as_str(),
-                        )
-                        .as_basic_value_enum();
-                }
-            }
-            self.build_store(return_pointer, return_value);
-        }
-        self.build_unconditional_branch(join_block);
-
-        self.set_basic_block(join_block);
-        return_pointer.map(|pointer| self.build_load(pointer, "near_call_result"))
-    }
-
-    ///
     /// Builds a memory copy call.
     ///
     /// Sets the alignment to `1`, since all non-stack memory pages have such alignment.
@@ -901,55 +598,6 @@ where
     }
 
     ///
-    /// Builds a memory copy call for the return data.
-    ///
-    /// Sets the output length to `min(output_length, return_data_size` and calls the default
-    /// generic page memory copy builder.
-    ///
-    pub fn build_memcpy_return_data(
-        &self,
-        function: FunctionDeclaration<'ctx>,
-        destination: Pointer<'ctx>,
-        source: Pointer<'ctx>,
-        size: inkwell::values::IntValue<'ctx>,
-        name: &str,
-    ) {
-        let pointer_casted = self.builder.build_ptr_to_int(
-            source.value,
-            self.field_type(),
-            format!("{name}_pointer_casted").as_str(),
-        );
-        let return_data_size_shifted = self.builder.build_right_shift(
-            pointer_casted,
-            self.field_const((compiler_common::BIT_LENGTH_X32 * 3) as u64),
-            false,
-            format!("{name}_return_data_size_shifted").as_str(),
-        );
-        let return_data_size_truncated = self.builder.build_and(
-            return_data_size_shifted,
-            self.field_const(u32::MAX as u64),
-            format!("{name}_return_data_size_truncated").as_str(),
-        );
-        let is_return_data_size_lesser = self.builder.build_int_compare(
-            inkwell::IntPredicate::ULT,
-            return_data_size_truncated,
-            size,
-            format!("{name}_is_return_data_size_lesser").as_str(),
-        );
-        let min_size = self
-            .builder
-            .build_select(
-                is_return_data_size_lesser,
-                return_data_size_truncated,
-                size,
-                format!("{name}_min_size").as_str(),
-            )
-            .into_int_value();
-
-        self.build_memcpy(function, destination, source, min_size, name)
-    }
-
-    ///
     /// Builds a return.
     ///
     /// Checks if there are no other terminators in the block.
@@ -973,79 +621,6 @@ where
         }
 
         self.builder.build_unreachable();
-    }
-
-    ///
-    /// Builds a long contract exit sequence.
-    ///
-    /// The deploy code does not return the runtime code like in EVM. Instead, it returns some
-    /// additional contract metadata, e.g. the array of immutables.
-    /// The deploy code uses the auxiliary heap for the return, because otherwise it is not possible
-    /// to allocate memory together with the Yul allocator safely.
-    ///
-    pub fn build_exit(
-        &self,
-        return_function: FunctionDeclaration<'ctx>,
-        offset: inkwell::values::IntValue<'ctx>,
-        length: inkwell::values::IntValue<'ctx>,
-    ) {
-        let return_forward_mode = if self.code_type() == Some(CodeType::Deploy)
-            && return_function == self.llvm_runtime().r#return
-        {
-            zkevm_opcode_defs::RetForwardPageType::UseAuxHeap
-        } else {
-            zkevm_opcode_defs::RetForwardPageType::UseHeap
-        };
-
-        self.build_call(
-            return_function,
-            &[
-                offset.as_basic_value_enum(),
-                length.as_basic_value_enum(),
-                self.field_const(return_forward_mode as u64)
-                    .as_basic_value_enum(),
-            ],
-            "exit_call",
-        );
-        self.builder.build_unreachable();
-    }
-
-    ///
-    /// Writes the ABI pointer to the global variable.
-    ///
-    pub fn write_abi_pointer(&mut self, pointer: Pointer<'ctx>, global_name: &str) {
-        self.set_global(
-            global_name,
-            self.byte_type().ptr_type(AddressSpace::Generic.into()),
-            AddressSpace::Stack,
-            pointer.value,
-        );
-    }
-
-    ///
-    /// Writes the ABI data size to the global variable.
-    ///
-    pub fn write_abi_data_size(&mut self, pointer: Pointer<'ctx>, global_name: &str) {
-        let abi_pointer_value =
-            self.builder()
-                .build_ptr_to_int(pointer.value, self.field_type(), "abi_pointer_value");
-        let abi_pointer_value_shifted = self.builder().build_right_shift(
-            abi_pointer_value,
-            self.field_const((compiler_common::BIT_LENGTH_X32 * 3) as u64),
-            false,
-            "abi_pointer_value_shifted",
-        );
-        let abi_length_value = self.builder().build_and(
-            abi_pointer_value_shifted,
-            self.field_const(u32::MAX as u64),
-            "abi_length_value",
-        );
-        self.set_global(
-            global_name,
-            self.field_type(),
-            AddressSpace::Stack,
-            abi_length_value,
-        );
     }
 
     ///
@@ -1163,12 +738,11 @@ where
         &self,
         argument_types: Vec<T>,
         return_values_size: usize,
-        is_near_call_abi: bool,
     ) -> inkwell::types::FunctionType<'ctx>
     where
         T: BasicType<'ctx>,
     {
-        let mut argument_types: Vec<inkwell::types::BasicMetadataTypeEnum> = argument_types
+        let argument_types: Vec<inkwell::types::BasicMetadataTypeEnum> = argument_types
             .as_slice()
             .iter()
             .map(T::as_basic_type_enum)
@@ -1180,14 +754,6 @@ where
                 .void_type()
                 .fn_type(argument_types.as_slice(), false),
             1 => self.field_type().fn_type(argument_types.as_slice(), false),
-            size if is_near_call_abi && self.is_system_mode() => {
-                let return_types: Vec<_> = vec![self.field_type().as_basic_type_enum(); size];
-                let return_type = self
-                    .structure_type(return_types.as_slice())
-                    .ptr_type(AddressSpace::Stack.into());
-                argument_types.insert(0, return_type.as_basic_type_enum().into());
-                return_type.fn_type(argument_types.as_slice(), false)
-            }
             size => self
                 .structure_type(vec![self.field_type().as_basic_type_enum(); size].as_slice())
                 .fn_type(argument_types.as_slice(), false),
@@ -1225,20 +791,6 @@ where
                     inkwell::attributes::AttributeLoc::Param(index as u32),
                     self.llvm.create_enum_attribute(Attribute::NoFree as u32, 0),
                 );
-                if function == self.llvm_runtime().mstore8 {
-                    call_site_value.add_attribute(
-                        inkwell::attributes::AttributeLoc::Param(index as u32),
-                        self.llvm
-                            .create_enum_attribute(Attribute::WriteOnly as u32, 0),
-                    );
-                }
-                if function == self.llvm_runtime().sha3 {
-                    call_site_value.add_attribute(
-                        inkwell::attributes::AttributeLoc::Param(index as u32),
-                        self.llvm
-                            .create_enum_attribute(Attribute::ReadOnly as u32, 0),
-                    );
-                }
                 if Some(argument.get_type()) == function.r#type.get_return_type() {
                     if function
                         .r#type
@@ -1312,68 +864,6 @@ where
     }
 
     ///
-    /// Sets the Solidity data.
-    ///
-    pub fn set_solidity_data(&mut self, data: SolidityData) {
-        self.solidity_data = Some(data);
-    }
-
-    ///
-    /// Returns the Solidity data reference.
-    ///
-    /// # Panics
-    /// If the Solidity data has not been initialized.
-    ///
-    pub fn solidity(&self) -> &SolidityData {
-        self.solidity_data
-            .as_ref()
-            .expect("The Solidity data must have been initialized")
-    }
-
-    ///
-    /// Returns the Solidity data mutable reference.
-    ///
-    /// # Panics
-    /// If the Solidity data has not been initialized.
-    ///
-    pub fn solidity_mut(&mut self) -> &mut SolidityData {
-        self.solidity_data
-            .as_mut()
-            .expect("The Solidity data must have been initialized")
-    }
-
-    ///
-    /// Sets the Yul data.
-    ///
-    pub fn set_yul_data(&mut self, data: YulData) {
-        self.yul_data = Some(data);
-    }
-
-    ///
-    /// Returns the Yul data reference.
-    ///
-    /// # Panics
-    /// If the Yul data has not been initialized.
-    ///
-    pub fn yul(&self) -> &YulData {
-        self.yul_data
-            .as_ref()
-            .expect("The Yul data must have been initialized")
-    }
-
-    ///
-    /// Returns the Yul data mutable reference.
-    ///
-    /// # Panics
-    /// If the Yul data has not been initialized.
-    ///
-    pub fn yul_mut(&mut self) -> &mut YulData {
-        self.yul_data
-            .as_mut()
-            .expect("The Yul data must have been initialized")
-    }
-
-    ///
     /// Sets the EVM legacy assembly data.
     ///
     pub fn set_evmla_data(&mut self, data: EVMLAData<'ctx>) {
@@ -1402,50 +892,5 @@ where
         self.evmla_data
             .as_mut()
             .expect("The EVMLA data must have been initialized")
-    }
-
-    ///
-    /// Sets the EVM legacy assembly data.
-    ///
-    pub fn set_vyper_data(&mut self, data: VyperData) {
-        self.vyper_data = Some(data);
-    }
-
-    ///
-    /// Returns the Vyper data reference.
-    ///
-    /// # Panics
-    /// If the Vyper data has not been initialized.
-    ///
-    pub fn vyper(&self) -> &VyperData {
-        self.vyper_data
-            .as_ref()
-            .expect("The Solidity data must have been initialized")
-    }
-
-    ///
-    /// Returns the current number of immutables values in the contract.
-    ///
-    /// If the size is set manually, then it is returned. Otherwise, the number of elements in
-    /// the identifier-to-offset mapping tree is returned.
-    ///
-    pub fn immutables_size(&self) -> anyhow::Result<usize> {
-        if let Some(solidity) = self.solidity_data.as_ref() {
-            Ok(solidity.immutables_size())
-        } else if let Some(vyper) = self.vyper_data.as_ref() {
-            Ok(vyper.immutables_size())
-        } else {
-            anyhow::bail!("The immutable size data is not available");
-        }
-    }
-
-    ///
-    /// Whether the system mode is enabled.
-    ///
-    pub fn is_system_mode(&self) -> bool {
-        self.yul_data
-            .as_ref()
-            .map(|data| data.is_system_mode())
-            .unwrap_or_default()
     }
 }

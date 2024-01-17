@@ -5,8 +5,8 @@
 use inkwell::values::BasicValue;
 use num::ToPrimitive;
 
+use crate::argument::Argument;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::argument::Argument;
 use crate::eravm::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::eravm::context::function::runtime::Runtime;
 use crate::eravm::context::pointer::Pointer;
@@ -36,10 +36,15 @@ where
     D: Dependency + Clone,
 {
     if context.is_system_mode() {
-        let simulation_address = constants
-            .get_mut(1)
-            .and_then(|option| option.take())
-            .and_then(|value| value.to_u16());
+        let simulation_address = match constants.get_mut(1).and_then(|option| option.take()) {
+            Some(value) => Some(value.to_u16().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Simulation address must fit into 16 bits, but found value `{}`",
+                    value
+                )
+            })?),
+            None => None,
+        };
 
         match simulation_address {
             Some(compiler_common::ERAVM_ADDRESS_TO_L1) => {

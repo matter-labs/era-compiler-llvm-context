@@ -3,6 +3,7 @@
 //!
 
 use std::collections::BTreeMap;
+use std::collections::HashSet;
 
 ///
 /// The LLVM IR generator Solidity data.
@@ -14,6 +15,8 @@ pub struct SolidityData {
     /// The immutables identifier-to-offset mapping. Is only used by Solidity due to
     /// the arbitrariness of its identifiers.
     immutables: BTreeMap<String, usize>,
+    /// The list of missing deployable libraries.
+    missing_libraries: HashSet<String>,
 }
 
 impl SolidityData {
@@ -55,5 +58,19 @@ impl SolidityData {
             Some(offset) => offset,
             None => self.allocate_immutable(identifier),
         }
+    }
+
+    ///
+    /// Pushes a missing deployable library.
+    ///
+    pub fn push_missing_library(&mut self, library: &str) {
+        self.missing_libraries.insert(library.to_owned());
+    }
+
+    ///
+    /// Returns the missing libraries list reference.
+    ///
+    pub fn take_missing_libraries(&mut self) -> HashSet<String> {
+        self.missing_libraries.drain().collect()
     }
 }

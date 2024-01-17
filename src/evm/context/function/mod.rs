@@ -6,25 +6,21 @@ pub mod block;
 pub mod declaration;
 pub mod evmla_data;
 pub mod intrinsics;
-pub mod llvm_runtime;
 pub mod r#return;
 pub mod runtime;
 pub mod vyper_data;
-pub mod yul_data;
 
 use std::collections::HashMap;
 
 use crate::attribute::Attribute;
-use crate::eravm::context::pointer::Pointer;
+use crate::evm::context::pointer::Pointer;
 use crate::optimizer::settings::size_level::SizeLevel;
 use crate::optimizer::Optimizer;
 
 use self::declaration::Declaration;
 use self::evmla_data::EVMLAData;
 use self::r#return::Return;
-use self::runtime::Runtime;
 use self::vyper_data::VyperData;
-use self::yul_data::YulData;
 
 ///
 /// The LLVM IR generator function.
@@ -48,8 +44,6 @@ pub struct Function<'ctx> {
     /// before the returning.
     return_block: inkwell::basic_block::BasicBlock<'ctx>,
 
-    /// The Yul compiler data.
-    yul_data: Option<YulData>,
     /// The EVM legacy assembly compiler data.
     evmla_data: Option<EVMLAData<'ctx>>,
     /// The Vyper data.
@@ -86,7 +80,6 @@ impl<'ctx> Function<'ctx> {
             entry_block,
             return_block,
 
-            yul_data: None,
             evmla_data: None,
             vyper_data: None,
         }
@@ -104,18 +97,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn is_name_external(name: &str) -> bool {
         name.starts_with("llvm.")
-            || (name.starts_with("__")
-                && name != Runtime::FUNCTION_ENTRY
-                && name != Runtime::FUNCTION_DEPLOY_CODE
-                && name != Runtime::FUNCTION_RUNTIME_CODE)
-    }
-
-    ///
-    /// Checks whether the function is related to the near call ABI.
-    ///
-    pub fn is_near_call_abi(name: &str) -> bool {
-        name.starts_with(Self::ZKSYNC_NEAR_CALL_ABI_PREFIX)
-            || name == Self::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER
+            || (name.starts_with("__") && name != crate::evm_const::ENTRY_FUNCTION_NAME)
     }
 
     ///
@@ -133,19 +115,6 @@ impl<'ctx> Function<'ctx> {
             .value
             .get_nth_param(index as u32)
             .expect("Always exists")
-    }
-
-    ///
-    /// Sets the CXA-throw attributes.
-    ///
-    pub fn set_cxa_throw_attributes(
-        llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
-    ) {
-        declaration.value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
-            llvm.create_enum_attribute(Attribute::NoProfile as u32, 0),
-        );
     }
 
     ///
@@ -209,9 +178,9 @@ impl<'ctx> Function<'ctx> {
     }
 
     ///
-    /// Sets the pure function attributes.
+    /// Sets the LLVM runtime attributes.
     ///
-    pub fn set_pure_function_attributes(
+    pub fn set_llvm_runtime_attributes(
         llvm: &'ctx inkwell::context::Context,
         declaration: Declaration<'ctx>,
     ) {
@@ -223,22 +192,6 @@ impl<'ctx> Function<'ctx> {
         ]
         .into_iter()
         {
-            declaration.value.add_attribute(
-                inkwell::attributes::AttributeLoc::Function,
-                llvm.create_enum_attribute(attribute_kind as u32, 0),
-            );
-        }
-    }
-
-    ///
-    /// Sets the memory writer function attributes.
-    ///
-    pub fn set_function_attributes(
-        llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
-        attributes: Vec<Attribute>,
-    ) {
-        for attribute_kind in attributes.into_iter() {
             declaration.value.add_attribute(
                 inkwell::attributes::AttributeLoc::Function,
                 llvm.create_enum_attribute(attribute_kind as u32, 0),
@@ -373,36 +326,5 @@ impl<'ctx> Function<'ctx> {
         self.vyper_data
             .as_mut()
             .expect("The Vyper data must have been initialized")
-    }
-
-    ///
-    /// Sets the Yul data.
-    ///
-    pub fn set_yul_data(&mut self, data: YulData) {
-        self.yul_data = Some(data);
-    }
-
-    ///
-    /// Returns the Yul data reference.
-    ///
-    /// # Panics
-    /// If the Yul data has not been initialized.
-    ///
-    pub fn yul(&self) -> &YulData {
-        self.yul_data
-            .as_ref()
-            .expect("The Yul data must have been initialized")
-    }
-
-    ///
-    /// Returns the Yul data mutable reference.
-    ///
-    /// # Panics
-    /// If the Yul data has not been initialized.
-    ///
-    pub fn yul_mut(&mut self) -> &mut YulData {
-        self.yul_data
-            .as_mut()
-            .expect("The Yul data must have been initialized")
     }
 }

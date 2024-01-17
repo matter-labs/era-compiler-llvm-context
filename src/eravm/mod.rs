@@ -11,6 +11,8 @@ pub mod utils;
 
 pub use self::r#const::*;
 
+use std::collections::HashSet;
+
 use crate::debug_config::DebugConfig;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 
@@ -31,10 +33,11 @@ pub fn build_assembly_text(
     contract_path: &str,
     assembly_text: &str,
     metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
+    missing_libraries: HashSet<String>,
     debug_config: Option<&DebugConfig>,
 ) -> anyhow::Result<Build> {
     if let Some(debug_config) = debug_config {
-        debug_config.dump_assembly(contract_path, assembly_text)?;
+        debug_config.dump_assembly(contract_path, None, assembly_text)?;
     }
 
     let mut assembly =
@@ -86,6 +89,7 @@ pub fn build_assembly_text(
         metadata_hash,
         bytecode,
         bytecode_hash,
+        missing_libraries,
     ))
 }
 

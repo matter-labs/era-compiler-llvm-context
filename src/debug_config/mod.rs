@@ -9,6 +9,8 @@ use std::path::PathBuf;
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::code_type::CodeType;
+
 use self::ir_type::IRType;
 
 ///
@@ -31,9 +33,14 @@ impl DebugConfig {
     ///
     /// Dumps the Yul IR.
     ///
-    pub fn dump_yul(&self, contract_path: &str, code: &str) -> anyhow::Result<()> {
+    pub fn dump_yul(
+        &self,
+        contract_path: &str,
+        code_type: Option<CodeType>,
+        code: &str,
+    ) -> anyhow::Result<()> {
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name = Self::full_file_name(contract_path, None, IRType::Yul);
+        let full_file_name = Self::full_file_name(contract_path, code_type, None, IRType::Yul);
         file_path.push(full_file_name);
         std::fs::write(file_path, code)?;
 
@@ -43,9 +50,14 @@ impl DebugConfig {
     ///
     /// Dumps the EVM legacy assembly IR.
     ///
-    pub fn dump_evmla(&self, contract_path: &str, code: &str) -> anyhow::Result<()> {
+    pub fn dump_evmla(
+        &self,
+        contract_path: &str,
+        code_type: Option<CodeType>,
+        code: &str,
+    ) -> anyhow::Result<()> {
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name = Self::full_file_name(contract_path, None, IRType::EVMLA);
+        let full_file_name = Self::full_file_name(contract_path, code_type, None, IRType::EVMLA);
         file_path.push(full_file_name);
         std::fs::write(file_path, code)?;
 
@@ -55,9 +67,14 @@ impl DebugConfig {
     ///
     /// Dumps the Ethereal IR.
     ///
-    pub fn dump_ethir(&self, contract_path: &str, code: &str) -> anyhow::Result<()> {
+    pub fn dump_ethir(
+        &self,
+        contract_path: &str,
+        code_type: Option<CodeType>,
+        code: &str,
+    ) -> anyhow::Result<()> {
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name = Self::full_file_name(contract_path, None, IRType::EthIR);
+        let full_file_name = Self::full_file_name(contract_path, code_type, None, IRType::EthIR);
         file_path.push(full_file_name);
         std::fs::write(file_path, code)?;
 
@@ -67,9 +84,14 @@ impl DebugConfig {
     ///
     /// Dumps the LLL IR.
     ///
-    pub fn dump_lll(&self, contract_path: &str, code: &str) -> anyhow::Result<()> {
+    pub fn dump_lll(
+        &self,
+        contract_path: &str,
+        code_type: Option<CodeType>,
+        code: &str,
+    ) -> anyhow::Result<()> {
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name = Self::full_file_name(contract_path, None, IRType::LLL);
+        let full_file_name = Self::full_file_name(contract_path, code_type, None, IRType::LLL);
         file_path.push(full_file_name);
         std::fs::write(file_path, code)?;
 
@@ -82,12 +104,14 @@ impl DebugConfig {
     pub fn dump_llvm_ir_unoptimized(
         &self,
         contract_path: &str,
+        code_type: Option<CodeType>,
         module: &inkwell::module::Module,
     ) -> anyhow::Result<()> {
         let llvm_code = module.print_to_string().to_string();
 
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name = Self::full_file_name(contract_path, Some("unoptimized"), IRType::LLVM);
+        let full_file_name =
+            Self::full_file_name(contract_path, code_type, Some("unoptimized"), IRType::LLVM);
         file_path.push(full_file_name);
         std::fs::write(file_path, llvm_code)?;
 
@@ -100,12 +124,14 @@ impl DebugConfig {
     pub fn dump_llvm_ir_optimized(
         &self,
         contract_path: &str,
+        code_type: Option<CodeType>,
         module: &inkwell::module::Module,
     ) -> anyhow::Result<()> {
         let llvm_code = module.print_to_string().to_string();
 
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name = Self::full_file_name(contract_path, Some("optimized"), IRType::LLVM);
+        let full_file_name =
+            Self::full_file_name(contract_path, code_type, Some("optimized"), IRType::LLVM);
         file_path.push(full_file_name);
         std::fs::write(file_path, llvm_code)?;
 
@@ -115,9 +141,14 @@ impl DebugConfig {
     ///
     /// Dumps the assembly.
     ///
-    pub fn dump_assembly(&self, contract_path: &str, code: &str) -> anyhow::Result<()> {
+    pub fn dump_assembly(
+        &self,
+        contract_path: &str,
+        code_type: Option<CodeType>,
+        code: &str,
+    ) -> anyhow::Result<()> {
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name = Self::full_file_name(contract_path, None, IRType::Assembly);
+        let full_file_name = Self::full_file_name(contract_path, code_type, None, IRType::Assembly);
         file_path.push(full_file_name);
         std::fs::write(file_path, code)?;
 
@@ -127,8 +158,17 @@ impl DebugConfig {
     ///
     /// Creates a full file name, given the contract full path, suffix, and extension.
     ///
-    fn full_file_name(contract_path: &str, suffix: Option<&str>, ir_type: IRType) -> String {
+    fn full_file_name(
+        contract_path: &str,
+        code_type: Option<CodeType>,
+        suffix: Option<&str>,
+        ir_type: IRType,
+    ) -> String {
         let mut full_file_name = contract_path.replace('/', "_").replace(':', ".");
+        if let Some(code_type) = code_type {
+            full_file_name.push('.');
+            full_file_name.push_str(code_type.to_string().as_str());
+        }
         if let Some(suffix) = suffix {
             full_file_name.push('.');
             full_file_name.push_str(suffix);

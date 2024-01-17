@@ -2,19 +2,23 @@
 //! The LLVM context library.
 //!
 
+pub(crate) mod argument;
+pub(crate) mod attribute;
+pub(crate) mod code_type;
 pub(crate) mod debug_config;
 pub(crate) mod eravm;
+pub(crate) mod evm;
 pub(crate) mod optimizer;
 pub(crate) mod target_machine;
 
+pub use self::argument::Argument;
+pub use self::attribute::Attribute;
+pub use self::code_type::CodeType;
 pub use self::debug_config::ir_type::IRType as DebugConfigIR;
 pub use self::debug_config::DebugConfig;
 pub use self::eravm::build_assembly_text as eravm_build_assembly_text;
 pub use self::eravm::context::address_space::AddressSpace as EraVMAddressSpace;
-pub use self::eravm::context::argument::Argument as EraVMArgument;
-pub use self::eravm::context::attribute::Attribute as EraVMAttribute;
 pub use self::eravm::context::build::Build as EraVMBuild;
-pub use self::eravm::context::code_type::CodeType as EraVMCodeType;
 pub use self::eravm::context::evmla_data::EVMLAData as EraVMContextEVMLAData;
 pub use self::eravm::context::function::block::evmla_data::key::Key as EraVMFunctionBlockKey;
 pub use self::eravm::context::function::block::evmla_data::EVMLAData as EraVMFunctionBlockEVMLAData;
@@ -66,6 +70,45 @@ pub use self::eravm::Dependency as EraVMDependency;
 pub use self::eravm::DummyDependency as EraVMDummyDependency;
 pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
 pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
+pub use self::evm::context::address_space::AddressSpace as EVMAddressSpace;
+pub use self::evm::context::build::Build as EVMBuild;
+pub use self::evm::context::evmla_data::EVMLAData as EVMContextEVMLAData;
+pub use self::evm::context::function::block::evmla_data::key::Key as EVMFunctionBlockKey;
+pub use self::evm::context::function::block::evmla_data::EVMLAData as EVMFunctionBlockEVMLAData;
+pub use self::evm::context::function::block::Block as EVMFunctionBlock;
+pub use self::evm::context::function::declaration::Declaration as EVMFunctionDeclaration;
+pub use self::evm::context::function::evmla_data::EVMLAData as EVMFunctionEVMLAData;
+pub use self::evm::context::function::intrinsics::Intrinsics as EVMIntrinsicFunction;
+pub use self::evm::context::function::r#return::Return as EVMFunctionReturn;
+pub use self::evm::context::function::runtime::entry::Entry as EVMEntryFunction;
+pub use self::evm::context::function::vyper_data::VyperData as EVMFunctionVyperData;
+pub use self::evm::context::function::Function as EVMFunction;
+pub use self::evm::context::pointer::Pointer as EVMPointer;
+pub use self::evm::context::r#loop::Loop as EVMLoop;
+pub use self::evm::context::Context as EVMContext;
+pub use self::evm::instructions::arithmetic as evm_arithmetic;
+pub use self::evm::instructions::bitwise as evm_bitwise;
+pub use self::evm::instructions::call as evm_call;
+pub use self::evm::instructions::calldata as evm_calldata;
+pub use self::evm::instructions::code as evm_code;
+pub use self::evm::instructions::comparison as evm_comparison;
+pub use self::evm::instructions::context as evm_contract_context;
+pub use self::evm::instructions::create as evm_create;
+pub use self::evm::instructions::ether_gas as evm_ether_gas;
+pub use self::evm::instructions::event as evm_event;
+pub use self::evm::instructions::immutable as evm_immutable;
+pub use self::evm::instructions::math as evm_math;
+pub use self::evm::instructions::memory as evm_memory;
+pub use self::evm::instructions::r#return as evm_return;
+pub use self::evm::instructions::return_data as evm_return_data;
+pub use self::evm::instructions::storage as evm_storage;
+pub use self::evm::metadata_hash::MetadataHash as EVMMetadataHash;
+pub use self::evm::r#const as evm_const;
+pub use self::evm::utils as evm_utils;
+pub use self::evm::Dependency as EVMDependency;
+pub use self::evm::DummyDependency as EVMDummyDependency;
+pub use self::evm::DummyLLVMWritable as EVMDummyLLVMWritable;
+pub use self::evm::WriteLLVM as EVMWriteLLVM;
 pub use self::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
 pub use self::optimizer::settings::Settings as OptimizerSettings;
 pub use self::optimizer::Optimizer;
@@ -78,6 +121,6 @@ pub use self::target_machine::TargetMachine;
 pub fn initialize_target(target: Target) {
     match target {
         Target::EraVM => self::eravm::initialize_target(),
-        Target::EVM => todo!(),
+        Target::EVM => self::evm::initialize_target(),
     }
 }

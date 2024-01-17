@@ -2,7 +2,7 @@
 //! The LLVM IR generator context tests.
 //!
 
-use crate::eravm::context::attribute::Attribute;
+use crate::attribute::Attribute;
 use crate::eravm::context::Context;
 use crate::eravm::DummyDependency;
 use crate::optimizer::settings::Settings as OptimizerSettings;

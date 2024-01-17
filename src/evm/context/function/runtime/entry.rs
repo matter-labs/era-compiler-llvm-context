@@ -1,22 +1,20 @@
 //!
-//! The runtime code function.
+//! The entry function.
 //!
 
 use std::marker::PhantomData;
 
-use crate::code_type::CodeType;
-use crate::eravm::context::function::runtime::Runtime;
-use crate::eravm::context::Context;
-use crate::eravm::Dependency;
-use crate::eravm::WriteLLVM;
+use crate::evm::context::Context;
+use crate::evm::Dependency;
+use crate::evm::WriteLLVM;
 
 ///
-/// The runtime code function.
+/// The entry function.
 ///
-/// Is a special function that is only used by the front-end generated code.
+/// Is a special runtime function that is only used by the front-end generated code.
 ///
 #[derive(Debug)]
-pub struct RuntimeCode<B, D>
+pub struct Entry<B, D>
 where
     B: WriteLLVM<D>,
     D: Dependency + Clone,
@@ -27,7 +25,7 @@ where
     _pd: PhantomData<D>,
 }
 
-impl<B, D> RuntimeCode<B, D>
+impl<B, D> Entry<B, D>
 where
     B: WriteLLVM<D>,
     D: Dependency + Clone,
@@ -43,29 +41,27 @@ where
     }
 }
 
-impl<B, D> WriteLLVM<D> for RuntimeCode<B, D>
+impl<B, D> WriteLLVM<D> for Entry<B, D>
 where
     B: WriteLLVM<D>,
     D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
-        let function_type =
-            context.function_type::<inkwell::types::BasicTypeEnum>(vec![], 0, false);
+        let function_type = context.function_type::<inkwell::types::BasicTypeEnum>(vec![], 0);
         context.add_function(
-            Runtime::FUNCTION_RUNTIME_CODE,
+            crate::evm::r#const::ENTRY_FUNCTION_NAME,
             function_type,
             0,
-            Some(inkwell::module::Linkage::Private),
+            Some(inkwell::module::Linkage::External),
         )?;
 
         self.inner.declare(context)
     }
 
     fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()> {
-        context.set_current_function(Runtime::FUNCTION_RUNTIME_CODE)?;
+        context.set_current_function(crate::evm::r#const::ENTRY_FUNCTION_NAME)?;
 
         context.set_basic_block(context.current_function().borrow().entry_block());
-        context.set_code_type(CodeType::Runtime);
         self.inner.into_llvm(context)?;
         match context
             .basic_block()
@@ -74,8 +70,7 @@ where
         {
             Some(inkwell::values::InstructionOpcode::Br) => {}
             Some(inkwell::values::InstructionOpcode::Switch) => {}
-            _ => context
-                .build_unconditional_branch(context.current_function().borrow().return_block()),
+            _ => context.build_unreachable(),
         }
 
         context.set_basic_block(context.current_function().borrow().return_block());
