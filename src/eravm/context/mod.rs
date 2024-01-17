@@ -217,7 +217,6 @@ where
             contract_path,
             assembly_text.as_str(),
             metadata_hash,
-            self.solidity_mut().take_missing_libraries(),
             self.debug_config(),
         ) {
             Ok(build) => build,
@@ -495,22 +494,14 @@ where
     ///
     /// Gets a deployed library address from the dependency manager.
     ///
-    pub fn resolve_library(
-        &mut self,
-        path: &str,
-    ) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
+    pub fn resolve_library(&self, path: &str) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
         self.dependency_manager
             .to_owned()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .map(|manager| match manager.resolve_library(path) {
-                Ok(address) => {
-                    let address = self.field_const_str_hex(address.as_str());
-                    address
-                }
-                Err(_) => {
-                    self.solidity_mut().push_missing_library(path);
-                    self.field_const(0)
-                }
+            .and_then(|manager| {
+                let address = manager.resolve_library(path)?;
+                let address = self.field_const_str_hex(address.as_str());
+                Ok(address)
             })
     }
 
