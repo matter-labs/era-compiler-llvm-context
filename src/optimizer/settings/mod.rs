@@ -14,7 +14,7 @@ use self::size_level::SizeLevel;
 ///
 /// The LLVM optimizer settings.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq)]
 pub struct Settings {
     /// The middle-end optimization level.
     pub level_middle_end: inkwell::OptimizationLevel,
@@ -22,6 +22,9 @@ pub struct Settings {
     pub level_middle_end_size: SizeLevel,
     /// The back-end optimization level.
     pub level_back_end: inkwell::OptimizationLevel,
+
+    /// Fallback to optimizing for size if the bytecode is too large.
+    pub has_fallback_to_size_enabled: bool,
 
     /// Whether the LLVM `verify each` option is enabled.
     pub is_verify_each_enabled: bool,
@@ -42,6 +45,8 @@ impl Settings {
             level_middle_end,
             level_middle_end_size,
             level_back_end,
+
+            has_fallback_to_size_enabled: false,
 
             is_verify_each_enabled: false,
             is_debug_logging_enabled: false,
@@ -64,6 +69,8 @@ impl Settings {
             level_middle_end_size,
             level_back_end,
 
+            has_fallback_to_size_enabled: false,
+
             is_verify_each_enabled,
             is_debug_logging_enabled,
         }
@@ -75,18 +82,23 @@ impl Settings {
     pub fn try_from_cli(value: char) -> anyhow::Result<Self> {
         Ok(match value {
             '0' => Self::new(
+                // The middle-end optimization level.
                 inkwell::OptimizationLevel::None,
+                // The middle-end size optimization level.
                 SizeLevel::Zero,
+                // The back-end optimization level.
                 inkwell::OptimizationLevel::None,
             ),
             '1' => Self::new(
                 inkwell::OptimizationLevel::Less,
                 SizeLevel::Zero,
+                // The back-end does not currently distinguish between O1, O2, and O3.
                 inkwell::OptimizationLevel::Less,
             ),
             '2' => Self::new(
                 inkwell::OptimizationLevel::Default,
                 SizeLevel::Zero,
+                // The back-end does not currently distinguish between O1, O2, and O3.
                 inkwell::OptimizationLevel::Default,
             ),
             '3' => Self::new(
@@ -95,11 +107,13 @@ impl Settings {
                 inkwell::OptimizationLevel::Aggressive,
             ),
             's' => Self::new(
+                // The middle-end optimization level is ignored when SizeLevel is set.
                 inkwell::OptimizationLevel::Default,
                 SizeLevel::S,
                 inkwell::OptimizationLevel::Aggressive,
             ),
             'z' => Self::new(
+                // The middle-end optimization level is ignored when SizeLevel is set.
                 inkwell::OptimizationLevel::Default,
                 SizeLevel::Z,
                 inkwell::OptimizationLevel::Aggressive,
@@ -204,6 +218,28 @@ impl Settings {
         combinations.extend(size_combinations);
 
         combinations
+    }
+
+    ///
+    /// Sets the fallback to optimizing for size if the bytecode is too large.
+    ///
+    pub fn set_fallback_to_size(&mut self) {
+        self.has_fallback_to_size_enabled = true;
+    }
+
+    ///
+    /// Gets the fallback to optimizing for size if the bytecode is too large.
+    ///
+    pub fn has_fallback_to_size(&self) -> bool {
+        self.has_fallback_to_size_enabled
+    }
+}
+
+impl PartialEq for Settings {
+    fn eq(&self, other: &Self) -> bool {
+        self.level_middle_end == other.level_middle_end
+            && self.level_middle_end_size == other.level_middle_end_size
+            && self.level_back_end == other.level_back_end
     }
 }
 

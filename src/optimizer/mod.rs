@@ -14,7 +14,7 @@ use self::settings::Settings;
 ///
 /// The LLVM optimizing tools.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Optimizer {
     /// The optimizer settings.
     settings: Settings,
