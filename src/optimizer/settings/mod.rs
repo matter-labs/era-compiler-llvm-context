@@ -82,18 +82,23 @@ impl Settings {
     pub fn try_from_cli(value: char) -> anyhow::Result<Self> {
         Ok(match value {
             '0' => Self::new(
+                // The middle-end optimization level.
                 inkwell::OptimizationLevel::None,
+                // The middle-end size optimization level.
                 SizeLevel::Zero,
+                // The back-end optimization level.
                 inkwell::OptimizationLevel::None,
             ),
             '1' => Self::new(
                 inkwell::OptimizationLevel::Less,
                 SizeLevel::Zero,
+                // The back-end does not currently distinguish between O1, O2, and O3.
                 inkwell::OptimizationLevel::Less,
             ),
             '2' => Self::new(
                 inkwell::OptimizationLevel::Default,
                 SizeLevel::Zero,
+                // The back-end does not currently distinguish between O1, O2, and O3.
                 inkwell::OptimizationLevel::Default,
             ),
             '3' => Self::new(
@@ -102,11 +107,13 @@ impl Settings {
                 inkwell::OptimizationLevel::Aggressive,
             ),
             's' => Self::new(
+                // The middle-end optimization level is ignored when SizeLevel is set.
                 inkwell::OptimizationLevel::Default,
                 SizeLevel::S,
                 inkwell::OptimizationLevel::Aggressive,
             ),
             'z' => Self::new(
+                // The middle-end optimization level is ignored when SizeLevel is set.
                 inkwell::OptimizationLevel::Default,
                 SizeLevel::Z,
                 inkwell::OptimizationLevel::Aggressive,
