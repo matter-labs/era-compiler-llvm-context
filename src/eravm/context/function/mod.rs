@@ -145,11 +145,23 @@ impl<'ctx> Function<'ctx> {
         force: bool,
     ) {
         for attribute_kind in attributes.into_iter() {
-            if attribute_kind == Attribute::AlwaysInline && force {
+            let is_optimize_none_set = declaration
+                .value
+                .get_enum_attribute(
+                    inkwell::attributes::AttributeLoc::Function,
+                    Attribute::OptimizeNone as u32,
+                )
+                .is_some();
+            if !is_optimize_none_set && attribute_kind == Attribute::AlwaysInline && force {
                 declaration.value.remove_enum_attribute(
                     inkwell::attributes::AttributeLoc::Function,
                     Attribute::NoInline as u32,
                 );
+                declaration.value.add_attribute(
+                    inkwell::attributes::AttributeLoc::Function,
+                    llvm.create_enum_attribute(Attribute::AlwaysInline as u32, 0),
+                );
+                continue;
             }
 
             declaration.value.add_attribute(
