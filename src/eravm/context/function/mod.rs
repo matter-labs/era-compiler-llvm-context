@@ -136,16 +136,51 @@ impl<'ctx> Function<'ctx> {
     }
 
     ///
-    /// Sets the CXA-throw attributes.
+    /// Sets the memory writer function attributes.
     ///
-    pub fn set_cxa_throw_attributes(
+    pub fn set_attributes(
         llvm: &'ctx inkwell::context::Context,
         declaration: Declaration<'ctx>,
+        attributes: Vec<Attribute>,
+        force: bool,
     ) {
-        declaration.value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
-            llvm.create_enum_attribute(Attribute::NoProfile as u32, 0),
-        );
+        for attribute_kind in attributes.into_iter() {
+            match attribute_kind {
+                attribute_kind @ Attribute::AlwaysInline if force => {
+                    let is_optimize_none_set = declaration
+                        .value
+                        .get_enum_attribute(
+                            inkwell::attributes::AttributeLoc::Function,
+                            Attribute::OptimizeNone as u32,
+                        )
+                        .is_some();
+                    if !is_optimize_none_set {
+                        declaration.value.remove_enum_attribute(
+                            inkwell::attributes::AttributeLoc::Function,
+                            Attribute::NoInline as u32,
+                        );
+                        declaration.value.add_attribute(
+                            inkwell::attributes::AttributeLoc::Function,
+                            llvm.create_enum_attribute(attribute_kind as u32, 0),
+                        );
+                    }
+                }
+                attribute_kind @ Attribute::NoInline if force => {
+                    declaration.value.remove_enum_attribute(
+                        inkwell::attributes::AttributeLoc::Function,
+                        Attribute::AlwaysInline as u32,
+                    );
+                    declaration.value.add_attribute(
+                        inkwell::attributes::AttributeLoc::Function,
+                        llvm.create_enum_attribute(attribute_kind as u32, 0),
+                    );
+                }
+                attribute_kind => declaration.value.add_attribute(
+                    inkwell::attributes::AttributeLoc::Function,
+                    llvm.create_enum_attribute(attribute_kind as u32, 0),
+                ),
+            }
+        }
     }
 
     ///
@@ -158,24 +193,27 @@ impl<'ctx> Function<'ctx> {
         declaration: Declaration<'ctx>,
         optimizer: &Optimizer,
     ) {
-        if optimizer.settings().level_middle_end_size == SizeLevel::Z {
-            declaration.value.add_attribute(
-                inkwell::attributes::AttributeLoc::Function,
-                llvm.create_enum_attribute(Attribute::OptimizeForSize as u32, 0),
+        if optimizer.settings().level_middle_end == inkwell::OptimizationLevel::None {
+            Self::set_attributes(
+                llvm,
+                declaration,
+                vec![Attribute::OptimizeNone, Attribute::NoInline],
+                false,
             );
-            declaration.value.add_attribute(
-                inkwell::attributes::AttributeLoc::Function,
-                llvm.create_enum_attribute(Attribute::MinSize as u32, 0),
+        } else if optimizer.settings().level_middle_end_size == SizeLevel::Z {
+            Self::set_attributes(
+                llvm,
+                declaration,
+                vec![Attribute::OptimizeForSize, Attribute::MinSize],
+                false,
             );
         }
 
-        declaration.value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
-            llvm.create_enum_attribute(Attribute::NoFree as u32, 0),
-        );
-        declaration.value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
-            llvm.create_enum_attribute(Attribute::NullPointerIsValid as u32, 0),
+        Self::set_attributes(
+            llvm,
+            declaration,
+            vec![Attribute::NoFree, Attribute::NullPointerIsValid],
+            false,
         );
     }
 
@@ -188,10 +226,7 @@ impl<'ctx> Function<'ctx> {
         optimizer: &Optimizer,
     ) {
         if optimizer.settings().level_middle_end_size == SizeLevel::Z {
-            declaration.value.add_attribute(
-                inkwell::attributes::AttributeLoc::Function,
-                llvm.create_enum_attribute(Attribute::NoInline as u32, 0),
-            );
+            Self::set_attributes(llvm, declaration, vec![Attribute::NoInline], false);
         }
     }
 
@@ -202,10 +237,17 @@ impl<'ctx> Function<'ctx> {
         llvm: &'ctx inkwell::context::Context,
         declaration: Declaration<'ctx>,
     ) {
-        declaration.value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
-            llvm.create_enum_attribute(Attribute::NoInline as u32, 0),
-        );
+        Self::set_attributes(llvm, declaration, vec![Attribute::NoInline], false);
+    }
+
+    ///
+    /// Sets the CXA-throw attributes.
+    ///
+    pub fn set_cxa_throw_attributes(
+        llvm: &'ctx inkwell::context::Context,
+        declaration: Declaration<'ctx>,
+    ) {
+        Self::set_attributes(llvm, declaration, vec![Attribute::NoProfile], false);
     }
 
     ///
@@ -215,35 +257,17 @@ impl<'ctx> Function<'ctx> {
         llvm: &'ctx inkwell::context::Context,
         declaration: Declaration<'ctx>,
     ) {
-        for attribute_kind in [
-            Attribute::MustProgress,
-            Attribute::NoUnwind,
-            Attribute::ReadNone,
-            Attribute::WillReturn,
-        ]
-        .into_iter()
-        {
-            declaration.value.add_attribute(
-                inkwell::attributes::AttributeLoc::Function,
-                llvm.create_enum_attribute(attribute_kind as u32, 0),
-            );
-        }
-    }
-
-    ///
-    /// Sets the memory writer function attributes.
-    ///
-    pub fn set_function_attributes(
-        llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
-        attributes: Vec<Attribute>,
-    ) {
-        for attribute_kind in attributes.into_iter() {
-            declaration.value.add_attribute(
-                inkwell::attributes::AttributeLoc::Function,
-                llvm.create_enum_attribute(attribute_kind as u32, 0),
-            );
-        }
+        Self::set_attributes(
+            llvm,
+            declaration,
+            vec![
+                Attribute::MustProgress,
+                Attribute::NoUnwind,
+                Attribute::ReadNone,
+                Attribute::WillReturn,
+            ],
+            false,
+        );
     }
 
     ///
