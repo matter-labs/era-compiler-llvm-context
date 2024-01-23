@@ -446,7 +446,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, mstore8, optimizer);
-        Function::set_function_attributes(
+        Function::set_attributes(
             llvm,
             mstore8,
             vec![
@@ -454,6 +454,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 Attribute::NoUnwind,
                 Attribute::WillReturn,
             ],
+            false,
         );
 
         let sha3 = Self::declare(
@@ -479,10 +480,11 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, sha3, optimizer);
-        Function::set_function_attributes(
+        Function::set_attributes(
             llvm,
             sha3,
             vec![Attribute::ArgMemOnly, Attribute::ReadOnly],
+            false,
         );
 
         let system_request = Self::declare(
@@ -511,10 +513,11 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, system_request, optimizer);
-        Function::set_function_attributes(
+        Function::set_attributes(
             llvm,
             system_request,
             vec![Attribute::ArgMemOnly, Attribute::ReadOnly],
+            false,
         );
 
         let external_call_arguments: Vec<inkwell::types::BasicMetadataTypeEnum> = vec![
