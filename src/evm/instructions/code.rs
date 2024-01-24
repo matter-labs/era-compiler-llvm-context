@@ -44,7 +44,7 @@ pub fn copy<'ctx, D>(
 
     let source = Pointer::new_with_offset(
         context,
-        AddressSpace::Calldata,
+        AddressSpace::Code,
         context.byte_type(),
         source_offset,
         "codecopy_source_pointer",
