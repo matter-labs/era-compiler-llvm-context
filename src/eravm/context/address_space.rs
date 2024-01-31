@@ -19,6 +19,8 @@ pub enum AddressSpace {
     Code,
     /// The storage.
     Storage,
+    /// The transient storage.
+    TransientStorage,
 }
 
 impl From<AddressSpace> for inkwell::AddressSpace {
@@ -30,6 +32,7 @@ impl From<AddressSpace> for inkwell::AddressSpace {
             AddressSpace::Generic => Self::from(3),
             AddressSpace::Code => Self::from(4),
             AddressSpace::Storage => Self::from(5),
+            AddressSpace::TransientStorage => Self::from(6),
         }
     }
 }
