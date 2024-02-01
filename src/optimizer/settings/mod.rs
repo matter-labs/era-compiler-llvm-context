@@ -24,7 +24,9 @@ pub struct Settings {
     pub level_back_end: inkwell::OptimizationLevel,
 
     /// Fallback to optimizing for size if the bytecode is too large.
-    pub has_fallback_to_size_enabled: bool,
+    pub is_fallback_to_size_enabled: bool,
+    /// Whether the system request memoization is disabled.
+    pub is_system_request_memoization_disabled: bool,
 
     /// Whether the LLVM `verify each` option is enabled.
     pub is_verify_each_enabled: bool,
@@ -46,7 +48,8 @@ impl Settings {
             level_middle_end_size,
             level_back_end,
 
-            has_fallback_to_size_enabled: false,
+            is_fallback_to_size_enabled: false,
+            is_system_request_memoization_disabled: false,
 
             is_verify_each_enabled: false,
             is_debug_logging_enabled: false,
@@ -69,7 +72,8 @@ impl Settings {
             level_middle_end_size,
             level_back_end,
 
-            has_fallback_to_size_enabled: false,
+            is_fallback_to_size_enabled: false,
+            is_system_request_memoization_disabled: false,
 
             is_verify_each_enabled,
             is_debug_logging_enabled,
@@ -223,15 +227,29 @@ impl Settings {
     ///
     /// Sets the fallback to optimizing for size if the bytecode is too large.
     ///
-    pub fn set_fallback_to_size(&mut self) {
-        self.has_fallback_to_size_enabled = true;
+    pub fn enable_fallback_to_size(&mut self) {
+        self.is_fallback_to_size_enabled = true;
     }
 
     ///
-    /// Gets the fallback to optimizing for size if the bytecode is too large.
+    /// Disables the system request memoization.
     ///
-    pub fn has_fallback_to_size(&self) -> bool {
-        self.has_fallback_to_size_enabled
+    pub fn disable_system_request_memoization(&mut self) {
+        self.is_system_request_memoization_disabled = true;
+    }
+
+    ///
+    /// Whether the fallback to optimizing for size is enabled.
+    ///
+    pub fn is_fallback_to_size_enabled(&self) -> bool {
+        self.is_fallback_to_size_enabled
+    }
+
+    ///
+    /// Whether the system request memoization is disabled.
+    ///
+    pub fn is_system_request_memoization_disabled(&self) -> bool {
+        self.is_system_request_memoization_disabled
     }
 }
 
