@@ -225,7 +225,7 @@ where
             Ok(build) => build,
             Err(_error)
                 if self.optimizer.settings() != &OptimizerSettings::size()
-                    && self.optimizer.settings().has_fallback_to_size() =>
+                    && self.optimizer.settings().is_fallback_to_size_enabled() =>
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
                 self.module = module_clone;
