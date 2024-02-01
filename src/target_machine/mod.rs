@@ -38,13 +38,13 @@ impl TargetMachine {
     /// A separate instance for every optimization level is created.
     ///
     pub fn new(target: Target, optimizer_settings: &OptimizerSettings) -> anyhow::Result<Self> {
-        // if optimizer_settings.is_system_request_memoization_disabled() {
-        inkwell::support::parse_command_line_options(
-            2,
-            &[target.name(), "-eravm-disable-sha3-sreq-cse"],
-            "Disables system request memoization",
-        );
-        // }
+        if optimizer_settings.is_system_request_memoization_disabled() {
+            inkwell::support::parse_command_line_options(
+                2,
+                &[target.name(), "-eravm-disable-sha3-sreq-cse"],
+                "Disables system request memoization",
+            );
+        }
 
         let target_machine = inkwell::targets::Target::from_name(target.name())
             .ok_or_else(|| anyhow::anyhow!("LLVM target machine `{}` not found", target.name()))?
