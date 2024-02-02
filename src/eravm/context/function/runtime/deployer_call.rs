@@ -141,7 +141,7 @@ where
 
         let salt_offset = context.builder().build_int_add(
             input_offset,
-            context.field_const(compiler_common::BYTE_LENGTH_X32 as u64),
+            context.field_const(era_compiler_common::BYTE_LENGTH_X32 as u64),
             "deployer_call_salt_offset",
         );
         let salt_pointer = Pointer::new_with_offset(
@@ -155,7 +155,7 @@ where
 
         let arguments_offset_offset = context.builder().build_int_add(
             salt_offset,
-            context.field_const((compiler_common::BYTE_LENGTH_FIELD * 2) as u64),
+            context.field_const((era_compiler_common::BYTE_LENGTH_FIELD * 2) as u64),
             "deployer_call_arguments_offset_offset",
         );
         let arguments_offset_pointer = Pointer::new_with_offset(
@@ -169,14 +169,14 @@ where
             arguments_offset_pointer,
             context.field_const(
                 (crate::eravm::DEPLOYER_CALL_HEADER_SIZE
-                    - (compiler_common::BYTE_LENGTH_X32 + compiler_common::BYTE_LENGTH_FIELD))
-                    as u64,
+                    - (era_compiler_common::BYTE_LENGTH_X32
+                        + era_compiler_common::BYTE_LENGTH_FIELD)) as u64,
             ),
         );
 
         let arguments_length_offset = context.builder().build_int_add(
             arguments_offset_offset,
-            context.field_const(compiler_common::BYTE_LENGTH_FIELD as u64),
+            context.field_const(era_compiler_common::BYTE_LENGTH_FIELD as u64),
             "deployer_call_arguments_length_offset",
         );
         let arguments_length_pointer = Pointer::new_with_offset(
@@ -263,7 +263,7 @@ where
             &[
                 context.field_const(0),
                 context
-                    .integer_type(compiler_common::BIT_LENGTH_X32)
+                    .integer_type(era_compiler_common::BIT_LENGTH_X32)
                     .const_zero(),
             ],
             context
@@ -280,7 +280,7 @@ where
             &[
                 context.field_const(0),
                 context
-                    .integer_type(compiler_common::BIT_LENGTH_X32)
+                    .integer_type(era_compiler_common::BIT_LENGTH_X32)
                     .const_int(1, false),
             ],
             context.bool_type().as_basic_type_enum(),
