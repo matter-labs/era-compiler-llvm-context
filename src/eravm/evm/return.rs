@@ -35,7 +35,7 @@ where
             );
             context.build_store(
                 immutables_offset_pointer,
-                context.field_const(compiler_common::BYTE_LENGTH_FIELD as u64),
+                context.field_const(era_compiler_common::BYTE_LENGTH_FIELD as u64),
             );
 
             let immutables_number_pointer = Pointer::new_with_offset(
@@ -44,7 +44,7 @@ where
                 context.field_type(),
                 context.field_const(
                     crate::eravm::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA
-                        + (compiler_common::BYTE_LENGTH_FIELD as u64),
+                        + (era_compiler_common::BYTE_LENGTH_FIELD as u64),
                 ),
                 "immutables_number_pointer",
             );
@@ -52,7 +52,7 @@ where
             context.build_store(
                 immutables_number_pointer,
                 context.field_const(
-                    (immutable_values_size / compiler_common::BYTE_LENGTH_FIELD) as u64,
+                    (immutable_values_size / era_compiler_common::BYTE_LENGTH_FIELD) as u64,
                 ),
             );
             let immutables_size = context.builder().build_int_mul(
@@ -62,7 +62,7 @@ where
             );
             let return_data_length = context.builder().build_int_add(
                 immutables_size,
-                context.field_const((compiler_common::BYTE_LENGTH_FIELD * 2) as u64),
+                context.field_const((era_compiler_common::BYTE_LENGTH_FIELD * 2) as u64),
                 "return_data_length",
             );
 

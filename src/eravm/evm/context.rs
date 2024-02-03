@@ -192,7 +192,7 @@ where
         .expect("Always exists");
     let meta_shifted = context.builder().build_right_shift(
         meta.into_int_value(),
-        context.field_const(compiler_common::BIT_LENGTH_X64 as u64),
+        context.field_const(era_compiler_common::BIT_LENGTH_X64 as u64),
         false,
         "msize_meta_shifted",
     );

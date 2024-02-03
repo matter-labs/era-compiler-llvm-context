@@ -179,7 +179,7 @@ where
                 &[
                     context.field_const(0),
                     context
-                        .integer_type(compiler_common::BIT_LENGTH_X32)
+                        .integer_type(era_compiler_common::BIT_LENGTH_X32)
                         .const_int(array_index as u64, false),
                 ],
                 context.field_type().as_basic_type_enum(),

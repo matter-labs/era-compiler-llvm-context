@@ -53,7 +53,7 @@ impl<'ctx> DebugInfo<'ctx> {
     ) -> anyhow::Result<inkwell::debug_info::DISubprogram<'ctx>> {
         let subroutine_type = self.builder.create_subroutine_type(
             self.compile_unit.get_file(),
-            Some(self.create_type(compiler_common::BIT_LENGTH_FIELD)?),
+            Some(self.create_type(era_compiler_common::BIT_LENGTH_FIELD)?),
             &[],
             inkwell::debug_info::DIFlags::zero(),
         );

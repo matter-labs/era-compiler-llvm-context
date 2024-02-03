@@ -132,7 +132,7 @@ where
     pub fn build(
         self,
         contract_path: &str,
-        metadata_hash: Option<[u8; compiler_common::BYTE_LENGTH_FIELD]>,
+        metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     ) -> anyhow::Result<Build> {
         let target_machine = TargetMachine::new(Target::EVM, self.optimizer.settings())?;
         target_machine.set_target_data(self.module());
@@ -436,7 +436,7 @@ where
         self.basic_block()
             .get_last_instruction()
             .expect("Always exists")
-            .set_alignment(compiler_common::BYTE_LENGTH_FIELD as u32)
+            .set_alignment(era_compiler_common::BYTE_LENGTH_FIELD as u32)
             .expect("Alignment is valid");
         Pointer::new(r#type, AddressSpace::Stack, pointer)
     }
@@ -454,9 +454,9 @@ where
         let value = self.builder.build_load(pointer.r#type, pointer.value, name);
 
         let alignment = if AddressSpace::Stack == pointer.address_space {
-            compiler_common::BYTE_LENGTH_FIELD
+            era_compiler_common::BYTE_LENGTH_FIELD
         } else {
-            compiler_common::BYTE_LENGTH_BYTE
+            era_compiler_common::BYTE_LENGTH_BYTE
         };
 
         self.basic_block()
@@ -479,9 +479,9 @@ where
         let instruction = self.builder.build_store(pointer.value, value);
 
         let alignment = if AddressSpace::Stack == pointer.address_space {
-            compiler_common::BYTE_LENGTH_FIELD
+            era_compiler_common::BYTE_LENGTH_FIELD
         } else {
-            compiler_common::BYTE_LENGTH_BYTE
+            era_compiler_common::BYTE_LENGTH_BYTE
         };
 
         instruction
@@ -691,7 +691,7 @@ where
     ///
     pub fn byte_type(&self) -> inkwell::types::IntType<'ctx> {
         self.llvm
-            .custom_width_int_type(compiler_common::BIT_LENGTH_BYTE as u32)
+            .custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
     }
 
     ///
@@ -706,7 +706,7 @@ where
     ///
     pub fn field_type(&self) -> inkwell::types::IntType<'ctx> {
         self.llvm
-            .custom_width_int_type(compiler_common::BIT_LENGTH_FIELD as u32)
+            .custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
     }
 
     ///
@@ -775,7 +775,7 @@ where
             if argument.is_pointer_value() {
                 call_site_value.set_alignment_attribute(
                     inkwell::attributes::AttributeLoc::Param(index as u32),
-                    compiler_common::BYTE_LENGTH_FIELD as u32,
+                    era_compiler_common::BYTE_LENGTH_FIELD as u32,
                 );
                 call_site_value.add_attribute(
                     inkwell::attributes::AttributeLoc::Param(index as u32),
@@ -811,14 +811,14 @@ where
                         inkwell::attributes::AttributeLoc::Param(index as u32),
                         self.llvm.create_enum_attribute(
                             Attribute::Dereferenceable as u32,
-                            (compiler_common::BIT_LENGTH_FIELD * 2) as u64,
+                            (era_compiler_common::BIT_LENGTH_FIELD * 2) as u64,
                         ),
                     );
                     call_site_value.add_attribute(
                         inkwell::attributes::AttributeLoc::Return,
                         self.llvm.create_enum_attribute(
                             Attribute::Dereferenceable as u32,
-                            (compiler_common::BIT_LENGTH_FIELD * 2) as u64,
+                            (era_compiler_common::BIT_LENGTH_FIELD * 2) as u64,
                         ),
                     );
                 }
@@ -843,7 +843,7 @@ where
         {
             call_site_value.set_alignment_attribute(
                 inkwell::attributes::AttributeLoc::Return,
-                compiler_common::BYTE_LENGTH_FIELD as u32,
+                era_compiler_common::BYTE_LENGTH_FIELD as u32,
             );
             call_site_value.add_attribute(
                 inkwell::attributes::AttributeLoc::Return,
