@@ -4,7 +4,6 @@
 
 pub(crate) mod debug_config;
 pub(crate) mod eravm;
-pub(crate) mod evm_version;
 pub(crate) mod optimizer;
 pub(crate) mod target_machine;
 
@@ -67,7 +66,6 @@ pub use self::eravm::Dependency as EraVMDependency;
 pub use self::eravm::DummyDependency as EraVMDummyDependency;
 pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
 pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
-pub use self::evm_version::EVMVersion;
 pub use self::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
 pub use self::optimizer::settings::Settings as OptimizerSettings;
 pub use self::optimizer::Optimizer;
