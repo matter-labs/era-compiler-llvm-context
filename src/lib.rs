@@ -9,10 +9,14 @@ pub(crate) mod evm;
 pub(crate) mod optimizer;
 pub(crate) mod target_machine;
 
+pub use self::context::address_space::IAddressSpace;
 pub use self::context::argument::Argument;
 pub use self::context::attribute::Attribute;
 pub use self::context::block_key::BlockKey;
 pub use self::context::code_type::CodeType;
+pub use self::context::function::declaration::Declaration as FunctionDeclaration;
+pub use self::context::function::r#return::Return as FunctionReturn;
+pub use self::context::pointer::Pointer;
 pub use self::context::r#loop::Loop;
 pub use self::context::IContext;
 pub use self::debug_config::ir_type::IRType as DebugConfigIR;
