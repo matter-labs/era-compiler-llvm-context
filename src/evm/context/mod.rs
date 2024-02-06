@@ -541,37 +541,6 @@ where
             );
         }
     }
-
-    ///
-    /// Sets the EVM legacy assembly data.
-    ///
-    pub fn set_evmla_data(&mut self, data: EVMLAData<'ctx>) {
-        self.evmla_data = Some(data);
-    }
-
-    ///
-    /// Returns the EVM legacy assembly data reference.
-    ///
-    /// # Panics
-    /// If the EVM data has not been initialized.
-    ///
-    pub fn evmla(&self) -> &EVMLAData<'ctx> {
-        self.evmla_data
-            .as_ref()
-            .expect("The EVMLA data must have been initialized")
-    }
-
-    ///
-    /// Returns the EVM legacy assembly data mutable reference.
-    ///
-    /// # Panics
-    /// If the EVM data has not been initialized.
-    ///
-    pub fn evmla_mut(&mut self) -> &mut EVMLAData<'ctx> {
-        self.evmla_data
-            .as_mut()
-            .expect("The EVMLA data must have been initialized")
-    }
 }
 
 impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
@@ -579,6 +548,14 @@ where
     D: Dependency + Clone,
 {
     type Pointer = Pointer<'ctx>;
+
+    type SolidityData = ();
+
+    type YulData = ();
+
+    type EVMLAData = EVMLAData<'ctx>;
+
+    type VyperData = ();
 
     fn llvm(&self) -> &'ctx inkwell::context::Context {
         self.llvm
@@ -810,5 +787,53 @@ where
         let field_types: Vec<inkwell::types::BasicTypeEnum<'ctx>> =
             field_types.iter().map(T::as_basic_type_enum).collect();
         self.llvm.struct_type(field_types.as_slice(), false)
+    }
+
+    fn set_solidity_data(&mut self, _data: Self::SolidityData) {
+        panic!("Unused with the EVM target");
+    }
+
+    fn solidity(&self) -> &Self::SolidityData {
+        panic!("Unused with the EVM target");
+    }
+
+    fn solidity_mut(&mut self) -> &mut Self::SolidityData {
+        panic!("Unused with the EVM target");
+    }
+
+    fn set_yul_data(&mut self, _data: Self::YulData) {
+        panic!("Unused with the EVM target");
+    }
+
+    fn yul(&self) -> &Self::YulData {
+        panic!("Unused with the EVM target");
+    }
+
+    fn yul_mut(&mut self) -> &mut Self::YulData {
+        panic!("Unused with the EVM target");
+    }
+
+    fn set_evmla_data(&mut self, data: Self::EVMLAData) {
+        self.evmla_data = Some(data);
+    }
+
+    fn evmla(&self) -> &Self::EVMLAData {
+        self.evmla_data
+            .as_ref()
+            .expect("The EVMLA data must have been initialized")
+    }
+
+    fn evmla_mut(&mut self) -> &mut Self::EVMLAData {
+        self.evmla_data
+            .as_mut()
+            .expect("The EVMLA data must have been initialized")
+    }
+
+    fn set_vyper_data(&mut self, _data: Self::VyperData) {
+        panic!("Unused with the EVM target");
+    }
+
+    fn vyper(&self) -> &Self::VyperData {
+        panic!("Unused with the EVM target");
     }
 }

@@ -969,118 +969,6 @@ where
     }
 
     ///
-    /// Sets the Solidity data.
-    ///
-    pub fn set_solidity_data(&mut self, data: SolidityData) {
-        self.solidity_data = Some(data);
-    }
-
-    ///
-    /// Returns the Solidity data reference.
-    ///
-    /// # Panics
-    /// If the Solidity data has not been initialized.
-    ///
-    pub fn solidity(&self) -> &SolidityData {
-        self.solidity_data
-            .as_ref()
-            .expect("The Solidity data must have been initialized")
-    }
-
-    ///
-    /// Returns the Solidity data mutable reference.
-    ///
-    /// # Panics
-    /// If the Solidity data has not been initialized.
-    ///
-    pub fn solidity_mut(&mut self) -> &mut SolidityData {
-        self.solidity_data
-            .as_mut()
-            .expect("The Solidity data must have been initialized")
-    }
-
-    ///
-    /// Sets the Yul data.
-    ///
-    pub fn set_yul_data(&mut self, data: YulData) {
-        self.yul_data = Some(data);
-    }
-
-    ///
-    /// Returns the Yul data reference.
-    ///
-    /// # Panics
-    /// If the Yul data has not been initialized.
-    ///
-    pub fn yul(&self) -> &YulData {
-        self.yul_data
-            .as_ref()
-            .expect("The Yul data must have been initialized")
-    }
-
-    ///
-    /// Returns the Yul data mutable reference.
-    ///
-    /// # Panics
-    /// If the Yul data has not been initialized.
-    ///
-    pub fn yul_mut(&mut self) -> &mut YulData {
-        self.yul_data
-            .as_mut()
-            .expect("The Yul data must have been initialized")
-    }
-
-    ///
-    /// Sets the EVM legacy assembly data.
-    ///
-    pub fn set_evmla_data(&mut self, data: EVMLAData<'ctx>) {
-        self.evmla_data = Some(data);
-    }
-
-    ///
-    /// Returns the EVM legacy assembly data reference.
-    ///
-    /// # Panics
-    /// If the EVM data has not been initialized.
-    ///
-    pub fn evmla(&self) -> &EVMLAData<'ctx> {
-        self.evmla_data
-            .as_ref()
-            .expect("The EVMLA data must have been initialized")
-    }
-
-    ///
-    /// Returns the EVM legacy assembly data mutable reference.
-    ///
-    /// # Panics
-    /// If the EVM data has not been initialized.
-    ///
-    pub fn evmla_mut(&mut self) -> &mut EVMLAData<'ctx> {
-        self.evmla_data
-            .as_mut()
-            .expect("The EVMLA data must have been initialized")
-    }
-
-    ///
-    /// Sets the EVM legacy assembly data.
-    ///
-    pub fn set_vyper_data(&mut self, data: VyperData) {
-        self.vyper_data = Some(data);
-    }
-
-    ///
-    /// Returns the Vyper data reference.
-    ///
-    /// # Panics
-    /// If the Vyper data has not been initialized.
-    ///
-    pub fn vyper(&self) -> &VyperData {
-        self.vyper_data
-            .as_ref()
-            .expect("The Solidity data must have been initialized")
-    }
-
-    ///
     /// Returns the current number of immutables values in the contract.
     ///
     /// If the size is set manually, then it is returned. Otherwise, the number of elements in
@@ -1112,6 +1000,14 @@ where
     D: Dependency + Clone,
 {
     type Pointer = Pointer<'ctx>;
+
+    type SolidityData = SolidityData;
+
+    type YulData = YulData;
+
+    type EVMLAData = EVMLAData<'ctx>;
+
+    type VyperData = VyperData;
 
     fn llvm(&self) -> &'ctx inkwell::context::Context {
         self.llvm
@@ -1342,5 +1238,63 @@ where
         let field_types: Vec<inkwell::types::BasicTypeEnum<'ctx>> =
             field_types.iter().map(T::as_basic_type_enum).collect();
         self.llvm.struct_type(field_types.as_slice(), false)
+    }
+
+    fn set_solidity_data(&mut self, data: Self::SolidityData) {
+        self.solidity_data = Some(data);
+    }
+
+    fn solidity(&self) -> &Self::SolidityData {
+        self.solidity_data
+            .as_ref()
+            .expect("The Solidity data must have been initialized")
+    }
+
+    fn solidity_mut(&mut self) -> &mut Self::SolidityData {
+        self.solidity_data
+            .as_mut()
+            .expect("The Solidity data must have been initialized")
+    }
+
+    fn set_yul_data(&mut self, data: Self::YulData) {
+        self.yul_data = Some(data);
+    }
+
+    fn yul(&self) -> &Self::YulData {
+        self.yul_data
+            .as_ref()
+            .expect("The Yul data must have been initialized")
+    }
+
+    fn yul_mut(&mut self) -> &mut Self::YulData {
+        self.yul_data
+            .as_mut()
+            .expect("The Yul data must have been initialized")
+    }
+
+    fn set_evmla_data(&mut self, data: Self::EVMLAData) {
+        self.evmla_data = Some(data);
+    }
+
+    fn evmla(&self) -> &Self::EVMLAData {
+        self.evmla_data
+            .as_ref()
+            .expect("The EVMLA data must have been initialized")
+    }
+
+    fn evmla_mut(&mut self) -> &mut Self::EVMLAData {
+        self.evmla_data
+            .as_mut()
+            .expect("The EVMLA data must have been initialized")
+    }
+
+    fn set_vyper_data(&mut self, data: Self::VyperData) {
+        self.vyper_data = Some(data);
+    }
+
+    fn vyper(&self) -> &Self::VyperData {
+        self.vyper_data
+            .as_ref()
+            .expect("The Vyper data must have been initialized")
     }
 }

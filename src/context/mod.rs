@@ -21,6 +21,18 @@ pub trait IContext<'ctx> {
     /// The pointer type.
     type Pointer;
 
+    /// The Solidity extra data type.
+    type SolidityData;
+
+    /// The Yul extra data type.
+    type YulData;
+
+    /// The EVMLA extra data type.
+    type EVMLAData;
+
+    /// The Solidit extra data type.
+    type VyperData;
+
     ///
     /// Returns the inner LLVM context.
     ///
@@ -224,4 +236,80 @@ pub trait IContext<'ctx> {
     fn structure_type<T>(&self, field_types: &[T]) -> inkwell::types::StructType<'ctx>
     where
         T: BasicType<'ctx>;
+
+    ///
+    /// Sets the Solidity data.
+    ///
+    fn set_solidity_data(&mut self, data: Self::SolidityData);
+
+    ///
+    /// Returns the Solidity data reference.
+    ///
+    /// # Panics
+    /// If the Solidity data has not been initialized.
+    ///
+    fn solidity(&self) -> &Self::SolidityData;
+
+    ///
+    /// Returns the Solidity data mutable reference.
+    ///
+    /// # Panics
+    /// If the Solidity data has not been initialized.
+    ///
+    fn solidity_mut(&mut self) -> &mut Self::SolidityData;
+
+    ///
+    /// Sets the Yul data.
+    ///
+    fn set_yul_data(&mut self, data: Self::YulData);
+
+    ///
+    /// Returns the Yul data reference.
+    ///
+    /// # Panics
+    /// If the Yul data has not been initialized.
+    ///
+    fn yul(&self) -> &Self::YulData;
+
+    ///
+    /// Returns the Yul data mutable reference.
+    ///
+    /// # Panics
+    /// If the Yul data has not been initialized.
+    ///
+    fn yul_mut(&mut self) -> &mut Self::YulData;
+
+    ///
+    /// Sets the EVM legacy assembly data.
+    ///
+    fn set_evmla_data(&mut self, data: Self::EVMLAData);
+
+    ///
+    /// Returns the EVM legacy assembly data reference.
+    ///
+    /// # Panics
+    /// If the EVM data has not been initialized.
+    ///
+    fn evmla(&self) -> &Self::EVMLAData;
+
+    ///
+    /// Returns the EVM legacy assembly data mutable reference.
+    ///
+    /// # Panics
+    /// If the EVM data has not been initialized.
+    ///
+    fn evmla_mut(&mut self) -> &mut Self::EVMLAData;
+
+    ///
+    /// Sets the EVM legacy assembly data.
+    ///
+    fn set_vyper_data(&mut self, data: Self::VyperData);
+
+    ///
+    /// Returns the Vyper data reference.
+    ///
+    /// # Panics
+    /// If the Vyper data has not been initialized.
+    ///
+    fn vyper(&self) -> &Self::VyperData;
 }
