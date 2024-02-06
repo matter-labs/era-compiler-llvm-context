@@ -72,7 +72,6 @@ pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
 pub use self::evm::context::address_space::AddressSpace as EVMAddressSpace;
 pub use self::evm::context::build::Build as EVMBuild;
 pub use self::evm::context::evmla_data::EVMLAData as EVMContextEVMLAData;
-pub use self::evm::context::function::block::evmla_data::key::Key as EVMFunctionBlockKey;
 pub use self::evm::context::function::block::evmla_data::EVMLAData as EVMFunctionBlockEVMLAData;
 pub use self::evm::context::function::block::Block as EVMFunctionBlock;
 pub use self::evm::context::function::declaration::Declaration as EVMFunctionDeclaration;
