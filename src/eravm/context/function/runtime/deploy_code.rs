@@ -4,7 +4,6 @@
 
 use std::marker::PhantomData;
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::code_type::CodeType;
 use crate::context::pointer::Pointer;
 use crate::context::IContext;
@@ -20,24 +19,20 @@ use crate::eravm::WriteLLVM;
 /// Is a special function that is only used by the front-end generated code.
 ///
 #[derive(Debug)]
-pub struct DeployCode<B, AS, D>
+pub struct DeployCode<B, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
     D: Dependency + Clone,
 {
     /// The deploy code AST representation.
     inner: B,
     /// The `D` phantom data.
-    _pd_d: PhantomData<D>,
-    /// The `D` phantom data.
-    _pd_as: PhantomData<AS>,
+    _pd: PhantomData<D>,
 }
 
-impl<B, AS, D> DeployCode<B, AS, D>
+impl<B, D> DeployCode<B, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
     D: Dependency + Clone,
 {
     ///
@@ -46,16 +41,14 @@ where
     pub fn new(inner: B) -> Self {
         Self {
             inner,
-            _pd_d: PhantomData,
-            _pd_as: PhantomData,
+            _pd: PhantomData,
         }
     }
 }
 
-impl<B, AS, D> WriteLLVM<D> for DeployCode<B, AS, D>
+impl<B, D> WriteLLVM<D> for DeployCode<B, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
     D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
