@@ -2,7 +2,7 @@
 //! The LLVM IR generator function block key.
 //!
 
-use crate::code_type::CodeType;
+use crate::context::code_type::CodeType;
 
 ///
 /// The LLVM IR generator function block key.
@@ -10,14 +10,14 @@ use crate::code_type::CodeType;
 /// Is only relevant to the EVM legacy assembly.
 ///
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Key {
+pub struct BlockKey {
     /// The block code type.
     pub code_type: CodeType,
     /// The block tag.
     pub tag: num::BigUint,
 }
 
-impl Key {
+impl BlockKey {
     ///
     /// A shortcut constructor.
     ///
@@ -26,7 +26,7 @@ impl Key {
     }
 }
 
-impl std::fmt::Display for Key {
+impl std::fmt::Display for BlockKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

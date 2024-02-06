@@ -14,7 +14,7 @@ pub mod yul_data;
 
 use std::collections::HashMap;
 
-use crate::attribute::Attribute;
+use crate::context::attribute::Attribute;
 use crate::eravm::context::pointer::Pointer;
 use crate::optimizer::settings::size_level::SizeLevel;
 use crate::optimizer::Optimizer;

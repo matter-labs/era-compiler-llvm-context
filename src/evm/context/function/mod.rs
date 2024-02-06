@@ -12,7 +12,7 @@ pub mod vyper_data;
 
 use std::collections::HashMap;
 
-use crate::attribute::Attribute;
+use crate::context::attribute::Attribute;
 use crate::evm::context::pointer::Pointer;
 use crate::optimizer::settings::size_level::SizeLevel;
 use crate::optimizer::Optimizer;

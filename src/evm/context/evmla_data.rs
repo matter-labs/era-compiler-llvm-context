@@ -2,7 +2,7 @@
 //! The LLVM IR generator EVM legacy assembly data.
 //!
 
-use crate::argument::Argument;
+use crate::context::argument::Argument;
 
 ///
 /// The LLVM IR generator EVM legacy assembly data.

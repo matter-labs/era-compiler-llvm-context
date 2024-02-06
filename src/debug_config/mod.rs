@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::code_type::CodeType;
+use crate::context::code_type::CodeType;
 
 use self::ir_type::IRType;
 

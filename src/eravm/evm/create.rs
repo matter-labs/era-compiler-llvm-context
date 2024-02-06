@@ -5,8 +5,9 @@
 use inkwell::values::BasicValue;
 use num::Zero;
 
-use crate::argument::Argument;
-use crate::code_type::CodeType;
+use crate::context::argument::Argument;
+use crate::context::code_type::CodeType;
+use crate::context::IContext;
 use crate::eravm::context::function::runtime::Runtime;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;

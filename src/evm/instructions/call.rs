@@ -4,7 +4,8 @@
 
 use inkwell::values::BasicValue;
 
-use crate::argument::Argument;
+use crate::context::argument::Argument;
+use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::pointer::Pointer;
 use crate::evm::context::Context;

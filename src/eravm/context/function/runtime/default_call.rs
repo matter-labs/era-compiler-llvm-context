@@ -5,6 +5,7 @@
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
+use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::eravm::context::function::llvm_runtime::LLVMRuntime;

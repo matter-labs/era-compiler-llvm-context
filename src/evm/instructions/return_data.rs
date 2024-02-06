@@ -2,6 +2,7 @@
 //! Translates the return data instructions.
 //!
 
+use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::pointer::Pointer;
 use crate::evm::context::Context;

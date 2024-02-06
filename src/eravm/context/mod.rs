@@ -8,7 +8,6 @@ pub mod build;
 pub mod evmla_data;
 pub mod function;
 pub mod global;
-pub mod r#loop;
 pub mod pointer;
 pub mod solidity_data;
 pub mod vyper_data;
@@ -24,8 +23,10 @@ use std::rc::Rc;
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
-use crate::attribute::Attribute;
-use crate::code_type::CodeType;
+use crate::context::attribute::Attribute;
+use crate::context::code_type::CodeType;
+use crate::context::r#loop::Loop;
+use crate::context::IContext;
 use crate::eravm::DebugConfig;
 use crate::eravm::Dependency;
 use crate::optimizer::settings::Settings as OptimizerSettings;
@@ -44,7 +45,6 @@ use self::function::r#return::Return as FunctionReturn;
 use self::function::Function;
 use self::global::Global;
 use self::pointer::Pointer;
-use self::r#loop::Loop;
 use self::solidity_data::SolidityData;
 use self::vyper_data::VyperData;
 use self::yul_data::YulData;
@@ -244,41 +244,6 @@ where
     }
 
     ///
-    /// Returns the inner LLVM context.
-    ///
-    pub fn llvm(&self) -> &'ctx inkwell::context::Context {
-        self.llvm
-    }
-
-    ///
-    /// Returns the LLVM IR builder.
-    ///
-    pub fn builder(&self) -> &inkwell::builder::Builder<'ctx> {
-        &self.builder
-    }
-
-    ///
-    /// Returns the current LLVM IR module reference.
-    ///
-    pub fn module(&self) -> &inkwell::module::Module<'ctx> {
-        &self.module
-    }
-
-    ///
-    /// Sets the current code type (deploy or runtime).
-    ///
-    pub fn set_code_type(&mut self, code_type: CodeType) {
-        self.code_type = Some(code_type);
-    }
-
-    ///
-    /// Returns the current code type (deploy or runtime).
-    ///
-    pub fn code_type(&self) -> Option<CodeType> {
-        self.code_type.to_owned()
-    }
-
-    ///
     /// Returns the pointer to a global variable.
     ///
     pub fn get_global(&self, name: &str) -> anyhow::Result<Global<'ctx>> {
@@ -425,35 +390,6 @@ where
     }
 
     ///
-    /// Pushes a new loop context to the stack.
-    ///
-    pub fn push_loop(
-        &mut self,
-        body_block: inkwell::basic_block::BasicBlock<'ctx>,
-        continue_block: inkwell::basic_block::BasicBlock<'ctx>,
-        join_block: inkwell::basic_block::BasicBlock<'ctx>,
-    ) {
-        self.loop_stack
-            .push(Loop::new(body_block, continue_block, join_block));
-    }
-
-    ///
-    /// Pops the current loop context from the stack.
-    ///
-    pub fn pop_loop(&mut self) {
-        self.loop_stack.pop();
-    }
-
-    ///
-    /// Returns the current loop context.
-    ///
-    pub fn r#loop(&self) -> &Loop<'ctx> {
-        self.loop_stack
-            .last()
-            .expect("The current context is not in a loop")
-    }
-
-    ///
     /// Compiles a contract dependency, if the dependency manager is set.
     ///
     pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
@@ -519,150 +455,6 @@ where
     ///
     pub fn debug_config(&self) -> Option<&DebugConfig> {
         self.debug_config.as_ref()
-    }
-
-    ///
-    /// Appends a new basic block to the current function.
-    ///
-    pub fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'ctx> {
-        self.llvm
-            .append_basic_block(self.current_function().borrow().declaration().value, name)
-    }
-
-    ///
-    /// Sets the current basic block.
-    ///
-    pub fn set_basic_block(&self, block: inkwell::basic_block::BasicBlock<'ctx>) {
-        self.builder.position_at_end(block);
-    }
-
-    ///
-    /// Returns the current basic block.
-    ///
-    pub fn basic_block(&self) -> inkwell::basic_block::BasicBlock<'ctx> {
-        self.builder.get_insert_block().expect("Always exists")
-    }
-
-    ///
-    /// Builds a stack allocation instruction.
-    ///
-    /// Sets the alignment to 256 bits.
-    ///
-    pub fn build_alloca<T: BasicType<'ctx> + Clone + Copy>(
-        &self,
-        r#type: T,
-        name: &str,
-    ) -> Pointer<'ctx> {
-        let pointer = self.builder.build_alloca(r#type, name);
-        self.basic_block()
-            .get_last_instruction()
-            .expect("Always exists")
-            .set_alignment(era_compiler_common::BYTE_LENGTH_FIELD as u32)
-            .expect("Alignment is valid");
-        Pointer::new(r#type, AddressSpace::Stack, pointer)
-    }
-
-    ///
-    /// Builds a stack load instruction.
-    ///
-    /// Sets the alignment to 256 bits for the stack and 1 bit for the heap, parent, and child.
-    ///
-    pub fn build_load(
-        &self,
-        pointer: Pointer<'ctx>,
-        name: &str,
-    ) -> inkwell::values::BasicValueEnum<'ctx> {
-        let value = self.builder.build_load(pointer.r#type, pointer.value, name);
-
-        let alignment = if AddressSpace::Stack == pointer.address_space {
-            era_compiler_common::BYTE_LENGTH_FIELD
-        } else {
-            era_compiler_common::BYTE_LENGTH_BYTE
-        };
-
-        self.basic_block()
-            .get_last_instruction()
-            .expect("Always exists")
-            .set_alignment(alignment as u32)
-            .expect("Alignment is valid");
-        value
-    }
-
-    ///
-    /// Builds a stack store instruction.
-    ///
-    /// Sets the alignment to 256 bits for the stack and 1 bit for the heap, parent, and child.
-    ///
-    pub fn build_store<V>(&self, pointer: Pointer<'ctx>, value: V)
-    where
-        V: BasicValue<'ctx>,
-    {
-        let instruction = self.builder.build_store(pointer.value, value);
-
-        let alignment = if AddressSpace::Stack == pointer.address_space {
-            era_compiler_common::BYTE_LENGTH_FIELD
-        } else {
-            era_compiler_common::BYTE_LENGTH_BYTE
-        };
-
-        instruction
-            .set_alignment(alignment as u32)
-            .expect("Alignment is valid");
-    }
-
-    ///
-    /// Builds a GEP instruction.
-    ///
-    pub fn build_gep<T>(
-        &self,
-        pointer: Pointer<'ctx>,
-        indexes: &[inkwell::values::IntValue<'ctx>],
-        element_type: T,
-        name: &str,
-    ) -> Pointer<'ctx>
-    where
-        T: BasicType<'ctx>,
-    {
-        let value = unsafe {
-            self.builder
-                .build_gep(pointer.r#type, pointer.value, indexes, name)
-        };
-        Pointer::new(element_type, pointer.address_space, value)
-    }
-
-    ///
-    /// Builds a conditional branch.
-    ///
-    /// Checks if there are no other terminators in the block.
-    ///
-    pub fn build_conditional_branch(
-        &self,
-        comparison: inkwell::values::IntValue<'ctx>,
-        then_block: inkwell::basic_block::BasicBlock<'ctx>,
-        else_block: inkwell::basic_block::BasicBlock<'ctx>,
-    ) {
-        if self.basic_block().get_terminator().is_some() {
-            return;
-        }
-
-        self.builder
-            .build_conditional_branch(comparison, then_block, else_block);
-    }
-
-    ///
-    /// Builds an unconditional branch.
-    ///
-    /// Checks if there are no other terminators in the block.
-    ///
-    pub fn build_unconditional_branch(
-        &self,
-        destination_block: inkwell::basic_block::BasicBlock<'ctx>,
-    ) {
-        if self.basic_block().get_terminator().is_some() {
-            return;
-        }
-
-        self.builder.build_unconditional_branch(destination_block);
     }
 
     ///
@@ -949,32 +741,6 @@ where
     }
 
     ///
-    /// Builds a return.
-    ///
-    /// Checks if there are no other terminators in the block.
-    ///
-    pub fn build_return(&self, value: Option<&dyn BasicValue<'ctx>>) {
-        if self.basic_block().get_terminator().is_some() {
-            return;
-        }
-
-        self.builder.build_return(value);
-    }
-
-    ///
-    /// Builds an unreachable.
-    ///
-    /// Checks if there are no other terminators in the block.
-    ///
-    pub fn build_unreachable(&self) {
-        if self.basic_block().get_terminator().is_some() {
-            return;
-        }
-
-        self.builder.build_unreachable();
-    }
-
-    ///
     /// Builds a long contract exit sequence.
     ///
     /// The deploy code does not return the runtime code like in EVM. Instead, it returns some
@@ -1045,114 +811,6 @@ where
             AddressSpace::Stack,
             abi_length_value,
         );
-    }
-
-    ///
-    /// Returns a boolean type constant.
-    ///
-    pub fn bool_const(&self, value: bool) -> inkwell::values::IntValue<'ctx> {
-        self.bool_type().const_int(u64::from(value), false)
-    }
-
-    ///
-    /// Returns an integer type constant.
-    ///
-    pub fn integer_const(&self, bit_length: usize, value: u64) -> inkwell::values::IntValue<'ctx> {
-        self.integer_type(bit_length).const_int(value, false)
-    }
-
-    ///
-    /// Returns a 256-bit field type constant.
-    ///
-    pub fn field_const(&self, value: u64) -> inkwell::values::IntValue<'ctx> {
-        self.field_type().const_int(value, false)
-    }
-
-    ///
-    /// Returns a 256-bit field type undefined value.
-    ///
-    pub fn field_undef(&self) -> inkwell::values::IntValue<'ctx> {
-        self.field_type().get_undef()
-    }
-
-    ///
-    /// Returns a field type constant from a decimal string.
-    ///
-    pub fn field_const_str_dec(&self, value: &str) -> inkwell::values::IntValue<'ctx> {
-        self.field_type()
-            .const_int_from_string(value, inkwell::types::StringRadix::Decimal)
-            .unwrap_or_else(|| panic!("Invalid string constant `{value}`"))
-    }
-
-    ///
-    /// Returns a field type constant from a hexadecimal string.
-    ///
-    pub fn field_const_str_hex(&self, value: &str) -> inkwell::values::IntValue<'ctx> {
-        self.field_type()
-            .const_int_from_string(
-                value.strip_prefix("0x").unwrap_or(value),
-                inkwell::types::StringRadix::Hexadecimal,
-            )
-            .unwrap_or_else(|| panic!("Invalid string constant `{value}`"))
-    }
-
-    ///
-    /// Returns the void type.
-    ///
-    pub fn void_type(&self) -> inkwell::types::VoidType<'ctx> {
-        self.llvm.void_type()
-    }
-
-    ///
-    /// Returns the boolean type.
-    ///
-    pub fn bool_type(&self) -> inkwell::types::IntType<'ctx> {
-        self.llvm.bool_type()
-    }
-
-    ///
-    /// Returns the default byte type.
-    ///
-    pub fn byte_type(&self) -> inkwell::types::IntType<'ctx> {
-        self.llvm
-            .custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
-    }
-
-    ///
-    /// Returns the integer type of the specified bit-length.
-    ///
-    pub fn integer_type(&self, bit_length: usize) -> inkwell::types::IntType<'ctx> {
-        self.llvm.custom_width_int_type(bit_length as u32)
-    }
-
-    ///
-    /// Returns the default field type.
-    ///
-    pub fn field_type(&self) -> inkwell::types::IntType<'ctx> {
-        self.llvm
-            .custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
-    }
-
-    ///
-    /// Returns the array type with the specified length.
-    ///
-    pub fn array_type<T>(&self, element_type: T, length: usize) -> inkwell::types::ArrayType<'ctx>
-    where
-        T: BasicType<'ctx>,
-    {
-        element_type.array_type(length as u32)
-    }
-
-    ///
-    /// Returns the structure type with specified fields.
-    ///
-    pub fn structure_type<T>(&self, field_types: &[T]) -> inkwell::types::StructType<'ctx>
-    where
-        T: BasicType<'ctx>,
-    {
-        let field_types: Vec<inkwell::types::BasicTypeEnum<'ctx>> =
-            field_types.iter().map(T::as_basic_type_enum).collect();
-        self.llvm.struct_type(field_types.as_slice(), false)
     }
 
     ///
@@ -1446,5 +1104,243 @@ where
             .as_ref()
             .map(|data| data.is_system_mode())
             .unwrap_or_default()
+    }
+}
+
+impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
+where
+    D: Dependency + Clone,
+{
+    type Pointer = Pointer<'ctx>;
+
+    fn llvm(&self) -> &'ctx inkwell::context::Context {
+        self.llvm
+    }
+
+    fn builder(&self) -> &inkwell::builder::Builder<'ctx> {
+        &self.builder
+    }
+
+    fn module(&self) -> &inkwell::module::Module<'ctx> {
+        &self.module
+    }
+
+    fn set_code_type(&mut self, code_type: CodeType) {
+        self.code_type = Some(code_type);
+    }
+
+    fn code_type(&self) -> Option<CodeType> {
+        self.code_type.to_owned()
+    }
+
+    fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'ctx> {
+        self.llvm
+            .append_basic_block(self.current_function().borrow().declaration().value, name)
+    }
+
+    fn set_basic_block(&self, block: inkwell::basic_block::BasicBlock<'ctx>) {
+        self.builder.position_at_end(block);
+    }
+
+    fn basic_block(&self) -> inkwell::basic_block::BasicBlock<'ctx> {
+        self.builder.get_insert_block().expect("Always exists")
+    }
+
+    fn push_loop(
+        &mut self,
+        body_block: inkwell::basic_block::BasicBlock<'ctx>,
+        continue_block: inkwell::basic_block::BasicBlock<'ctx>,
+        join_block: inkwell::basic_block::BasicBlock<'ctx>,
+    ) {
+        self.loop_stack
+            .push(Loop::new(body_block, continue_block, join_block));
+    }
+
+    fn pop_loop(&mut self) {
+        self.loop_stack.pop();
+    }
+
+    fn r#loop(&self) -> &Loop<'ctx> {
+        self.loop_stack
+            .last()
+            .expect("The current context is not in a loop")
+    }
+
+    fn build_alloca<T>(&self, r#type: T, name: &str) -> Self::Pointer
+    where
+        T: BasicType<'ctx> + Clone + Copy,
+    {
+        let pointer = self.builder.build_alloca(r#type, name);
+        self.basic_block()
+            .get_last_instruction()
+            .expect("Always exists")
+            .set_alignment(era_compiler_common::BYTE_LENGTH_FIELD as u32)
+            .expect("Alignment is valid");
+        Self::Pointer::new(r#type, AddressSpace::Stack, pointer)
+    }
+
+    fn build_load(
+        &self,
+        pointer: Self::Pointer,
+        name: &str,
+    ) -> inkwell::values::BasicValueEnum<'ctx> {
+        let value = self.builder.build_load(pointer.r#type, pointer.value, name);
+
+        let alignment = if AddressSpace::Stack == pointer.address_space {
+            era_compiler_common::BYTE_LENGTH_FIELD
+        } else {
+            era_compiler_common::BYTE_LENGTH_BYTE
+        };
+
+        self.basic_block()
+            .get_last_instruction()
+            .expect("Always exists")
+            .set_alignment(alignment as u32)
+            .expect("Alignment is valid");
+        value
+    }
+
+    fn build_store<V>(&self, pointer: Self::Pointer, value: V)
+    where
+        V: BasicValue<'ctx>,
+    {
+        let instruction = self.builder.build_store(pointer.value, value);
+
+        let alignment = if AddressSpace::Stack == pointer.address_space {
+            era_compiler_common::BYTE_LENGTH_FIELD
+        } else {
+            era_compiler_common::BYTE_LENGTH_BYTE
+        };
+
+        instruction
+            .set_alignment(alignment as u32)
+            .expect("Alignment is valid");
+    }
+
+    fn build_gep<T>(
+        &self,
+        pointer: Self::Pointer,
+        indexes: &[inkwell::values::IntValue<'ctx>],
+        element_type: T,
+        name: &str,
+    ) -> Self::Pointer
+    where
+        T: BasicType<'ctx>,
+    {
+        let value = unsafe {
+            self.builder
+                .build_gep(pointer.r#type, pointer.value, indexes, name)
+        };
+        Self::Pointer::new(element_type, pointer.address_space, value)
+    }
+
+    fn build_conditional_branch(
+        &self,
+        comparison: inkwell::values::IntValue<'ctx>,
+        then_block: inkwell::basic_block::BasicBlock<'ctx>,
+        else_block: inkwell::basic_block::BasicBlock<'ctx>,
+    ) {
+        if self.basic_block().get_terminator().is_some() {
+            return;
+        }
+
+        self.builder
+            .build_conditional_branch(comparison, then_block, else_block);
+    }
+
+    fn build_unconditional_branch(
+        &self,
+        destination_block: inkwell::basic_block::BasicBlock<'ctx>,
+    ) {
+        if self.basic_block().get_terminator().is_some() {
+            return;
+        }
+
+        self.builder.build_unconditional_branch(destination_block);
+    }
+
+    fn build_return(&self, value: Option<&dyn BasicValue<'ctx>>) {
+        if self.basic_block().get_terminator().is_some() {
+            return;
+        }
+
+        self.builder.build_return(value);
+    }
+
+    fn build_unreachable(&self) {
+        if self.basic_block().get_terminator().is_some() {
+            return;
+        }
+
+        self.builder.build_unreachable();
+    }
+
+    fn bool_const(&self, value: bool) -> inkwell::values::IntValue<'ctx> {
+        self.bool_type().const_int(u64::from(value), false)
+    }
+
+    fn integer_const(&self, bit_length: usize, value: u64) -> inkwell::values::IntValue<'ctx> {
+        self.integer_type(bit_length).const_int(value, false)
+    }
+
+    fn field_const(&self, value: u64) -> inkwell::values::IntValue<'ctx> {
+        self.field_type().const_int(value, false)
+    }
+
+    fn field_undef(&self) -> inkwell::values::IntValue<'ctx> {
+        self.field_type().get_undef()
+    }
+
+    fn field_const_str_dec(&self, value: &str) -> inkwell::values::IntValue<'ctx> {
+        self.field_type()
+            .const_int_from_string(value, inkwell::types::StringRadix::Decimal)
+            .unwrap_or_else(|| panic!("Invalid string constant `{value}`"))
+    }
+
+    fn field_const_str_hex(&self, value: &str) -> inkwell::values::IntValue<'ctx> {
+        self.field_type()
+            .const_int_from_string(
+                value.strip_prefix("0x").unwrap_or(value),
+                inkwell::types::StringRadix::Hexadecimal,
+            )
+            .unwrap_or_else(|| panic!("Invalid string constant `{value}`"))
+    }
+
+    fn void_type(&self) -> inkwell::types::VoidType<'ctx> {
+        self.llvm.void_type()
+    }
+
+    fn bool_type(&self) -> inkwell::types::IntType<'ctx> {
+        self.llvm.bool_type()
+    }
+
+    fn byte_type(&self) -> inkwell::types::IntType<'ctx> {
+        self.llvm
+            .custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
+    }
+
+    fn integer_type(&self, bit_length: usize) -> inkwell::types::IntType<'ctx> {
+        self.llvm.custom_width_int_type(bit_length as u32)
+    }
+
+    fn field_type(&self) -> inkwell::types::IntType<'ctx> {
+        self.llvm
+            .custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
+    }
+
+    fn array_type<T>(&self, element_type: T, length: usize) -> inkwell::types::ArrayType<'ctx>
+    where
+        T: BasicType<'ctx>,
+    {
+        element_type.array_type(length as u32)
+    }
+
+    fn structure_type<T>(&self, field_types: &[T]) -> inkwell::types::StructType<'ctx>
+    where
+        T: BasicType<'ctx>,
+    {
+        let field_types: Vec<inkwell::types::BasicTypeEnum<'ctx>> =
+            field_types.iter().map(T::as_basic_type_enum).collect();
+        self.llvm.struct_type(field_types.as_slice(), false)
     }
 }

@@ -2,6 +2,7 @@
 //! Some LLVM IR generator utilies.
 //!
 
+use crate::context::IContext;
 use crate::evm::context::Context;
 use crate::evm::Dependency;
 

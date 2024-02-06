@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::eravm::context::function::block::evmla_data::key::Key as BlockKey;
+use crate::context::block_key::BlockKey;
 use crate::eravm::context::function::block::Block;
 
 ///

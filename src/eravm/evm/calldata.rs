@@ -2,11 +2,13 @@
 //! Translates the calldata instructions.
 //!
 
+use inkwell::types::BasicType;
+
+use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
-use inkwell::types::BasicType;
 
 ///
 /// Translates the calldata load.

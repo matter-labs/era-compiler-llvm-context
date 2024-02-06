@@ -2,25 +2,25 @@
 //! The LLVM context library.
 //!
 
-pub(crate) mod argument;
-pub(crate) mod attribute;
-pub(crate) mod code_type;
+pub(crate) mod context;
 pub(crate) mod debug_config;
 pub(crate) mod eravm;
 pub(crate) mod evm;
 pub(crate) mod optimizer;
 pub(crate) mod target_machine;
 
-pub use self::argument::Argument;
-pub use self::attribute::Attribute;
-pub use self::code_type::CodeType;
+pub use self::context::argument::Argument;
+pub use self::context::attribute::Attribute;
+pub use self::context::block_key::BlockKey;
+pub use self::context::code_type::CodeType;
+pub use self::context::r#loop::Loop;
+pub use self::context::IContext;
 pub use self::debug_config::ir_type::IRType as DebugConfigIR;
 pub use self::debug_config::DebugConfig;
 pub use self::eravm::build_assembly_text as eravm_build_assembly_text;
 pub use self::eravm::context::address_space::AddressSpace as EraVMAddressSpace;
 pub use self::eravm::context::build::Build as EraVMBuild;
 pub use self::eravm::context::evmla_data::EVMLAData as EraVMContextEVMLAData;
-pub use self::eravm::context::function::block::evmla_data::key::Key as EraVMFunctionBlockKey;
 pub use self::eravm::context::function::block::evmla_data::EVMLAData as EraVMFunctionBlockEVMLAData;
 pub use self::eravm::context::function::block::Block as EraVMFunctionBlock;
 pub use self::eravm::context::function::declaration::Declaration as EraVMFunctionDeclaration;
@@ -37,7 +37,6 @@ pub use self::eravm::context::function::yul_data::YulData as EraVMFunctionYulDat
 pub use self::eravm::context::function::Function as EraVMFunction;
 pub use self::eravm::context::global::Global as EraVMGlobal;
 pub use self::eravm::context::pointer::Pointer as EraVMPointer;
-pub use self::eravm::context::r#loop::Loop as EraVMLoop;
 pub use self::eravm::context::solidity_data::SolidityData as EraVMContextSolidityData;
 pub use self::eravm::context::vyper_data::VyperData as EraVMContextVyperData;
 pub use self::eravm::context::yul_data::YulData as EraVMContextYulData;
@@ -84,7 +83,6 @@ pub use self::evm::context::function::runtime::entry::Entry as EVMEntryFunction;
 pub use self::evm::context::function::vyper_data::VyperData as EVMFunctionVyperData;
 pub use self::evm::context::function::Function as EVMFunction;
 pub use self::evm::context::pointer::Pointer as EVMPointer;
-pub use self::evm::context::r#loop::Loop as EVMLoop;
 pub use self::evm::context::Context as EVMContext;
 pub use self::evm::instructions::arithmetic as evm_arithmetic;
 pub use self::evm::instructions::bitwise as evm_bitwise;

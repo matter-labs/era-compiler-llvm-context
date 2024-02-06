@@ -4,6 +4,7 @@
 
 use std::marker::PhantomData;
 
+use crate::context::IContext;
 use crate::evm::context::Context;
 use crate::evm::Dependency;
 use crate::evm::WriteLLVM;
