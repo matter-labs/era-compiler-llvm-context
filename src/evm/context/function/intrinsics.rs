@@ -115,6 +115,8 @@ pub struct Intrinsics<'ctx> {
     pub selfdestruct: FunctionDeclaration<'ctx>,
 
     /// The corresponding intrinsic function name.
+    pub memory_copy_from_heap: FunctionDeclaration<'ctx>,
+    /// The corresponding intrinsic function name.
     pub memory_copy_from_calldata: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub memory_copy_from_return_data: FunctionDeclaration<'ctx>,
@@ -260,6 +262,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_SELFDESTRUCT: &'static str = "llvm.evm.selfdestruct";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_MEMORY_COPY_FROM_HEAP: &'static str = "llvm.memcpy.p1.p1.i256";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_MEMORY_COPY_FROM_CALLDATA: &'static str = "llvm.memcpy.p2.p1.i256";
@@ -727,6 +732,20 @@ impl<'ctx> Intrinsics<'ctx> {
             void_type.fn_type(&[field_type.as_basic_type_enum().into()], false),
         );
 
+        let memory_copy_from_heap = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_MEMORY_COPY_FROM_HEAP,
+            void_type.fn_type(
+                &[
+                    heap_byte_pointer_type.as_basic_type_enum().into(),
+                    heap_byte_pointer_type.as_basic_type_enum().into(),
+                    field_type.as_basic_type_enum().into(),
+                    bool_type.as_basic_type_enum().into(),
+                ],
+                false,
+            ),
+        );
         let memory_copy_from_calldata = Self::declare(
             llvm,
             module,
@@ -825,6 +844,7 @@ impl<'ctx> Intrinsics<'ctx> {
 
             selfdestruct,
 
+            memory_copy_from_heap,
             memory_copy_from_calldata,
             memory_copy_from_return_data,
             memory_copy_from_code,
