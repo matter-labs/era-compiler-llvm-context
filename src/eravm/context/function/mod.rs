@@ -3,11 +3,9 @@
 //!
 
 pub mod block;
-pub mod declaration;
 pub mod evmla_data;
 pub mod intrinsics;
 pub mod llvm_runtime;
-pub mod r#return;
 pub mod runtime;
 pub mod vyper_data;
 pub mod yul_data;
@@ -15,13 +13,14 @@ pub mod yul_data;
 use std::collections::HashMap;
 
 use crate::context::attribute::Attribute;
-use crate::eravm::context::pointer::Pointer;
+use crate::context::function::declaration::Declaration as FunctionDeclaration;
+use crate::context::function::r#return::Return as FunctionReturn;
+use crate::context::pointer::Pointer;
+use crate::eravm::context::address_space::AddressSpace;
 use crate::optimizer::settings::size_level::SizeLevel;
 use crate::optimizer::Optimizer;
 
-use self::declaration::Declaration;
 use self::evmla_data::EVMLAData;
-use self::r#return::Return;
 use self::runtime::Runtime;
 use self::vyper_data::VyperData;
 use self::yul_data::YulData;
@@ -34,11 +33,11 @@ pub struct Function<'ctx> {
     /// The high-level source code name.
     name: String,
     /// The LLVM function declaration.
-    declaration: Declaration<'ctx>,
+    declaration: FunctionDeclaration<'ctx>,
     /// The stack representation.
-    stack: HashMap<String, Pointer<'ctx>>,
+    stack: HashMap<String, Pointer<'ctx, AddressSpace>>,
     /// The return value entity.
-    r#return: Return<'ctx>,
+    r#return: FunctionReturn<'ctx, AddressSpace>,
 
     /// The entry block. Each LLVM IR functions must have an entry block.
     entry_block: inkwell::basic_block::BasicBlock<'ctx>,
@@ -71,8 +70,8 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn new(
         name: String,
-        declaration: Declaration<'ctx>,
-        r#return: Return<'ctx>,
+        declaration: FunctionDeclaration<'ctx>,
+        r#return: FunctionReturn<'ctx, AddressSpace>,
 
         entry_block: inkwell::basic_block::BasicBlock<'ctx>,
         return_block: inkwell::basic_block::BasicBlock<'ctx>,
@@ -121,7 +120,7 @@ impl<'ctx> Function<'ctx> {
     ///
     /// Returns the LLVM function declaration.
     ///
-    pub fn declaration(&self) -> Declaration<'ctx> {
+    pub fn declaration(&self) -> FunctionDeclaration<'ctx> {
         self.declaration
     }
 
@@ -140,7 +139,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
+        declaration: FunctionDeclaration<'ctx>,
         attributes: Vec<Attribute>,
         force: bool,
     ) {
@@ -190,7 +189,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_default_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
+        declaration: FunctionDeclaration<'ctx>,
         optimizer: &Optimizer,
     ) {
         if optimizer.settings().level_middle_end == inkwell::OptimizationLevel::None {
@@ -222,7 +221,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_frontend_runtime_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
+        declaration: FunctionDeclaration<'ctx>,
         optimizer: &Optimizer,
     ) {
         if optimizer.settings().level_middle_end_size == SizeLevel::Z {
@@ -235,7 +234,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_exception_handler_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
+        declaration: FunctionDeclaration<'ctx>,
     ) {
         Self::set_attributes(llvm, declaration, vec![Attribute::NoInline], false);
     }
@@ -245,7 +244,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_cxa_throw_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
+        declaration: FunctionDeclaration<'ctx>,
     ) {
         Self::set_attributes(llvm, declaration, vec![Attribute::NoProfile], false);
     }
@@ -255,7 +254,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_pure_function_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: Declaration<'ctx>,
+        declaration: FunctionDeclaration<'ctx>,
     ) {
         Self::set_attributes(
             llvm,
@@ -277,15 +276,15 @@ impl<'ctx> Function<'ctx> {
     pub fn insert_stack_pointer(
         &mut self,
         name: String,
-        pointer: Pointer<'ctx>,
-    ) -> Option<Pointer<'ctx>> {
+        pointer: Pointer<'ctx, AddressSpace>,
+    ) -> Option<Pointer<'ctx, AddressSpace>> {
         self.stack.insert(name, pointer)
     }
 
     ///
     /// Gets the pointer to a stack variable.
     ///
-    pub fn get_stack_pointer(&self, name: &str) -> Option<Pointer<'ctx>> {
+    pub fn get_stack_pointer(&self, name: &str) -> Option<Pointer<'ctx, AddressSpace>> {
         self.stack.get(name).copied()
     }
 
@@ -299,7 +298,7 @@ impl<'ctx> Function<'ctx> {
     ///
     /// Returns the return entity representation.
     ///
-    pub fn r#return(&self) -> Return<'ctx> {
+    pub fn r#return(&self) -> FunctionReturn<'ctx, AddressSpace> {
         self.r#return
     }
 
@@ -309,7 +308,7 @@ impl<'ctx> Function<'ctx> {
     /// # Panics
     /// If the pointer has not been set yet.
     ///
-    pub fn return_pointer(&self) -> Option<Pointer<'ctx>> {
+    pub fn return_pointer(&self) -> Option<Pointer<'ctx, AddressSpace>> {
         self.r#return.return_pointer()
     }
 

@@ -8,7 +8,6 @@ pub mod build;
 pub mod evmla_data;
 pub mod function;
 pub mod global;
-pub mod pointer;
 pub mod solidity_data;
 pub mod vyper_data;
 pub mod yul_data;
@@ -23,8 +22,12 @@ use std::rc::Rc;
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
+use crate::context::address_space::IAddressSpace;
 use crate::context::attribute::Attribute;
 use crate::context::code_type::CodeType;
+use crate::context::function::declaration::Declaration as FunctionDeclaration;
+use crate::context::function::r#return::Return as FunctionReturn;
+use crate::context::pointer::Pointer;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::eravm::DebugConfig;
@@ -38,13 +41,10 @@ use self::address_space::AddressSpace;
 use self::build::Build;
 // use self::debug_info::DebugInfo;
 use self::evmla_data::EVMLAData;
-use self::function::declaration::Declaration as FunctionDeclaration;
 use self::function::intrinsics::Intrinsics;
 use self::function::llvm_runtime::LLVMRuntime;
-use self::function::r#return::Return as FunctionReturn;
 use self::function::Function;
 use self::global::Global;
-use self::pointer::Pointer;
 use self::solidity_data::SolidityData;
 use self::vyper_data::VyperData;
 use self::yul_data::YulData;
@@ -299,97 +299,6 @@ where
     }
 
     ///
-    /// Appends a function to the current module.
-    ///
-    pub fn add_function(
-        &mut self,
-        name: &str,
-        r#type: inkwell::types::FunctionType<'ctx>,
-        return_values_length: usize,
-        mut linkage: Option<inkwell::module::Linkage>,
-    ) -> anyhow::Result<Rc<RefCell<Function<'ctx>>>> {
-        if Function::is_near_call_abi(name) && self.is_system_mode() {
-            linkage = Some(inkwell::module::Linkage::External);
-        }
-
-        let value = self.module().add_function(name, r#type, linkage);
-
-        let entry_block = self.llvm.append_basic_block(value, "entry");
-        let return_block = self.llvm.append_basic_block(value, "return");
-
-        value.set_personality_function(self.llvm_runtime.personality.value);
-
-        let r#return = match return_values_length {
-            0 => FunctionReturn::none(),
-            1 => {
-                self.set_basic_block(entry_block);
-                let pointer = self.build_alloca(self.field_type(), "return_pointer");
-                FunctionReturn::primitive(pointer)
-            }
-            size if name.starts_with(Function::ZKSYNC_NEAR_CALL_ABI_PREFIX) => {
-                let first_argument = value.get_first_param().expect("Always exists");
-                let r#type = self.structure_type(vec![self.field_type(); size].as_slice());
-                let pointer = first_argument.into_pointer_value();
-                FunctionReturn::compound(Pointer::new(r#type, AddressSpace::Stack, pointer), size)
-            }
-            size => {
-                self.set_basic_block(entry_block);
-                let pointer = self.build_alloca(
-                    self.structure_type(
-                        vec![self.field_type().as_basic_type_enum(); size].as_slice(),
-                    ),
-                    "return_pointer",
-                );
-                FunctionReturn::compound(pointer, size)
-            }
-        };
-
-        let function = Function::new(
-            name.to_owned(),
-            FunctionDeclaration::new(r#type, value),
-            r#return,
-            entry_block,
-            return_block,
-        );
-        Function::set_default_attributes(self.llvm, function.declaration(), &self.optimizer);
-        if Function::is_near_call_abi(function.name()) && self.is_system_mode() {
-            Function::set_exception_handler_attributes(self.llvm, function.declaration());
-        }
-
-        let function = Rc::new(RefCell::new(function));
-        self.functions.insert(name.to_string(), function.clone());
-
-        Ok(function)
-    }
-
-    ///
-    /// Returns a shared reference to the specified function.
-    ///
-    pub fn get_function(&self, name: &str) -> Option<Rc<RefCell<Function<'ctx>>>> {
-        self.functions.get(name).cloned()
-    }
-
-    ///
-    /// Returns a shared reference to the current active function.
-    ///
-    pub fn current_function(&self) -> Rc<RefCell<Function<'ctx>>> {
-        self.current_function
-            .clone()
-            .expect("Must be declared before use")
-    }
-
-    ///
-    /// Sets the current active function.
-    ///
-    pub fn set_current_function(&mut self, name: &str) -> anyhow::Result<()> {
-        let function = self.functions.get(name).cloned().ok_or_else(|| {
-            anyhow::anyhow!("Failed to activate an undeclared function `{}`", name)
-        })?;
-        self.current_function = Some(function);
-        Ok(())
-    }
-
-    ///
     /// Compiles a contract dependency, if the dependency manager is set.
     ///
     pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
@@ -455,113 +364,6 @@ where
     ///
     pub fn debug_config(&self) -> Option<&DebugConfig> {
         self.debug_config.as_ref()
-    }
-
-    ///
-    /// Builds a call.
-    ///
-    pub fn build_call(
-        &self,
-        function: FunctionDeclaration<'ctx>,
-        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
-        name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
-        let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
-            .iter()
-            .copied()
-            .map(inkwell::values::BasicMetadataValueEnum::from)
-            .collect();
-        let call_site_value = self.builder.build_indirect_call(
-            function.r#type,
-            function.value.as_global_value().as_pointer_value(),
-            arguments_wrapped.as_slice(),
-            name,
-        );
-        self.modify_call_site_value(arguments, call_site_value, function);
-        call_site_value.try_as_basic_value().left()
-    }
-
-    ///
-    /// Builds an invoke.
-    ///
-    /// Is defaulted to a call if there is no global exception handler.
-    ///
-    pub fn build_invoke(
-        &self,
-        function: FunctionDeclaration<'ctx>,
-        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
-        name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
-        if !self
-            .functions
-            .contains_key(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
-        {
-            return self.build_call(function, arguments, name);
-        }
-
-        let return_pointer = if let Some(r#type) = function.r#type.get_return_type() {
-            let pointer = self.build_alloca(r#type, "invoke_return_pointer");
-            self.build_store(pointer, r#type.const_zero());
-            Some(pointer)
-        } else {
-            None
-        };
-
-        let success_block = self.append_basic_block("invoke_success_block");
-        let catch_block = self.append_basic_block("invoke_catch_block");
-        let current_block = self.basic_block();
-
-        self.set_basic_block(catch_block);
-        let landing_pad_type = self.structure_type(&[
-            self.byte_type()
-                .ptr_type(AddressSpace::Stack.into())
-                .as_basic_type_enum(),
-            self.integer_type(era_compiler_common::BIT_LENGTH_X32)
-                .as_basic_type_enum(),
-        ]);
-        self.builder.build_landing_pad(
-            landing_pad_type,
-            self.llvm_runtime.personality.value,
-            &[self
-                .byte_type()
-                .ptr_type(AddressSpace::Stack.into())
-                .const_zero()
-                .as_basic_value_enum()],
-            false,
-            "invoke_catch_landing",
-        );
-        crate::eravm::utils::throw(self);
-
-        self.set_basic_block(current_block);
-        let call_site_value = self.builder.build_indirect_invoke(
-            function.r#type,
-            function.value.as_global_value().as_pointer_value(),
-            arguments,
-            success_block,
-            catch_block,
-            name,
-        );
-        self.modify_call_site_value(arguments, call_site_value, function);
-
-        self.set_basic_block(success_block);
-        if let (Some(return_pointer), Some(mut return_value)) =
-            (return_pointer, call_site_value.try_as_basic_value().left())
-        {
-            if let Some(return_type) = function.r#type.get_return_type() {
-                if return_type.is_pointer_type() {
-                    return_value = self
-                        .builder()
-                        .build_int_to_ptr(
-                            return_value.into_int_value(),
-                            return_type.into_pointer_type(),
-                            format!("{name}_invoke_return_pointer_casted").as_str(),
-                        )
-                        .as_basic_value_enum();
-                }
-            }
-            self.build_store(return_pointer, return_value);
-        }
-        return_pointer.map(|pointer| self.build_load(pointer, "invoke_result"))
     }
 
     ///
@@ -663,35 +465,6 @@ where
     }
 
     ///
-    /// Builds a memory copy call.
-    ///
-    /// Sets the alignment to `1`, since all non-stack memory pages have such alignment.
-    ///
-    pub fn build_memcpy(
-        &self,
-        function: FunctionDeclaration<'ctx>,
-        destination: Pointer<'ctx>,
-        source: Pointer<'ctx>,
-        size: inkwell::values::IntValue<'ctx>,
-        name: &str,
-    ) {
-        let call_site_value = self.builder.build_indirect_call(
-            function.r#type,
-            function.value.as_global_value().as_pointer_value(),
-            &[
-                destination.value.as_basic_value_enum().into(),
-                source.value.as_basic_value_enum().into(),
-                size.as_basic_value_enum().into(),
-                self.bool_type().const_zero().as_basic_value_enum().into(),
-            ],
-            name,
-        );
-
-        call_site_value.set_alignment_attribute(inkwell::attributes::AttributeLoc::Param(0), 1);
-        call_site_value.set_alignment_attribute(inkwell::attributes::AttributeLoc::Param(1), 1);
-    }
-
-    ///
     /// Builds a memory copy call for the return data.
     ///
     /// Sets the output length to `min(output_length, return_data_size` and calls the default
@@ -700,8 +473,8 @@ where
     pub fn build_memcpy_return_data(
         &self,
         function: FunctionDeclaration<'ctx>,
-        destination: Pointer<'ctx>,
-        source: Pointer<'ctx>,
+        destination: Pointer<'ctx, AddressSpace>,
+        source: Pointer<'ctx, AddressSpace>,
         size: inkwell::values::IntValue<'ctx>,
         name: &str,
     ) {
@@ -778,7 +551,7 @@ where
     ///
     /// Writes the ABI pointer to the global variable.
     ///
-    pub fn write_abi_pointer(&mut self, pointer: Pointer<'ctx>, global_name: &str) {
+    pub fn write_abi_pointer(&mut self, pointer: Pointer<'ctx, AddressSpace>, global_name: &str) {
         self.set_global(
             global_name,
             self.byte_type().ptr_type(AddressSpace::Generic.into()),
@@ -790,7 +563,7 @@ where
     ///
     /// Writes the ABI data size to the global variable.
     ///
-    pub fn write_abi_data_size(&mut self, pointer: Pointer<'ctx>, global_name: &str) {
+    pub fn write_abi_data_size(&mut self, pointer: Pointer<'ctx, AddressSpace>, global_name: &str) {
         let abi_pointer_value =
             self.builder()
                 .build_ptr_to_int(pointer.value, self.field_type(), "abi_pointer_value");
@@ -999,7 +772,9 @@ impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
 where
     D: Dependency + Clone,
 {
-    type Pointer = Pointer<'ctx>;
+    type Function = Function<'ctx>;
+
+    type AddressSpace = AddressSpace;
 
     type SolidityData = SolidityData;
 
@@ -1062,7 +837,86 @@ where
             .expect("The current context is not in a loop")
     }
 
-    fn build_alloca<T>(&self, r#type: T, name: &str) -> Self::Pointer
+    fn add_function(
+        &mut self,
+        name: &str,
+        r#type: inkwell::types::FunctionType<'ctx>,
+        return_values_length: usize,
+        mut linkage: Option<inkwell::module::Linkage>,
+    ) -> anyhow::Result<Rc<RefCell<Function<'ctx>>>> {
+        if Function::is_near_call_abi(name) && self.is_system_mode() {
+            linkage = Some(inkwell::module::Linkage::External);
+        }
+
+        let value = self.module().add_function(name, r#type, linkage);
+
+        let entry_block = self.llvm.append_basic_block(value, "entry");
+        let return_block = self.llvm.append_basic_block(value, "return");
+
+        value.set_personality_function(self.llvm_runtime.personality.value);
+
+        let r#return = match return_values_length {
+            0 => FunctionReturn::none(),
+            1 => {
+                self.set_basic_block(entry_block);
+                let pointer = self.build_alloca(self.field_type(), "return_pointer");
+                FunctionReturn::primitive(pointer)
+            }
+            size if name.starts_with(Function::ZKSYNC_NEAR_CALL_ABI_PREFIX) => {
+                let first_argument = value.get_first_param().expect("Always exists");
+                let r#type = self.structure_type(vec![self.field_type(); size].as_slice());
+                let pointer = first_argument.into_pointer_value();
+                FunctionReturn::compound(Pointer::new(r#type, AddressSpace::Stack, pointer), size)
+            }
+            size => {
+                self.set_basic_block(entry_block);
+                let pointer = self.build_alloca(
+                    self.structure_type(
+                        vec![self.field_type().as_basic_type_enum(); size].as_slice(),
+                    ),
+                    "return_pointer",
+                );
+                FunctionReturn::compound(pointer, size)
+            }
+        };
+
+        let function = Function::new(
+            name.to_owned(),
+            FunctionDeclaration::new(r#type, value),
+            r#return,
+            entry_block,
+            return_block,
+        );
+        Function::set_default_attributes(self.llvm, function.declaration(), &self.optimizer);
+        if Function::is_near_call_abi(function.name()) && self.is_system_mode() {
+            Function::set_exception_handler_attributes(self.llvm, function.declaration());
+        }
+
+        let function = Rc::new(RefCell::new(function));
+        self.functions.insert(name.to_string(), function.clone());
+
+        Ok(function)
+    }
+
+    fn get_function(&self, name: &str) -> Option<Rc<RefCell<Function<'ctx>>>> {
+        self.functions.get(name).cloned()
+    }
+
+    fn current_function(&self) -> Rc<RefCell<Function<'ctx>>> {
+        self.current_function
+            .clone()
+            .expect("Must be declared before use")
+    }
+
+    fn set_current_function(&mut self, name: &str) -> anyhow::Result<()> {
+        let function = self.functions.get(name).cloned().ok_or_else(|| {
+            anyhow::anyhow!("Failed to activate an undeclared function `{}`", name)
+        })?;
+        self.current_function = Some(function);
+        Ok(())
+    }
+
+    fn build_alloca<T>(&self, r#type: T, name: &str) -> Pointer<'ctx, Self::AddressSpace>
     where
         T: BasicType<'ctx> + Clone + Copy,
     {
@@ -1072,17 +926,17 @@ where
             .expect("Always exists")
             .set_alignment(era_compiler_common::BYTE_LENGTH_FIELD as u32)
             .expect("Alignment is valid");
-        Self::Pointer::new(r#type, AddressSpace::Stack, pointer)
+        Pointer::new(r#type, Self::AddressSpace::stack(), pointer)
     }
 
     fn build_load(
         &self,
-        pointer: Self::Pointer,
+        pointer: Pointer<'ctx, Self::AddressSpace>,
         name: &str,
     ) -> inkwell::values::BasicValueEnum<'ctx> {
         let value = self.builder.build_load(pointer.r#type, pointer.value, name);
 
-        let alignment = if AddressSpace::Stack == pointer.address_space {
+        let alignment = if Self::AddressSpace::stack() == pointer.address_space {
             era_compiler_common::BYTE_LENGTH_FIELD
         } else {
             era_compiler_common::BYTE_LENGTH_BYTE
@@ -1096,13 +950,13 @@ where
         value
     }
 
-    fn build_store<V>(&self, pointer: Self::Pointer, value: V)
+    fn build_store<V>(&self, pointer: Pointer<'ctx, Self::AddressSpace>, value: V)
     where
         V: BasicValue<'ctx>,
     {
         let instruction = self.builder.build_store(pointer.value, value);
 
-        let alignment = if AddressSpace::Stack == pointer.address_space {
+        let alignment = if Self::AddressSpace::stack() == pointer.address_space {
             era_compiler_common::BYTE_LENGTH_FIELD
         } else {
             era_compiler_common::BYTE_LENGTH_BYTE
@@ -1115,11 +969,11 @@ where
 
     fn build_gep<T>(
         &self,
-        pointer: Self::Pointer,
+        pointer: Pointer<'ctx, Self::AddressSpace>,
         indexes: &[inkwell::values::IntValue<'ctx>],
         element_type: T,
         name: &str,
-    ) -> Self::Pointer
+    ) -> Pointer<'ctx, Self::AddressSpace>
     where
         T: BasicType<'ctx>,
     {
@@ -1127,7 +981,7 @@ where
             self.builder
                 .build_gep(pointer.r#type, pointer.value, indexes, name)
         };
-        Self::Pointer::new(element_type, pointer.address_space, value)
+        Pointer::new(element_type, pointer.address_space, value)
     }
 
     fn build_conditional_branch(
@@ -1153,6 +1007,129 @@ where
         }
 
         self.builder.build_unconditional_branch(destination_block);
+    }
+
+    fn build_call(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        name: &str,
+    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
+        let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
+            .iter()
+            .copied()
+            .map(inkwell::values::BasicMetadataValueEnum::from)
+            .collect();
+        let call_site_value = self.builder.build_indirect_call(
+            function.r#type,
+            function.value.as_global_value().as_pointer_value(),
+            arguments_wrapped.as_slice(),
+            name,
+        );
+        self.modify_call_site_value(arguments, call_site_value, function);
+        call_site_value.try_as_basic_value().left()
+    }
+
+    fn build_invoke(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        name: &str,
+    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
+        if !self
+            .functions
+            .contains_key(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
+        {
+            return self.build_call(function, arguments, name);
+        }
+
+        let return_pointer = if let Some(r#type) = function.r#type.get_return_type() {
+            let pointer = self.build_alloca(r#type, "invoke_return_pointer");
+            self.build_store(pointer, r#type.const_zero());
+            Some(pointer)
+        } else {
+            None
+        };
+
+        let success_block = self.append_basic_block("invoke_success_block");
+        let catch_block = self.append_basic_block("invoke_catch_block");
+        let current_block = self.basic_block();
+
+        self.set_basic_block(catch_block);
+        let landing_pad_type = self.structure_type(&[
+            self.byte_type()
+                .ptr_type(AddressSpace::Stack.into())
+                .as_basic_type_enum(),
+            self.integer_type(era_compiler_common::BIT_LENGTH_X32)
+                .as_basic_type_enum(),
+        ]);
+        self.builder.build_landing_pad(
+            landing_pad_type,
+            self.llvm_runtime.personality.value,
+            &[self
+                .byte_type()
+                .ptr_type(AddressSpace::Stack.into())
+                .const_zero()
+                .as_basic_value_enum()],
+            false,
+            "invoke_catch_landing",
+        );
+        crate::eravm::utils::throw(self);
+
+        self.set_basic_block(current_block);
+        let call_site_value = self.builder.build_indirect_invoke(
+            function.r#type,
+            function.value.as_global_value().as_pointer_value(),
+            arguments,
+            success_block,
+            catch_block,
+            name,
+        );
+        self.modify_call_site_value(arguments, call_site_value, function);
+
+        self.set_basic_block(success_block);
+        if let (Some(return_pointer), Some(mut return_value)) =
+            (return_pointer, call_site_value.try_as_basic_value().left())
+        {
+            if let Some(return_type) = function.r#type.get_return_type() {
+                if return_type.is_pointer_type() {
+                    return_value = self
+                        .builder()
+                        .build_int_to_ptr(
+                            return_value.into_int_value(),
+                            return_type.into_pointer_type(),
+                            format!("{name}_invoke_return_pointer_casted").as_str(),
+                        )
+                        .as_basic_value_enum();
+                }
+            }
+            self.build_store(return_pointer, return_value);
+        }
+        return_pointer.map(|pointer| self.build_load(pointer, "invoke_result"))
+    }
+
+    fn build_memcpy(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        destination: Pointer<'ctx, AddressSpace>,
+        source: Pointer<'ctx, AddressSpace>,
+        size: inkwell::values::IntValue<'ctx>,
+        name: &str,
+    ) {
+        let call_site_value = self.builder.build_indirect_call(
+            function.r#type,
+            function.value.as_global_value().as_pointer_value(),
+            &[
+                destination.value.as_basic_value_enum().into(),
+                source.value.as_basic_value_enum().into(),
+                size.as_basic_value_enum().into(),
+                self.bool_type().const_zero().as_basic_value_enum().into(),
+            ],
+            name,
+        );
+
+        call_site_value.set_alignment_attribute(inkwell::attributes::AttributeLoc::Param(0), 1);
+        call_site_value.set_alignment_attribute(inkwell::attributes::AttributeLoc::Param(1), 1);
     }
 
     fn build_return(&self, value: Option<&dyn BasicValue<'ctx>>) {

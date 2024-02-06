@@ -4,6 +4,7 @@
 
 use inkwell::values::BasicValue;
 
+use crate::context::IContext;
 use crate::evm::context::Context;
 use crate::evm::Dependency;
 

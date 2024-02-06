@@ -5,9 +5,10 @@
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
+use crate::context::address_space::IAddressSpace;
+use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -58,9 +59,9 @@ where
     crate::eravm::evm::r#return::revert(context, context.field_const(0), context.field_const(0))?;
 
     context.set_basic_block(join_block);
-    let destination = Pointer::new_with_offset(
+    let destination = Pointer::<AddressSpace>::new_with_offset(
         context,
-        AddressSpace::Heap,
+        AddressSpace::heap(),
         context.byte_type(),
         destination_offset,
         "return_data_copy_destination_pointer",
@@ -72,7 +73,7 @@ where
     let return_data_pointer =
         context.build_load(return_data_pointer_pointer, "return_data_pointer");
     let source = context.build_gep(
-        Pointer::new(
+        Pointer::<AddressSpace>::new(
             context.byte_type(),
             return_data_pointer_pointer.address_space,
             return_data_pointer.into_pointer_value(),

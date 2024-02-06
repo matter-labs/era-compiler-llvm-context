@@ -4,9 +4,10 @@
 
 use inkwell::values::BasicValue;
 
+use crate::context::address_space::IAddressSpace;
+use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -24,7 +25,7 @@ where
 {
     let pointer = Pointer::new_with_offset(
         context,
-        AddressSpace::Heap,
+        AddressSpace::heap(),
         context.field_type(),
         offset,
         "memory_load_pointer",
@@ -48,7 +49,7 @@ where
 {
     let pointer = Pointer::new_with_offset(
         context,
-        AddressSpace::Heap,
+        AddressSpace::heap(),
         context.field_type(),
         offset,
         "memory_store_pointer",
@@ -72,7 +73,7 @@ where
 {
     let offset_pointer = Pointer::new_with_offset(
         context,
-        AddressSpace::Heap,
+        AddressSpace::heap(),
         context.byte_type(),
         offset,
         "mstore8_offset_pointer",

@@ -5,9 +5,10 @@
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
+use crate::context::address_space::IAddressSpace;
+use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -226,7 +227,7 @@ where
 {
     let destination = Pointer::new_with_offset(
         context,
-        AddressSpace::Heap,
+        AddressSpace::heap(),
         context.byte_type(),
         destination_offset,
         "active_pointer_data_copy_destination_pointer",
@@ -236,7 +237,7 @@ where
     let source = context.build_gep(
         Pointer::new(
             context.byte_type(),
-            AddressSpace::Generic,
+            AddressSpace::generic(),
             active_pointer.into_pointer_value(),
         ),
         &[source_offset],

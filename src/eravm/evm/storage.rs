@@ -2,9 +2,10 @@
 //! Translates the storage operations.
 //!
 
+use crate::context::address_space::IAddressSpace;
+use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -20,7 +21,7 @@ where
 {
     let position_pointer = Pointer::new_with_offset(
         context,
-        AddressSpace::Storage,
+        AddressSpace::storage(),
         context.field_type(),
         position,
         "storage_load_position_pointer",
@@ -42,7 +43,7 @@ where
 {
     let position_pointer = Pointer::new_with_offset(
         context,
-        AddressSpace::Storage,
+        AddressSpace::storage(),
         context.field_type(),
         position,
         "storage_store_position_pointer",
@@ -63,7 +64,7 @@ where
 {
     let position_pointer = Pointer::new_with_offset(
         context,
-        AddressSpace::TransientStorage,
+        AddressSpace::transient_storage(),
         context.field_type(),
         position,
         "transient_storage_load_position_pointer",
@@ -85,7 +86,7 @@ where
 {
     let position_pointer = Pointer::new_with_offset(
         context,
-        AddressSpace::TransientStorage,
+        AddressSpace::transient_storage(),
         context.field_type(),
         position,
         "transient_storage_store_position_pointer",

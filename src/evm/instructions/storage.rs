@@ -2,9 +2,9 @@
 //! Translates the contract storage operations.
 //!
 
+use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
-use crate::evm::context::pointer::Pointer;
 use crate::evm::context::Context;
 use crate::evm::Dependency;
 

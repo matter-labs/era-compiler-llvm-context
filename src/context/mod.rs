@@ -2,35 +2,59 @@
 //! The LLVM module context trait.
 //!
 
+pub mod address_space;
 pub mod argument;
 pub mod attribute;
 pub mod block_key;
 pub mod code_type;
+pub mod function;
 pub mod r#loop;
+pub mod pointer;
+
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
+use self::address_space::IAddressSpace;
 use self::code_type::CodeType;
+use self::function::declaration::Declaration as FunctionDeclaration;
+use self::pointer::Pointer;
 use self::r#loop::Loop;
 
 ///
 /// The LLVM module context trait.
 ///
 pub trait IContext<'ctx> {
-    /// The pointer type.
-    type Pointer;
+    ///
+    /// The address space unique to each target.
+    ///
+    type AddressSpace: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>;
 
+    ///
+    /// The function type.
+    ///
+    type Function;
+
+    ///
     /// The Solidity extra data type.
+    ///
     type SolidityData;
 
+    ///
     /// The Yul extra data type.
+    ///
     type YulData;
 
+    ///
     /// The EVMLA extra data type.
+    ///
     type EVMLAData;
 
-    /// The Solidit extra data type.
+    ///
+    /// The Solidity extra data type.
+    ///
     type VyperData;
 
     ///
@@ -94,11 +118,37 @@ pub trait IContext<'ctx> {
     fn r#loop(&self) -> &Loop<'ctx>;
 
     ///
+    /// Appends a function to the current module.
+    ///
+    fn add_function(
+        &mut self,
+        name: &str,
+        r#type: inkwell::types::FunctionType<'ctx>,
+        return_values_length: usize,
+        linkage: Option<inkwell::module::Linkage>,
+    ) -> anyhow::Result<Rc<RefCell<Self::Function>>>;
+
+    ///
+    /// Returns a shared reference to the specified function.
+    ///
+    fn get_function(&self, name: &str) -> Option<Rc<RefCell<Self::Function>>>;
+
+    ///
+    /// Returns a shared reference to the current active function.
+    ///
+    fn current_function(&self) -> Rc<RefCell<Self::Function>>;
+
+    ///
+    /// Sets the current active function.
+    ///
+    fn set_current_function(&mut self, name: &str) -> anyhow::Result<()>;
+
+    ///
     /// Builds a stack allocation instruction.
     ///
     /// Sets the alignment to 256 bits.
     ///
-    fn build_alloca<T>(&self, r#type: T, name: &str) -> Self::Pointer
+    fn build_alloca<T>(&self, r#type: T, name: &str) -> Pointer<'ctx, Self::AddressSpace>
     where
         T: BasicType<'ctx> + Clone + Copy;
 
@@ -109,7 +159,7 @@ pub trait IContext<'ctx> {
     ///
     fn build_load(
         &self,
-        pointer: Self::Pointer,
+        pointer: Pointer<'ctx, Self::AddressSpace>,
         name: &str,
     ) -> inkwell::values::BasicValueEnum<'ctx>;
 
@@ -118,7 +168,7 @@ pub trait IContext<'ctx> {
     ///
     /// Sets the alignment to 256 bits for the stack and 1 bit for the heap, parent, and child.
     ///
-    fn build_store<V>(&self, pointer: Self::Pointer, value: V)
+    fn build_store<V>(&self, pointer: Pointer<'ctx, Self::AddressSpace>, value: V)
     where
         V: BasicValue<'ctx>;
 
@@ -127,11 +177,11 @@ pub trait IContext<'ctx> {
     ///
     fn build_gep<T>(
         &self,
-        pointer: Self::Pointer,
+        pointer: Pointer<'ctx, Self::AddressSpace>,
         indexes: &[inkwell::values::IntValue<'ctx>],
         element_type: T,
         name: &str,
-    ) -> Self::Pointer
+    ) -> Pointer<'ctx, Self::AddressSpace>
     where
         T: BasicType<'ctx>;
 
@@ -153,6 +203,42 @@ pub trait IContext<'ctx> {
     /// Checks if there are no other terminators in the block.
     ///
     fn build_unconditional_branch(&self, destination_block: inkwell::basic_block::BasicBlock<'ctx>);
+
+    ///
+    /// Builds a call.
+    ///
+    fn build_call(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        name: &str,
+    ) -> Option<inkwell::values::BasicValueEnum<'ctx>>;
+
+    ///
+    /// Builds an invoke.
+    ///
+    /// Is defaulted to a call if there is no global exception handler.
+    ///
+    fn build_invoke(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        name: &str,
+    ) -> Option<inkwell::values::BasicValueEnum<'ctx>>;
+
+    ///
+    /// Builds a memory copy call.
+    ///
+    /// Sets the alignment to `1`, since all non-stack memory pages have such alignment.
+    ///
+    fn build_memcpy(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        destination: Pointer<'ctx, Self::AddressSpace>,
+        source: Pointer<'ctx, Self::AddressSpace>,
+        size: inkwell::values::IntValue<'ctx>,
+        name: &str,
+    );
 
     ///
     /// Builds a return.

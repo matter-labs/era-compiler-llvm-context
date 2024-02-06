@@ -2,6 +2,8 @@
 //! The address space aliases.
 //!
 
+use crate::context::address_space::IAddressSpace;
+
 ///
 /// The address space aliases.
 ///
@@ -19,6 +21,46 @@ pub enum AddressSpace {
     Code,
     /// The storage.
     Storage,
+    /// The transient storage.
+    TransientStorage,
+}
+
+impl IAddressSpace for AddressSpace {
+    fn stack() -> Self {
+        Self::Stack
+    }
+
+    fn heap() -> Self {
+        Self::Heap
+    }
+
+    fn aux_heap() -> Self {
+        panic!("Only available for zkVM")
+    }
+
+    fn calldata() -> Self {
+        Self::Calldata
+    }
+
+    fn return_data() -> Self {
+        Self::ReturnData
+    }
+
+    fn generic() -> Self {
+        panic!("Only available for zkVM");
+    }
+
+    fn code() -> Self {
+        Self::Code
+    }
+
+    fn storage() -> Self {
+        Self::Storage
+    }
+
+    fn transient_storage() -> Self {
+        Self::TransientStorage
+    }
 }
 
 impl From<AddressSpace> for inkwell::AddressSpace {
@@ -30,6 +72,7 @@ impl From<AddressSpace> for inkwell::AddressSpace {
             AddressSpace::ReturnData => Self::from(3),
             AddressSpace::Code => Self::from(4),
             AddressSpace::Storage => Self::from(5),
+            AddressSpace::TransientStorage => Self::from(6),
         }
     }
 }

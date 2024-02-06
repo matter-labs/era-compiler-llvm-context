@@ -4,9 +4,10 @@
 
 use inkwell::types::BasicType;
 
+use crate::context::address_space::IAddressSpace;
+use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -65,7 +66,7 @@ where
 {
     let destination = Pointer::new_with_offset(
         context,
-        AddressSpace::Heap,
+        AddressSpace::heap(),
         context.byte_type(),
         destination_offset,
         "calldata_copy_destination_pointer",
