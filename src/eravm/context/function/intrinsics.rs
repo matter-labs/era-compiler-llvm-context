@@ -4,8 +4,8 @@
 
 use inkwell::types::BasicType;
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
+use crate::context::traits::address_space::IAddressSpace;
 use crate::eravm::context::address_space::AddressSpace;
 
 ///
@@ -121,8 +121,8 @@ impl<'ctx> Intrinsics<'ctx> {
         let byte_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32);
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
         let stack_field_pointer_type = field_type.ptr_type(AddressSpace::stack().into());
-        let heap_byte_pointer_type = byte_type.ptr_type(AddressSpace::heap().into());
-        let generic_byte_pointer_type = byte_type.ptr_type(AddressSpace::generic().into());
+        let heap_byte_pointer_type = byte_type.ptr_type(AddressSpace::Heap.into());
+        let generic_byte_pointer_type = byte_type.ptr_type(AddressSpace::Generic.into());
 
         let trap = Self::declare(
             llvm,
@@ -342,19 +342,19 @@ impl<'ctx> Intrinsics<'ctx> {
         match name {
             name if name == Self::FUNCTION_MEMORY_COPY => vec![
                 byte_type
-                    .ptr_type(AddressSpace::heap().into())
+                    .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 byte_type
-                    .ptr_type(AddressSpace::heap().into())
+                    .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 field_type.as_basic_type_enum(),
             ],
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_GENERIC => vec![
                 byte_type
-                    .ptr_type(AddressSpace::heap().into())
+                    .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 byte_type
-                    .ptr_type(AddressSpace::generic().into())
+                    .ptr_type(AddressSpace::Generic.into())
                     .as_basic_type_enum(),
                 field_type.as_basic_type_enum(),
             ],

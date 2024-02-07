@@ -2,7 +2,6 @@
 //! Translates the contract immutable operations.
 //!
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::code_type::CodeType;
 use crate::context::pointer::Pointer;
 use crate::context::IContext;
@@ -43,7 +42,7 @@ where
             );
             let immutable_pointer = Pointer::new_with_offset(
                 context,
-                AddressSpace::aux_heap(),
+                AddressSpace::HeapAuxiliary,
                 context.field_type(),
                 offset_absolute,
                 "immutable_pointer",
@@ -106,7 +105,7 @@ where
             );
             let index_offset_pointer = Pointer::new_with_offset(
                 context,
-                AddressSpace::aux_heap(),
+                AddressSpace::HeapAuxiliary,
                 context.field_type(),
                 index_offset_absolute,
                 "immutable_index_pointer",
@@ -120,7 +119,7 @@ where
             );
             let value_offset_pointer = Pointer::new_with_offset(
                 context,
-                AddressSpace::aux_heap(),
+                AddressSpace::HeapAuxiliary,
                 context.field_type(),
                 value_offset_absolute,
                 "immutable_value_pointer",

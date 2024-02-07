@@ -5,8 +5,8 @@
 use inkwell::values::BasicValue;
 use num::Zero;
 
-use crate::context::argument::Argument;
 use crate::context::code_type::CodeType;
+use crate::context::value::Value;
 use crate::context::IContext;
 use crate::eravm::context::function::runtime::Runtime;
 use crate::eravm::context::Context;
@@ -98,7 +98,7 @@ where
 pub fn contract_hash<'ctx, D>(
     context: &mut Context<'ctx, D>,
     identifier: String,
-) -> anyhow::Result<Argument<'ctx>>
+) -> anyhow::Result<Value<'ctx>>
 where
     D: Dependency + Clone,
 {
@@ -118,7 +118,7 @@ where
                 _ => error,
             })?;
     if contract_path.as_str() == parent {
-        return Ok(Argument::new_with_constant(
+        return Ok(Value::new_with_constant(
             context.field_const(0).as_basic_value_enum(),
             num::BigUint::zero(),
         ));
@@ -130,7 +130,7 @@ where
     let hash_value = context
         .field_const_str_hex(hash_string.as_str())
         .as_basic_value_enum();
-    Ok(Argument::new_with_original(hash_value, hash_string))
+    Ok(Value::new_with_original(hash_value, hash_string))
 }
 
 ///
@@ -150,7 +150,7 @@ where
 pub fn header_size<'ctx, D>(
     context: &mut Context<'ctx, D>,
     identifier: String,
-) -> anyhow::Result<Argument<'ctx>>
+) -> anyhow::Result<Value<'ctx>>
 where
     D: Dependency + Clone,
 {
@@ -170,7 +170,7 @@ where
                 _ => error,
             })?;
     if contract_path.as_str() == parent {
-        return Ok(Argument::new_with_constant(
+        return Ok(Value::new_with_constant(
             context.field_const(0).as_basic_value_enum(),
             num::BigUint::zero(),
         ));
@@ -182,5 +182,5 @@ where
     let size_value = context
         .field_const(crate::eravm::DEPLOYER_CALL_HEADER_SIZE as u64)
         .as_basic_value_enum();
-    Ok(Argument::new_with_constant(size_value, size_bigint))
+    Ok(Value::new_with_constant(size_value, size_bigint))
 }

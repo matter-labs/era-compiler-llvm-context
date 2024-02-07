@@ -4,7 +4,6 @@
 
 use inkwell::values::BasicValue;
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::Function as EraVMFunction;
@@ -24,7 +23,7 @@ where
 {
     let offset_pointer = context.builder().build_int_to_ptr(
         offset,
-        context.byte_type().ptr_type(AddressSpace::heap().into()),
+        context.byte_type().ptr_type(AddressSpace::Heap.into()),
         "sha3_offset_pointer",
     );
 

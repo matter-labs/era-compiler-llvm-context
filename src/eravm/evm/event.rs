@@ -4,7 +4,6 @@
 
 use inkwell::values::BasicValue;
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
@@ -37,7 +36,7 @@ where
         input_offset,
         input_length,
         Some(gas),
-        AddressSpace::heap(),
+        AddressSpace::Heap,
         true,
     )?;
     let mut extra_abi_data = Vec::with_capacity(1 + topics.len());

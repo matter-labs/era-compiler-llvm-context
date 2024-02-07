@@ -4,7 +4,6 @@
 
 use inkwell::types::BasicType;
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::evm::context::address_space::AddressSpace;
 
@@ -288,10 +287,10 @@ impl<'ctx> Intrinsics<'ctx> {
         let byte_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32);
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
 
-        let heap_byte_pointer_type = byte_type.ptr_type(AddressSpace::heap().into());
-        let calldata_byte_pointer_type = byte_type.ptr_type(AddressSpace::calldata().into());
-        let return_data_byte_pointer_type = byte_type.ptr_type(AddressSpace::return_data().into());
-        let code_byte_pointer_type = byte_type.ptr_type(AddressSpace::code().into());
+        let heap_byte_pointer_type = byte_type.ptr_type(AddressSpace::Heap.into());
+        let calldata_byte_pointer_type = byte_type.ptr_type(AddressSpace::Calldata.into());
+        let return_data_byte_pointer_type = byte_type.ptr_type(AddressSpace::ReturnData.into());
+        let code_byte_pointer_type = byte_type.ptr_type(AddressSpace::Code.into());
 
         let exp = Self::declare(
             llvm,
@@ -883,7 +882,7 @@ impl<'ctx> Intrinsics<'ctx> {
         match name {
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_CALLDATA => vec![
                 byte_type
-                    .ptr_type(AddressSpace::heap().into())
+                    .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 byte_type
                     .ptr_type(AddressSpace::Calldata.into())
@@ -892,7 +891,7 @@ impl<'ctx> Intrinsics<'ctx> {
             ],
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_RETURN_DATA => vec![
                 byte_type
-                    .ptr_type(AddressSpace::heap().into())
+                    .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 byte_type
                     .ptr_type(AddressSpace::ReturnData.into())
@@ -901,7 +900,7 @@ impl<'ctx> Intrinsics<'ctx> {
             ],
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_CODE => vec![
                 byte_type
-                    .ptr_type(AddressSpace::heap().into())
+                    .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 byte_type
                     .ptr_type(AddressSpace::Code.into())

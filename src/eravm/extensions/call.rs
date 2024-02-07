@@ -2,7 +2,6 @@
 //! Translates the call instructions of the EraVM Yul extension.
 //!
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::pointer::Pointer;
 use crate::context::IContext;
@@ -256,7 +255,7 @@ where
 
     let destination = Pointer::<AddressSpace>::new_with_offset(
         context,
-        AddressSpace::heap(),
+        AddressSpace::Heap,
         context.byte_type(),
         output_offset,
         "system_far_call_destination",

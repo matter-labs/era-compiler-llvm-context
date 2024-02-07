@@ -2,7 +2,8 @@
 //! The LLVM IR generator EVM legacy assembly data.
 //!
 
-use crate::context::argument::Argument;
+use crate::context::traits::evmla_data::IEVMLAData;
+use crate::context::value::Value;
 
 ///
 /// The LLVM IR generator EVM legacy assembly data.
@@ -15,7 +16,7 @@ pub struct EVMLAData<'ctx> {
     /// Some instruction behave differenly depending on the version.
     pub version: semver::Version,
     /// The static stack allocated for the current function.
-    pub stack: Vec<Argument<'ctx>>,
+    pub stack: Vec<Value<'ctx>>,
 }
 
 impl<'ctx> EVMLAData<'ctx> {
@@ -30,5 +31,19 @@ impl<'ctx> EVMLAData<'ctx> {
             version,
             stack: Vec::with_capacity(Self::DEFAULT_STACK_SIZE),
         }
+    }
+}
+
+impl<'ctx> IEVMLAData<'ctx> for EVMLAData<'ctx> {
+    fn get_element(&self, position: usize) -> &Value<'ctx> {
+        &self.stack[position]
+    }
+
+    fn set_element(&mut self, position: usize, value: Value<'ctx>) {
+        self.stack[position] = value;
+    }
+
+    fn set_original(&mut self, position: usize, original: String) {
+        self.stack[position].original = Some(original);
     }
 }

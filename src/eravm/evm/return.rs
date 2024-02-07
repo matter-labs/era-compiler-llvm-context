@@ -2,7 +2,6 @@
 //! Translates the transaction return operations.
 //!
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::code_type::CodeType;
 use crate::context::pointer::Pointer;
 use crate::context::IContext;
@@ -30,7 +29,7 @@ where
         Some(CodeType::Deploy) => {
             let immutables_offset_pointer = Pointer::new_with_offset(
                 context,
-                AddressSpace::aux_heap(),
+                AddressSpace::HeapAuxiliary,
                 context.field_type(),
                 context.field_const(crate::eravm::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA),
                 "immutables_offset_pointer",
@@ -42,7 +41,7 @@ where
 
             let immutables_number_pointer = Pointer::new_with_offset(
                 context,
-                AddressSpace::aux_heap(),
+                AddressSpace::HeapAuxiliary,
                 context.field_type(),
                 context.field_const(
                     crate::eravm::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA

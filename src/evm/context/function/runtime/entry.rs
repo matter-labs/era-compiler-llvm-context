@@ -4,7 +4,7 @@
 
 use std::marker::PhantomData;
 
-use crate::context::address_space::IAddressSpace;
+use crate::context::traits::address_space::IAddressSpace;
 use crate::context::IContext;
 use crate::evm::context::Context;
 use crate::evm::Dependency;
@@ -19,7 +19,13 @@ use crate::evm::WriteLLVM;
 pub struct Entry<B, AS, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
     D: Dependency + Clone,
 {
     /// The runtime code AST representation.
@@ -33,7 +39,13 @@ where
 impl<B, AS, D> Entry<B, AS, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
     D: Dependency + Clone,
 {
     ///
@@ -51,7 +63,13 @@ where
 impl<B, AS, D> WriteLLVM<D> for Entry<B, AS, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
     D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {

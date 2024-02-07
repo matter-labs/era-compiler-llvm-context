@@ -5,7 +5,7 @@
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
-use crate::context::address_space::IAddressSpace;
+use crate::context::traits::address_space::IAddressSpace;
 use crate::context::IContext;
 use crate::eravm::context::global::Global;
 
@@ -15,7 +15,13 @@ use crate::eravm::context::global::Global;
 #[derive(Debug, Clone, Copy)]
 pub struct Pointer<'ctx, AS>
 where
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
 {
     /// The pointee type.
     pub r#type: inkwell::types::BasicTypeEnum<'ctx>,
@@ -33,6 +39,7 @@ where
         + PartialEq
         + Eq
         + Into<inkwell::AddressSpace>
+        + std::fmt::Debug
         + std::fmt::Debug,
 {
     ///
@@ -115,7 +122,13 @@ where
 
 impl<'ctx, AS> From<Global<'ctx>> for Pointer<'ctx, AS>
 where
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
 {
     fn from(global: Global<'ctx>) -> Self {
         Self {

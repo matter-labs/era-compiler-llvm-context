@@ -4,8 +4,8 @@
 
 use inkwell::values::BasicValue;
 
-use crate::context::argument::Argument;
 use crate::context::pointer::Pointer;
+use crate::context::value::Value;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
@@ -159,7 +159,7 @@ where
 ///
 pub fn linker_symbol<'ctx, D>(
     context: &mut Context<'ctx, D>,
-    mut arguments: [Argument<'ctx>; 1],
+    mut arguments: [Value<'ctx>; 1],
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency + Clone,

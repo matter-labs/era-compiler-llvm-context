@@ -4,7 +4,7 @@
 
 use inkwell::values::BasicValue;
 
-use crate::context::address_space::IAddressSpace;
+use crate::context::traits::address_space::IAddressSpace;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::llvm_runtime::LLVMRuntime;

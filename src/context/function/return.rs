@@ -2,8 +2,8 @@
 //! The LLVM IR generator function return entity.
 //!
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::pointer::Pointer;
+use crate::context::traits::address_space::IAddressSpace;
 
 ///
 /// The LLVM IR generator function return entity.
@@ -11,7 +11,13 @@ use crate::context::pointer::Pointer;
 #[derive(Debug, Clone, Copy)]
 pub enum Return<'ctx, AS>
 where
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
 {
     /// The function does not return a value.
     None,
@@ -32,7 +38,13 @@ where
 
 impl<'ctx, AS> Return<'ctx, AS>
 where
-    AS: IAddressSpace + Clone + Copy + PartialEq + Eq + Into<inkwell::AddressSpace>,
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
 {
     ///
     /// A shortcut constructor.

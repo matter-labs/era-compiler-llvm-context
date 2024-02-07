@@ -5,7 +5,6 @@
 use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
@@ -61,7 +60,7 @@ where
     context.set_basic_block(join_block);
     let destination = Pointer::<AddressSpace>::new_with_offset(
         context,
-        AddressSpace::heap(),
+        AddressSpace::Heap,
         context.byte_type(),
         destination_offset,
         "return_data_copy_destination_pointer",

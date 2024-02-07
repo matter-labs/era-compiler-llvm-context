@@ -4,7 +4,6 @@
 
 use inkwell::types::BasicType;
 
-use crate::context::address_space::IAddressSpace;
 use crate::context::attribute::Attribute;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::eravm::context::address_space::AddressSpace;
@@ -434,7 +433,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             llvm.void_type().fn_type(
                 vec![
                     llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
-                        .ptr_type(AddressSpace::heap().into())
+                        .ptr_type(AddressSpace::Heap.into())
                         .as_basic_type_enum()
                         .into(),
                     llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
@@ -465,7 +464,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 .fn_type(
                     vec![
                         llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
-                            .ptr_type(AddressSpace::heap().into())
+                            .ptr_type(AddressSpace::Heap.into())
                             .as_basic_type_enum()
                             .into(),
                         llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)

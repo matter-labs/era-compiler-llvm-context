@@ -5,10 +5,9 @@
 use inkwell::values::BasicValue;
 use num::ToPrimitive;
 
-use crate::context::address_space::IAddressSpace;
-use crate::context::argument::Argument;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::pointer::Pointer;
+use crate::context::value::Value;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::runtime::Runtime;
@@ -572,7 +571,7 @@ where
 ///
 pub fn linker_symbol<'ctx, D>(
     context: &mut Context<'ctx, D>,
-    mut arguments: [Argument<'ctx>; 1],
+    mut arguments: [Value<'ctx>; 1],
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency + Clone,
@@ -674,7 +673,7 @@ where
         input_offset,
         input_length,
         Some(gas),
-        AddressSpace::heap(),
+        AddressSpace::Heap,
         true,
     )?;
     let result = crate::eravm::extensions::call::system(
@@ -731,14 +730,14 @@ where
 {
     let destination = Pointer::<AddressSpace>::new_with_offset(
         context,
-        AddressSpace::heap(),
+        AddressSpace::Heap,
         context.byte_type(),
         destination,
         "contract_call_identity_destination",
     );
     let source = Pointer::<AddressSpace>::new_with_offset(
         context,
-        AddressSpace::heap(),
+        AddressSpace::Heap,
         context.byte_type(),
         source,
         "contract_call_identity_source",
