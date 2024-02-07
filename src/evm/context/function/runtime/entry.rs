@@ -4,7 +4,6 @@
 
 use std::marker::PhantomData;
 
-use crate::context::traits::address_space::IAddressSpace;
 use crate::context::IContext;
 use crate::evm::context::Context;
 use crate::evm::Dependency;
@@ -16,36 +15,20 @@ use crate::evm::WriteLLVM;
 /// Is a special runtime function that is only used by the front-end generated code.
 ///
 #[derive(Debug)]
-pub struct Entry<B, AS, D>
+pub struct Entry<B, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace
-        + Clone
-        + Copy
-        + PartialEq
-        + Eq
-        + Into<inkwell::AddressSpace>
-        + std::fmt::Debug,
     D: Dependency + Clone,
 {
     /// The runtime code AST representation.
     inner: B,
     /// The `D` phantom data.
-    _pd_d: PhantomData<D>,
-    /// The `D` phantom data.
-    _pd_as: PhantomData<AS>,
+    _pd: PhantomData<D>,
 }
 
-impl<B, AS, D> Entry<B, AS, D>
+impl<B, D> Entry<B, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace
-        + Clone
-        + Copy
-        + PartialEq
-        + Eq
-        + Into<inkwell::AddressSpace>
-        + std::fmt::Debug,
     D: Dependency + Clone,
 {
     ///
@@ -54,22 +37,14 @@ where
     pub fn new(inner: B) -> Self {
         Self {
             inner,
-            _pd_d: PhantomData,
-            _pd_as: PhantomData,
+            _pd: PhantomData,
         }
     }
 }
 
-impl<B, AS, D> WriteLLVM<D> for Entry<B, AS, D>
+impl<B, D> WriteLLVM<D> for Entry<B, D>
 where
     B: WriteLLVM<D>,
-    AS: IAddressSpace
-        + Clone
-        + Copy
-        + PartialEq
-        + Eq
-        + Into<inkwell::AddressSpace>
-        + std::fmt::Debug,
     D: Dependency + Clone,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
