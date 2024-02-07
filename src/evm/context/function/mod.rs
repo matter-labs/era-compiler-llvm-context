@@ -2,8 +2,6 @@
 //! The LLVM IR generator function.
 //!
 
-pub mod block;
-pub mod evmla_data;
 pub mod intrinsics;
 pub mod runtime;
 pub mod vyper_data;
@@ -11,14 +9,17 @@ pub mod vyper_data;
 use std::collections::HashMap;
 
 use crate::context::attribute::Attribute;
+use crate::context::function::block::key::Key as BlockKey;
+use crate::context::function::block::Block;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
+use crate::context::function::evmla_data::EVMLAData as FunctionEVMLAData;
 use crate::context::function::r#return::Return as FunctionReturn;
 use crate::context::pointer::Pointer;
+use crate::context::traits::evmla_function::IEVMLAFunction;
 use crate::evm::context::address_space::AddressSpace;
 use crate::optimizer::settings::size_level::SizeLevel;
 use crate::optimizer::Optimizer;
 
-use self::evmla_data::EVMLAData;
 use self::vyper_data::VyperData;
 
 ///
@@ -44,7 +45,7 @@ pub struct Function<'ctx> {
     return_block: inkwell::basic_block::BasicBlock<'ctx>,
 
     /// The EVM legacy assembly compiler data.
-    evmla_data: Option<EVMLAData<'ctx>>,
+    evmla_data: Option<FunctionEVMLAData<'ctx>>,
     /// The Vyper data.
     vyper_data: Option<VyperData>,
 }
@@ -268,7 +269,7 @@ impl<'ctx> Function<'ctx> {
     ///
     /// Sets the EVM legacy assembly data.
     ///
-    pub fn set_evmla_data(&mut self, data: EVMLAData<'ctx>) {
+    pub fn set_evmla_data(&mut self, data: FunctionEVMLAData<'ctx>) {
         self.evmla_data = Some(data);
     }
 
@@ -278,7 +279,7 @@ impl<'ctx> Function<'ctx> {
     /// # Panics
     /// If the EVM data has not been initialized.
     ///
-    pub fn evmla(&self) -> &EVMLAData<'ctx> {
+    pub fn evmla(&self) -> &FunctionEVMLAData<'ctx> {
         self.evmla_data
             .as_ref()
             .expect("The EVM data must have been initialized")
@@ -290,7 +291,7 @@ impl<'ctx> Function<'ctx> {
     /// # Panics
     /// If the EVM data has not been initialized.
     ///
-    pub fn evmla_mut(&mut self) -> &mut EVMLAData<'ctx> {
+    pub fn evmla_mut(&mut self) -> &mut FunctionEVMLAData<'ctx> {
         self.evmla_data
             .as_mut()
             .expect("The EVM data must have been initialized")
@@ -325,5 +326,42 @@ impl<'ctx> Function<'ctx> {
         self.vyper_data
             .as_mut()
             .expect("The Vyper data must have been initialized")
+    }
+}
+
+impl<'ctx> IEVMLAFunction<'ctx> for Function<'ctx> {
+    fn find_block(&self, key: &BlockKey, stack_hash: &md5::Digest) -> anyhow::Result<Block<'ctx>> {
+        let evmla_data = self.evmla();
+
+        if evmla_data
+            .blocks
+            .get(key)
+            .ok_or_else(|| anyhow::anyhow!("Undeclared function block {}", key))?
+            .len()
+            == 1
+        {
+            return evmla_data
+                .blocks
+                .get(key)
+                .ok_or_else(|| anyhow::anyhow!("Undeclared function block {}", key))?
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Undeclared function block {}", key));
+        }
+
+        evmla_data
+            .blocks
+            .get(key)
+            .ok_or_else(|| anyhow::anyhow!("Undeclared function block {}", key))?
+            .iter()
+            .find(|block| {
+                block
+                    .evm()
+                    .stack_hashes
+                    .iter()
+                    .any(|hash| hash == stack_hash)
+            })
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("Undeclared function block {}", key))
     }
 }

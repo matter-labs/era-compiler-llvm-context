@@ -3,7 +3,6 @@
 //!
 
 pub mod attribute;
-pub mod block_key;
 pub mod code_type;
 pub mod function;
 pub mod r#loop;
@@ -23,6 +22,7 @@ use self::pointer::Pointer;
 use self::r#loop::Loop;
 use self::traits::address_space::IAddressSpace;
 use self::traits::evmla_data::IEVMLAData;
+use self::traits::evmla_function::IEVMLAFunction;
 
 ///
 /// The LLVM module context trait.
@@ -42,7 +42,7 @@ pub trait IContext<'ctx> {
     ///
     /// The function type.
     ///
-    type Function;
+    type Function: IEVMLAFunction<'ctx>;
 
     ///
     /// The Solidity extra data type.
@@ -80,12 +80,12 @@ pub trait IContext<'ctx> {
     fn module(&self) -> &inkwell::module::Module<'ctx>;
 
     ///
-    /// Sets the current code type (deploy or runtime).
+    /// Sets the code type.
     ///
     fn set_code_type(&mut self, code_type: CodeType);
 
     ///
-    /// Returns the current code type (deploy or runtime).
+    /// Returns the code type.
     ///
     fn code_type(&self) -> Option<CodeType>;
 

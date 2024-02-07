@@ -10,14 +10,14 @@ use crate::context::code_type::CodeType;
 /// Is only relevant to the EVM legacy assembly.
 ///
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct BlockKey {
+pub struct Key {
     /// The block code type.
     pub code_type: CodeType,
     /// The block tag.
     pub tag: num::BigUint,
 }
 
-impl BlockKey {
+impl Key {
     ///
     /// A shortcut constructor.
     ///
@@ -26,7 +26,7 @@ impl BlockKey {
     }
 }
 
-impl std::fmt::Display for BlockKey {
+impl std::fmt::Display for Key {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

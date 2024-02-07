@@ -1,11 +1,11 @@
 //!
-//! The LLVM IR EVMLA function trait.
+//! The LLVM IR EVMLA data trait.
 //!
 
 use crate::context::value::Value;
 
 ///
-/// The LLVM IR EVMLA function trait.
+/// The LLVM IR EVMLA data trait.
 ///
 pub trait IEVMLAData<'ctx> {
     ///
