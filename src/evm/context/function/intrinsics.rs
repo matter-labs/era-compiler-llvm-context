@@ -880,6 +880,15 @@ impl<'ctx> Intrinsics<'ctx> {
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
 
         match name {
+            name if name == Self::FUNCTION_MEMORY_COPY_FROM_HEAP => vec![
+                byte_type
+                    .ptr_type(AddressSpace::Heap.into())
+                    .as_basic_type_enum(),
+                byte_type
+                    .ptr_type(AddressSpace::Heap.into())
+                    .as_basic_type_enum(),
+                field_type.as_basic_type_enum(),
+            ],
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_CALLDATA => vec![
                 byte_type
                     .ptr_type(AddressSpace::Heap.into())
