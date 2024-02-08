@@ -4,7 +4,6 @@
 
 pub mod address_space;
 pub mod build;
-// pub mod debug_info;
 pub mod evmla_data;
 pub mod function;
 pub mod global;
@@ -29,6 +28,7 @@ use crate::context::function::r#return::Return as FunctionReturn;
 use crate::context::pointer::Pointer;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
+use crate::debug_info::DebugInfo;
 use crate::eravm::DebugConfig;
 use crate::eravm::Dependency;
 use crate::optimizer::settings::Settings as OptimizerSettings;
@@ -38,7 +38,6 @@ use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
 use self::build::Build;
-// use self::debug_info::DebugInfo;
 use self::evmla_data::EVMLAData;
 use self::function::intrinsics::Intrinsics;
 use self::function::llvm_runtime::LLVMRuntime;
@@ -88,7 +87,7 @@ where
     /// Whether to append the metadata hash at the end of bytecode.
     include_metadata_hash: bool,
     /// The debug info of the current module.
-    // debug_info: DebugInfo<'ctx>,
+    debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
     debug_config: Option<DebugConfig>,
 
@@ -129,7 +128,7 @@ where
         let builder = llvm.create_builder();
         let intrinsics = Intrinsics::new(llvm, &module);
         let llvm_runtime = LLVMRuntime::new(llvm, &module, &optimizer);
-        // let debug_info = DebugInfo::new(&module);
+        let debug_info = DebugInfo::new(&module);
 
         Self {
             llvm,
@@ -146,7 +145,7 @@ where
 
             dependency_manager,
             include_metadata_hash,
-            // debug_info,
+            debug_info,
             debug_config,
 
             solidity_data: None,
@@ -356,13 +355,6 @@ where
         self.dependency_manager
             .take()
             .expect("The dependency manager is unset")
-    }
-
-    ///
-    /// Returns the debug config reference.
-    ///
-    pub fn debug_config(&self) -> Option<&DebugConfig> {
-        self.debug_config.as_ref()
     }
 
     ///
@@ -793,6 +785,14 @@ where
 
     fn module(&self) -> &inkwell::module::Module<'ctx> {
         &self.module
+    }
+
+    fn debug_info(&self) -> &DebugInfo<'ctx> {
+        &self.debug_info
+    }
+
+    fn debug_config(&self) -> Option<&DebugConfig> {
+        self.debug_config.as_ref()
     }
 
     fn set_code_type(&mut self, code_type: CodeType) {

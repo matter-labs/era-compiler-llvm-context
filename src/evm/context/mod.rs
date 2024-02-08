@@ -4,7 +4,6 @@
 
 pub mod address_space;
 pub mod build;
-pub mod debug_info;
 pub mod evmla_data;
 pub mod function;
 
@@ -20,6 +19,7 @@ use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::function::r#return::Return as FunctionReturn;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
+use crate::debug_info::DebugInfo;
 use crate::evm::DebugConfig;
 use crate::evm::Dependency;
 use crate::optimizer::Optimizer;
@@ -28,7 +28,6 @@ use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
 use self::build::Build;
-use self::debug_info::DebugInfo;
 use self::evmla_data::EVMLAData;
 use self::function::intrinsics::Intrinsics;
 use self::function::Function;
@@ -265,20 +264,6 @@ where
     }
 
     ///
-    /// Returns the debug info reference.
-    ///
-    pub fn debug_info(&self) -> &DebugInfo<'ctx> {
-        &self.debug_info
-    }
-
-    ///
-    /// Returns the debug config reference.
-    ///
-    pub fn debug_config(&self) -> Option<&DebugConfig> {
-        self.debug_config.as_ref()
-    }
-
-    ///
     /// Returns a Yul function type with the specified arguments and number of return values.
     ///
     pub fn function_type<T>(
@@ -437,6 +422,14 @@ where
 
     fn module(&self) -> &inkwell::module::Module<'ctx> {
         &self.module
+    }
+
+    fn debug_info(&self) -> &DebugInfo<'ctx> {
+        &self.debug_info
+    }
+
+    fn debug_config(&self) -> Option<&DebugConfig> {
+        self.debug_config.as_ref()
     }
 
     fn set_code_type(&mut self, code_type: CodeType) {
