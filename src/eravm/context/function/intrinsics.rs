@@ -4,8 +4,9 @@
 
 use inkwell::types::BasicType;
 
+use crate::context::function::declaration::Declaration as FunctionDeclaration;
+use crate::context::traits::address_space::IAddressSpace;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::function::declaration::Declaration as FunctionDeclaration;
 
 ///
 /// The LLVM intrinsic functions, implemented in the LLVM back-end.
@@ -119,8 +120,8 @@ impl<'ctx> Intrinsics<'ctx> {
         let bool_type = llvm.bool_type();
         let byte_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32);
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
-        let stack_field_pointer_type = field_type.ptr_type(AddressSpace::Stack.into());
-        let heap_field_pointer_type = byte_type.ptr_type(AddressSpace::Heap.into());
+        let stack_field_pointer_type = field_type.ptr_type(AddressSpace::stack().into());
+        let heap_byte_pointer_type = byte_type.ptr_type(AddressSpace::Heap.into());
         let generic_byte_pointer_type = byte_type.ptr_type(AddressSpace::Generic.into());
 
         let trap = Self::declare(
@@ -135,8 +136,8 @@ impl<'ctx> Intrinsics<'ctx> {
             Self::FUNCTION_MEMORY_COPY,
             void_type.fn_type(
                 &[
-                    heap_field_pointer_type.as_basic_type_enum().into(),
-                    heap_field_pointer_type.as_basic_type_enum().into(),
+                    heap_byte_pointer_type.as_basic_type_enum().into(),
+                    heap_byte_pointer_type.as_basic_type_enum().into(),
                     field_type.as_basic_type_enum().into(),
                     bool_type.as_basic_type_enum().into(),
                 ],
@@ -149,7 +150,7 @@ impl<'ctx> Intrinsics<'ctx> {
             Self::FUNCTION_MEMORY_COPY_FROM_GENERIC,
             void_type.fn_type(
                 &[
-                    heap_field_pointer_type.as_basic_type_enum().into(),
+                    heap_byte_pointer_type.as_basic_type_enum().into(),
                     generic_byte_pointer_type.as_basic_type_enum().into(),
                     field_type.as_basic_type_enum().into(),
                     bool_type.as_basic_type_enum().into(),
@@ -335,23 +336,24 @@ impl<'ctx> Intrinsics<'ctx> {
         llvm: &'ctx inkwell::context::Context,
         name: &str,
     ) -> Vec<inkwell::types::BasicTypeEnum<'ctx>> {
+        let byte_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32);
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
 
         match name {
             name if name == Self::FUNCTION_MEMORY_COPY => vec![
-                field_type
+                byte_type
                     .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
-                field_type
+                byte_type
                     .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 field_type.as_basic_type_enum(),
             ],
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_GENERIC => vec![
-                field_type
+                byte_type
                     .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
-                field_type
+                byte_type
                     .ptr_type(AddressSpace::Generic.into())
                     .as_basic_type_enum(),
                 field_type.as_basic_type_enum(),

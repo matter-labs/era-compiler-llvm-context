@@ -1,12 +1,12 @@
 //!
-//! The LLVM argument with metadata.
+//! The LLVM compile-time value with metadata.
 //!
 
 ///
-/// The LLVM argument with metadata.
+/// The LLVM compile-time value with metadata.
 ///
 #[derive(Debug, Clone)]
-pub struct Argument<'ctx> {
+pub struct Value<'ctx> {
     /// The actual LLVM operand.
     pub value: inkwell::values::BasicValueEnum<'ctx>,
     /// The original AST value. Used mostly for string literals.
@@ -15,7 +15,7 @@ pub struct Argument<'ctx> {
     pub constant: Option<num::BigUint>,
 }
 
-impl<'ctx> Argument<'ctx> {
+impl<'ctx> Value<'ctx> {
     /// The calldata offset argument index.
     pub const ARGUMENT_INDEX_CALLDATA_OFFSET: usize = 0;
 
@@ -69,7 +69,7 @@ impl<'ctx> Argument<'ctx> {
     }
 }
 
-impl<'ctx> From<inkwell::values::BasicValueEnum<'ctx>> for Argument<'ctx> {
+impl<'ctx> From<inkwell::values::BasicValueEnum<'ctx>> for Value<'ctx> {
     fn from(value: inkwell::values::BasicValueEnum<'ctx>) -> Self {
         Self::new(value)
     }

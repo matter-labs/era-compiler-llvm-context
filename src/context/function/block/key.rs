@@ -2,7 +2,7 @@
 //! The LLVM IR generator function block key.
 //!
 
-use crate::eravm::context::code_type::CodeType;
+use crate::context::code_type::CodeType;
 
 ///
 /// The LLVM IR generator function block key.

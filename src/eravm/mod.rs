@@ -34,7 +34,7 @@ pub fn build_assembly_text(
     debug_config: Option<&DebugConfig>,
 ) -> anyhow::Result<Build> {
     if let Some(debug_config) = debug_config {
-        debug_config.dump_assembly(contract_path, assembly_text)?;
+        debug_config.dump_assembly(contract_path, None, assembly_text)?;
     }
 
     let mut assembly =

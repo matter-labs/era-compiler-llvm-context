@@ -2,9 +2,10 @@
 //! Translates the transaction return operations.
 //!
 
+use crate::context::code_type::CodeType;
+use crate::context::pointer::Pointer;
+use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::code_type::CodeType;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 

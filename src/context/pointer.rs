@@ -3,34 +3,49 @@
 //!
 
 use inkwell::types::BasicType;
+use inkwell::values::BasicValue;
 
-use crate::eravm::context::address_space::AddressSpace;
+use crate::context::traits::address_space::IAddressSpace;
+use crate::context::IContext;
 use crate::eravm::context::global::Global;
-use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// The LLVM pointer.
 ///
 #[derive(Debug, Clone, Copy)]
-pub struct Pointer<'ctx> {
+pub struct Pointer<'ctx, AS>
+where
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
+{
     /// The pointee type.
     pub r#type: inkwell::types::BasicTypeEnum<'ctx>,
     /// The address space.
-    pub address_space: AddressSpace,
+    pub address_space: AS,
     /// The pointer value.
     pub value: inkwell::values::PointerValue<'ctx>,
 }
 
-impl<'ctx> Pointer<'ctx> {
+impl<'ctx, AS> Pointer<'ctx, AS>
+where
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug
+        + std::fmt::Debug,
+{
     ///
     /// A shortcut constructor.
     ///
-    pub fn new<T>(
-        r#type: T,
-        address_space: AddressSpace,
-        value: inkwell::values::PointerValue<'ctx>,
-    ) -> Self
+    pub fn new<T>(r#type: T, address_space: AS, value: inkwell::values::PointerValue<'ctx>) -> Self
     where
         T: BasicType<'ctx>,
     {
@@ -44,16 +59,13 @@ impl<'ctx> Pointer<'ctx> {
     ///
     /// Wraps a 256-bit primitive type pointer.
     ///
-    pub fn new_stack_field<D>(
-        context: &Context<'ctx, D>,
-        value: inkwell::values::PointerValue<'ctx>,
-    ) -> Self
+    pub fn new_stack_field<C>(context: &C, value: inkwell::values::PointerValue<'ctx>) -> Self
     where
-        D: Dependency + Clone,
+        C: IContext<'ctx>,
     {
         Self {
             r#type: context.field_type().as_basic_type_enum(),
-            address_space: AddressSpace::Stack,
+            address_space: AS::stack(),
             value,
         }
     }
@@ -61,24 +73,24 @@ impl<'ctx> Pointer<'ctx> {
     ///
     /// Creates a new pointer with the specified `offset`.
     ///
-    pub fn new_with_offset<D, T>(
-        context: &Context<'ctx, D>,
-        address_space: AddressSpace,
+    pub fn new_with_offset<C, T>(
+        context: &C,
+        address_space: AS,
         r#type: T,
         offset: inkwell::values::IntValue<'ctx>,
         name: &str,
     ) -> Self
     where
-        D: Dependency + Clone,
+        C: IContext<'ctx>,
         T: BasicType<'ctx>,
     {
         assert_ne!(
             address_space,
-            AddressSpace::Stack,
+            AS::stack(),
             "Stack pointers cannot be addressed"
         );
 
-        let value = context.builder.build_int_to_ptr(
+        let value = context.builder().build_int_to_ptr(
             offset,
             context.byte_type().ptr_type(address_space.into()),
             name,
@@ -99,13 +111,29 @@ impl<'ctx> Pointer<'ctx> {
             value: self.value,
         }
     }
+
+    ///
+    /// Converts the pointer to a value enum.
+    ///
+    pub fn as_basic_value_enum(self) -> inkwell::values::BasicValueEnum<'ctx> {
+        self.value.as_basic_value_enum()
+    }
 }
 
-impl<'ctx> From<Global<'ctx>> for Pointer<'ctx> {
+impl<'ctx, AS> From<Global<'ctx>> for Pointer<'ctx, AS>
+where
+    AS: IAddressSpace
+        + Clone
+        + Copy
+        + PartialEq
+        + Eq
+        + Into<inkwell::AddressSpace>
+        + std::fmt::Debug,
+{
     fn from(global: Global<'ctx>) -> Self {
         Self {
             r#type: global.r#type,
-            address_space: AddressSpace::Stack,
+            address_space: AS::stack(),
             value: global.value.as_pointer_value(),
         }
     }

@@ -2,6 +2,8 @@
 //! The address space aliases.
 //!
 
+use crate::context::traits::address_space::IAddressSpace;
+
 ///
 /// The address space aliases.
 ///
@@ -21,6 +23,12 @@ pub enum AddressSpace {
     Storage,
     /// The transient storage.
     TransientStorage,
+}
+
+impl IAddressSpace for AddressSpace {
+    fn stack() -> Self {
+        Self::Stack
+    }
 }
 
 impl From<AddressSpace> for inkwell::AddressSpace {

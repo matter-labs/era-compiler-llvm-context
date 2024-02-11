@@ -5,11 +5,12 @@
 use inkwell::values::BasicValue;
 use num::ToPrimitive;
 
+use crate::context::function::declaration::Declaration as FunctionDeclaration;
+use crate::context::pointer::Pointer;
+use crate::context::value::Value;
+use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::argument::Argument;
-use crate::eravm::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::eravm::context::function::runtime::Runtime;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -570,7 +571,7 @@ where
 ///
 pub fn linker_symbol<'ctx, D>(
     context: &mut Context<'ctx, D>,
-    mut arguments: [Argument<'ctx>; 1],
+    mut arguments: [Value<'ctx>; 1],
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency + Clone,
@@ -727,14 +728,14 @@ fn identity<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let destination = Pointer::new_with_offset(
+    let destination = Pointer::<AddressSpace>::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),
         destination,
         "contract_call_identity_destination",
     );
-    let source = Pointer::new_with_offset(
+    let source = Pointer::<AddressSpace>::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),
