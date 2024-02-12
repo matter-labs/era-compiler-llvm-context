@@ -37,6 +37,7 @@ where
         ],
         "return",
     );
+    context.build_unreachable();
     Ok(())
 }
 
@@ -67,6 +68,7 @@ where
         ],
         "revert",
     );
+    context.build_unreachable();
     Ok(())
 }
 
@@ -78,6 +80,7 @@ where
     D: Dependency + Clone,
 {
     context.build_call(context.intrinsics().stop, &[], "stop");
+    context.build_unreachable();
     Ok(())
 }
 
@@ -89,5 +92,6 @@ where
     D: Dependency + Clone,
 {
     context.build_call(context.intrinsics().invalid, &[], "invalid");
+    context.build_unreachable();
     Ok(())
 }
