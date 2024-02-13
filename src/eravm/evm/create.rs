@@ -5,6 +5,7 @@
 use inkwell::values::BasicValue;
 use num::Zero;
 
+use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::argument::Argument;
 use crate::eravm::context::code_type::CodeType;
 use crate::eravm::context::function::runtime::Runtime;
@@ -18,6 +19,7 @@ use crate::eravm::Dependency;
 ///
 pub fn create<'ctx, D>(
     context: &mut Context<'ctx, D>,
+    address_space: AddressSpace,
     value: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
@@ -31,7 +33,7 @@ where
 
     let salt = context.field_const(0);
 
-    let function = Runtime::deployer_call(context);
+    let function = Runtime::deployer_call(context, address_space);
     let result = context
         .build_call(
             function,
@@ -56,6 +58,7 @@ where
 ///
 pub fn create2<'ctx, D>(
     context: &mut Context<'ctx, D>,
+    address_space: AddressSpace,
     value: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
@@ -70,7 +73,7 @@ where
 
     let salt = salt.unwrap_or_else(|| context.field_const(0));
 
-    let function = Runtime::deployer_call(context);
+    let function = Runtime::deployer_call(context, address_space);
     let result = context
         .build_call(
             function,
