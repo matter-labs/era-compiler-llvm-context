@@ -461,7 +461,7 @@ where
     ///
     pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
         if let Some(vyper_data) = self.vyper_data.as_mut() {
-            vyper_data.set_is_forwarder_used();
+            vyper_data.set_is_minimal_proxy_used();
         }
         self.dependency_manager
             .to_owned()
