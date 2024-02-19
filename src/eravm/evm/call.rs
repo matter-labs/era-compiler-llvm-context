@@ -743,7 +743,7 @@ where
     );
 
     context.build_memcpy(
-        context.intrinsics().memory_copy,
+        context.intrinsics().memory_move,
         destination,
         source,
         size,

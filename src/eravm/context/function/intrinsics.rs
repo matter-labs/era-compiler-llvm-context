@@ -17,7 +17,7 @@ pub struct Intrinsics<'ctx> {
     /// The trap.
     pub trap: FunctionDeclaration<'ctx>,
     /// The memory copy within the heap.
-    pub memory_copy: FunctionDeclaration<'ctx>,
+    pub memory_move: FunctionDeclaration<'ctx>,
     /// The memory copy from a generic page.
     pub memory_copy_from_generic: FunctionDeclaration<'ctx>,
 
@@ -58,7 +58,7 @@ impl<'ctx> Intrinsics<'ctx> {
     pub const FUNCTION_TRAP: &'static str = "llvm.trap";
 
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_MEMORY_COPY: &'static str = "llvm.memcpy.p1.p1.i256";
+    pub const FUNCTION_MEMORY_MOVE: &'static str = "llvm.memmove.p1.p1.i256";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_MEMORY_COPY_FROM_GENERIC: &'static str = "llvm.memcpy.p3.p1.i256";
@@ -129,10 +129,10 @@ impl<'ctx> Intrinsics<'ctx> {
             Self::FUNCTION_TRAP,
             void_type.fn_type(&[], false),
         );
-        let memory_copy = Self::declare(
+        let memory_move = Self::declare(
             llvm,
             module,
-            Self::FUNCTION_MEMORY_COPY,
+            Self::FUNCTION_MEMORY_MOVE,
             void_type.fn_type(
                 &[
                     heap_field_pointer_type.as_basic_type_enum().into(),
@@ -289,7 +289,7 @@ impl<'ctx> Intrinsics<'ctx> {
 
         Self {
             trap,
-            memory_copy,
+            memory_move,
             memory_copy_from_generic,
 
             event,
@@ -338,7 +338,7 @@ impl<'ctx> Intrinsics<'ctx> {
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
 
         match name {
-            name if name == Self::FUNCTION_MEMORY_COPY => vec![
+            name if name == Self::FUNCTION_MEMORY_MOVE => vec![
                 field_type
                     .ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
