@@ -12,18 +12,18 @@ pub struct VyperData {
     /// The immutables size tracker. Stores the size in bytes.
     /// Does not take into account the size of the indexes.
     immutables_size: usize,
-    /// Whether the contract forwarder has been used.
-    is_forwarder_used: bool,
+    /// Whether the contract minimal proxy has been used.
+    is_minimal_proxy_used: bool,
 }
 
 impl VyperData {
     ///
     /// A shortcut constructor.
     ///
-    pub fn new(immutables_size: usize, is_forwarder_used: bool) -> Self {
+    pub fn new(immutables_size: usize, is_minimal_proxy_used: bool) -> Self {
         Self {
             immutables_size,
-            is_forwarder_used,
+            is_minimal_proxy_used,
         }
     }
 
@@ -35,16 +35,16 @@ impl VyperData {
     }
 
     ///
-    /// Sets the forwarder usage flag.
+    /// Sets the minimal proxy usage flag.
     ///
-    pub fn set_is_forwarder_used(&mut self) {
-        self.is_forwarder_used = true;
+    pub fn set_is_minimal_proxy_used(&mut self) {
+        self.is_minimal_proxy_used = true;
     }
 
     ///
-    /// Returns the forwarder usage flag.
+    /// Returns the minimal proxy usage flag.
     ///
-    pub fn is_forwarder_used(&self) -> bool {
-        self.is_forwarder_used
+    pub fn is_minimal_proxy_used(&self) -> bool {
+        self.is_minimal_proxy_used
     }
 }
