@@ -113,6 +113,27 @@ where
 }
 
 ///
+/// Generates a decommit call.
+///
+pub fn decommit<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    in_0: inkwell::values::IntValue<'ctx>,
+    gas_left: inkwell::values::IntValue<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let result = context
+        .build_call(
+            context.intrinsics().decommit,
+            &[in_0.as_basic_value_enum(), gas_left.as_basic_value_enum()],
+            "contract_call_simulation_decommit",
+        )
+        .expect("Always exists");
+    Ok(result)
+}
+
+///
 /// Generates a `meta` call.
 ///
 pub fn meta<'ctx, D>(

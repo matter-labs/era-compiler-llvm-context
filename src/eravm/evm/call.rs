@@ -76,6 +76,18 @@ where
 
                 return crate::eravm::extensions::general::precompile(context, in_0, gas_left);
             }
+            Some(era_compiler_common::ERAVM_ADDRESS_DECOMMIT) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "decommit",
+                )?;
+
+                let in_0 = gas;
+                let gas_left = input_offset;
+
+                return crate::eravm::extensions::general::decommit(context, in_0, gas_left);
+            }
             Some(era_compiler_common::ERAVM_ADDRESS_META) => {
                 crate::eravm::extensions::call::validate_call_type(
                     context.llvm_runtime().static_call,
