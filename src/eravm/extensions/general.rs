@@ -4,6 +4,7 @@
 
 use inkwell::values::BasicValue;
 
+use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -130,6 +131,12 @@ where
             "contract_call_simulation_decommit",
         )
         .expect("Always exists");
+    context.set_global(
+        crate::eravm::GLOBAL_DECOMMIT_POINTER,
+        context.byte_type().ptr_type(AddressSpace::Generic.into()),
+        AddressSpace::Stack,
+        result,
+    );
     Ok(result)
 }
 

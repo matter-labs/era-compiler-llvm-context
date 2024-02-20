@@ -156,6 +156,7 @@ where
             calldata_end_pointer,
             crate::eravm::GLOBAL_RETURN_DATA_POINTER,
         );
+        context.write_abi_pointer(calldata_end_pointer, crate::eravm::GLOBAL_DECOMMIT_POINTER);
         context.write_abi_pointer(calldata_end_pointer, crate::eravm::GLOBAL_ACTIVE_POINTER);
 
         let call_flags = context
