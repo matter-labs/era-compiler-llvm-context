@@ -500,6 +500,24 @@ where
 
                 return crate::eravm::extensions::const_array::get(context, index, offset);
             }
+            Some(era_compiler_common::ERAVM_ADDRESS_RETURN_FORWARD) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "return_forward",
+                )?;
+
+                return crate::eravm::extensions::abi::active_ptr_return_forward(context);
+            }
+            Some(era_compiler_common::ERAVM_ADDRESS_REVERT_FORWARD) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "revert_forward",
+                )?;
+
+                return crate::eravm::extensions::abi::active_ptr_revert_forward(context);
+            }
             _ => {}
         }
     }
