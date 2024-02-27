@@ -253,3 +253,41 @@ where
 
     Ok(context.field_const(1).as_basic_value_enum())
 }
+
+///
+/// Generates a return forwarding the active pointer.
+///
+pub fn active_ptr_return_forward<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let active_pointer = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    context.build_call(
+        context.llvm_runtime().return_forward,
+        &[active_pointer.as_basic_value_enum()],
+        "active_pointer_return_forward",
+    );
+    context.build_unreachable();
+    Ok(context.field_const(1).as_basic_value_enum())
+}
+
+///
+/// Generates a revert forwarding the active pointer.
+///
+pub fn active_ptr_revert_forward<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let active_pointer = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    context.build_call(
+        context.llvm_runtime().revert_forward,
+        &[active_pointer.as_basic_value_enum()],
+        "active_pointer_revert_forward",
+    );
+    context.build_unreachable();
+    Ok(context.field_const(1).as_basic_value_enum())
+}
