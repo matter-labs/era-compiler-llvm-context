@@ -156,7 +156,10 @@ where
             calldata_end_pointer,
             crate::eravm::GLOBAL_RETURN_DATA_POINTER,
         );
-        context.write_abi_pointer(calldata_end_pointer, crate::eravm::GLOBAL_ACTIVE_POINTER);
+        for index in 0..crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER {
+            let name = format!("{}_{index}", crate::eravm::GLOBAL_ACTIVE_POINTER_PREFIX);
+            context.write_abi_pointer(calldata_end_pointer, name.as_str());
+        }
 
         let call_flags = context
             .current_function()

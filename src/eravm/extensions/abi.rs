@@ -291,3 +291,45 @@ where
     context.build_unreachable();
     Ok(context.field_const(1).as_basic_value_enum())
 }
+
+///
+/// Swaps active pointers.
+///
+pub fn active_ptr_swap<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    index_1: usize,
+    index_2: usize,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    if index_1 >= crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER
+        || index_2 >= crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER
+    {
+        anyhow::bail!(
+            "Active pointer index must be less than {}",
+            crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER
+        );
+    }
+
+    let name_1 = format!("{}_{index_1}", crate::eravm::GLOBAL_ACTIVE_POINTER_PREFIX);
+    let name_2 = format!("{}_{index_2}", crate::eravm::GLOBAL_ACTIVE_POINTER_PREFIX);
+
+    let pointer_1 = context.get_global_value(name_1.as_str())?;
+    let pointer_2 = context.get_global_value(name_2.as_str())?;
+
+    context.set_global(
+        name_1.as_str(),
+        pointer_1.get_type(),
+        AddressSpace::Stack,
+        pointer_2.into_pointer_value(),
+    );
+    context.set_global(
+        name_2.as_str(),
+        pointer_2.get_type(),
+        AddressSpace::Stack,
+        pointer_1.into_pointer_value(),
+    );
+
+    Ok(context.field_const(1).as_basic_value_enum())
+}
