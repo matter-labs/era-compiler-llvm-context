@@ -32,14 +32,17 @@ pub static GLOBAL_CALL_FLAGS: &str = "call_flags";
 /// The extra ABI data global variable name.
 pub static GLOBAL_EXTRA_ABI_DATA: &str = "extra_abi_data";
 
-/// The active pointer global variable name.
-pub static GLOBAL_ACTIVE_POINTER: &str = "ptr_active";
+/// The active pointer array global variable name.
+pub static GLOBAL_ACTIVE_POINTER_ARRAY: &str = "ptr_active";
 
 /// The constant array global variable name prefix.
 pub static GLOBAL_CONST_ARRAY_PREFIX: &str = "const_array_";
 
 /// The global verbatim getter identifier prefix.
 pub static GLOBAL_VERBATIM_GETTER_PREFIX: &str = "get_global::";
+
+/// The number of available active pointers.
+pub const AVAILABLE_ACTIVE_POINTERS_NUMBER: usize = 16;
 
 /// The external call data offset in the auxiliary heap.
 pub const HEAP_AUX_OFFSET_EXTERNAL_CALL: u64 = 0;

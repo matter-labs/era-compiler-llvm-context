@@ -78,6 +78,20 @@ impl Entry {
             extra_abi_data_type.const_zero(),
         );
 
+        let generic_byte_pointer_type = context.byte_type().ptr_type(AddressSpace::Generic.into());
+        context.set_global(
+            crate::eravm::GLOBAL_ACTIVE_POINTER_ARRAY,
+            generic_byte_pointer_type
+                .array_type(crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER as u32),
+            AddressSpace::Stack,
+            context
+                .array_type(
+                    generic_byte_pointer_type,
+                    crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER,
+                )
+                .const_zero(),
+        );
+
         Ok(())
     }
 }
@@ -157,7 +171,12 @@ where
             crate::eravm::GLOBAL_RETURN_DATA_POINTER,
         );
         context.write_abi_pointer(calldata_end_pointer, crate::eravm::GLOBAL_DECOMMIT_POINTER);
-        context.write_abi_pointer(calldata_end_pointer, crate::eravm::GLOBAL_ACTIVE_POINTER);
+        for index in 0..crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER {
+            context.set_active_pointer(
+                context.field_const(index as u64),
+                calldata_end_pointer.value,
+            )?;
+        }
 
         let call_flags = context
             .current_function()
