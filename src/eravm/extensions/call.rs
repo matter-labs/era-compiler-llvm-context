@@ -2,9 +2,10 @@
 //! Translates the call instructions of the EraVM Yul extension.
 //!
 
+use crate::context::function::declaration::Declaration as FunctionDeclaration;
+use crate::context::pointer::Pointer;
+use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::function::declaration::Declaration as FunctionDeclaration;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -55,7 +56,7 @@ where
             "mimic_call_external_result_abi_data",
         )
         .expect("Always exists");
-    let result_abi_data_pointer = Pointer::new(
+    let result_abi_data_pointer = Pointer::<AddressSpace>::new(
         context.byte_type(),
         AddressSpace::Generic,
         result_abi_data.into_pointer_value(),
@@ -129,7 +130,7 @@ where
             "system_far_call_external_result_abi_data",
         )
         .expect("Always exists");
-    let result_abi_data_pointer = Pointer::new(
+    let result_abi_data_pointer = Pointer::<AddressSpace>::new(
         context.byte_type(),
         AddressSpace::Generic,
         result_abi_data.into_pointer_value(),
@@ -152,7 +153,7 @@ where
 
     let source = result_abi_data_pointer;
 
-    let destination = Pointer::new_with_offset(
+    let destination = Pointer::<AddressSpace>::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),
@@ -229,7 +230,7 @@ where
             "system_far_call_external_result_abi_data",
         )
         .expect("Always exists");
-    let result_abi_data_pointer = Pointer::new(
+    let result_abi_data_pointer = Pointer::<AddressSpace>::new(
         context.byte_type(),
         AddressSpace::Generic,
         result_abi_data.into_pointer_value(),
@@ -252,7 +253,7 @@ where
 
     let source = result_abi_data_pointer;
 
-    let destination = Pointer::new_with_offset(
+    let destination = Pointer::<AddressSpace>::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),

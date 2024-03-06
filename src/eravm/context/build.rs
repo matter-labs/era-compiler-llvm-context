@@ -10,15 +10,15 @@ use serde::Serialize;
 ///
 /// The LLVM module build.
 ///
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Build {
-    /// The EraVM text assembly.
+    /// The text assembly.
     pub assembly_text: String,
     /// The metadata hash.
     pub metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     /// The EraVM binary bytecode.
     pub bytecode: Vec<u8>,
-    /// The EraVM bytecode hash.
+    /// The bytecode hash.
     pub bytecode_hash: String,
     /// The hash-to-full-path mapping of the contract factory dependencies.
     pub factory_dependencies: BTreeMap<String, String>,

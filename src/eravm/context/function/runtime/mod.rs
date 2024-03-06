@@ -8,8 +8,9 @@ pub mod deployer_call;
 pub mod entry;
 pub mod runtime_code;
 
+use crate::context::function::declaration::Declaration as FunctionDeclaration;
+use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 use crate::eravm::WriteLLVM;
