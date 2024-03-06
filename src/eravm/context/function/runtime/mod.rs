@@ -21,12 +21,8 @@ use self::deployer_call::DeployerCall;
 ///
 /// The front-end runtime functions.
 ///
-#[derive(Debug, Clone)]
-pub struct Runtime {
-    /// The address space where the calldata is allocated.
-    /// Solidity uses the ordinary heap. Vyper uses the auxiliary heap.
-    address_space: AddressSpace,
-}
+#[derive(Debug, Default, Clone)]
+pub struct Runtime {}
 
 impl Runtime {
     /// The main entry function name.
@@ -37,13 +33,6 @@ impl Runtime {
 
     /// The runtime code function name.
     pub const FUNCTION_RUNTIME_CODE: &'static str = "__runtime";
-
-    ///
-    /// A shortcut constructor.
-    ///
-    pub fn new(address_space: AddressSpace) -> Self {
-        Self { address_space }
-    }
 
     ///
     /// Returns the corresponding runtime function.
@@ -65,12 +54,15 @@ impl Runtime {
     ///
     /// Returns the corresponding runtime function.
     ///
-    pub fn deployer_call<'ctx, D>(context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
+    pub fn deployer_call<'ctx, D>(
+        context: &Context<'ctx, D>,
+        address_space: AddressSpace,
+    ) -> FunctionDeclaration<'ctx>
     where
         D: Dependency + Clone,
     {
         context
-            .get_function(DeployerCall::FUNCTION_NAME)
+            .get_function(DeployerCall::name(address_space).as_str())
             .expect("Always exists")
             .borrow()
             .declaration()
@@ -85,7 +77,8 @@ where
         DefaultCall::new(context.llvm_runtime().far_call).declare(context)?;
         DefaultCall::new(context.llvm_runtime().static_call).declare(context)?;
         DefaultCall::new(context.llvm_runtime().delegate_call).declare(context)?;
-        DeployerCall::new(self.address_space).declare(context)?;
+        DeployerCall::new(AddressSpace::Heap).declare(context)?;
+        DeployerCall::new(AddressSpace::HeapAuxiliary).declare(context)?;
 
         Ok(())
     }
@@ -94,7 +87,8 @@ where
         DefaultCall::new(context.llvm_runtime().far_call).into_llvm(context)?;
         DefaultCall::new(context.llvm_runtime().static_call).into_llvm(context)?;
         DefaultCall::new(context.llvm_runtime().delegate_call).into_llvm(context)?;
-        DeployerCall::new(self.address_space).into_llvm(context)?;
+        DeployerCall::new(AddressSpace::Heap).into_llvm(context)?;
+        DeployerCall::new(AddressSpace::HeapAuxiliary).into_llvm(context)?;
 
         Ok(())
     }

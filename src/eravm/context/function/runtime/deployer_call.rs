@@ -29,9 +29,6 @@ pub struct DeployerCall {
 }
 
 impl DeployerCall {
-    /// The default function name.
-    pub const FUNCTION_NAME: &'static str = "__deployer_call";
-
     /// The value argument index.
     pub const ARGUMENT_INDEX_VALUE: usize = 0;
 
@@ -47,11 +44,25 @@ impl DeployerCall {
     /// The salt argument index.
     pub const ARGUMENT_INDEX_SALT: usize = 4;
 
+    /// The heap function name.
+    const FUNCTION_NAME: &'static str = "__deployer_call";
+
     ///
     /// A shortcut constructor.
     ///
     pub fn new(address_space: AddressSpace) -> Self {
         Self { address_space }
+    }
+
+    ///
+    /// Returns the function name based on its address space.
+    ///
+    pub fn name(address_space: AddressSpace) -> String {
+        match address_space {
+            AddressSpace::HeapAuxiliary => format!("{}_aux", Self::FUNCTION_NAME),
+            AddressSpace::Heap => Self::FUNCTION_NAME.to_owned(),
+            _ => panic!("DeployerCall can only use Heap or HeapAuxiliary address spaces"),
+        }
     }
 }
 
@@ -72,7 +83,7 @@ where
             false,
         );
         let function = context.add_function(
-            Self::FUNCTION_NAME,
+            Self::name(self.address_space).as_str(),
             function_type,
             1,
             Some(inkwell::module::Linkage::Private),
@@ -87,7 +98,7 @@ where
     }
 
     fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()> {
-        context.set_current_function(Self::FUNCTION_NAME)?;
+        context.set_current_function(Self::name(self.address_space).as_str())?;
 
         let value = context
             .current_function()

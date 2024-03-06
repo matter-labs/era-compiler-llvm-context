@@ -283,6 +283,51 @@ where
     }
 
     ///
+    /// Returns the active pointer at `index`.
+    ///
+    pub fn get_active_pointer(
+        &self,
+        index: inkwell::values::IntValue<'ctx>,
+    ) -> anyhow::Result<inkwell::values::PointerValue<'ctx>> {
+        let active_pointer_array_global = self
+            .globals
+            .get(crate::eravm_const::GLOBAL_ACTIVE_POINTER_ARRAY)
+            .expect("Always exists")
+            .to_owned();
+        let active_pointer_pointer = self.build_gep(
+            active_pointer_array_global.into(),
+            &[self.field_const(0), index],
+            self.byte_type().ptr_type(AddressSpace::Generic.into()),
+            "active_pointer_pointer",
+        );
+        let active_pointer = self.build_load(active_pointer_pointer, "active_pointer");
+        Ok(active_pointer.into_pointer_value())
+    }
+
+    ///
+    /// Sets the active pointer at `index`.
+    ///
+    pub fn set_active_pointer(
+        &self,
+        index: inkwell::values::IntValue<'ctx>,
+        pointer: inkwell::values::PointerValue<'ctx>,
+    ) -> anyhow::Result<()> {
+        let active_pointer_array_global = self
+            .globals
+            .get(crate::eravm_const::GLOBAL_ACTIVE_POINTER_ARRAY)
+            .expect("Always exists")
+            .to_owned();
+        let active_pointer_pointer = self.build_gep(
+            active_pointer_array_global.into(),
+            &[self.field_const(0), index],
+            self.byte_type().ptr_type(AddressSpace::Generic.into()),
+            "active_pointer_pointer",
+        );
+        self.build_store(active_pointer_pointer, pointer);
+        Ok(())
+    }
+
+    ///
     /// Returns the LLVM intrinsics collection reference.
     ///
     pub fn intrinsics(&self) -> &Intrinsics<'ctx> {
@@ -301,7 +346,7 @@ where
     ///
     pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
         if let Some(vyper_data) = self.vyper_data.as_mut() {
-            vyper_data.set_is_forwarder_used();
+            vyper_data.set_is_minimal_proxy_used();
         }
         self.dependency_manager
             .to_owned()

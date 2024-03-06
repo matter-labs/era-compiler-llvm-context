@@ -46,12 +46,10 @@ where
     D: Dependency + Clone,
 {
     let calldata_pointer = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
-    context.set_global(
-        crate::eravm::GLOBAL_ACTIVE_POINTER,
-        context.byte_type().ptr_type(AddressSpace::Generic.into()),
-        AddressSpace::Stack,
-        calldata_pointer,
-    );
+    context.set_active_pointer(
+        context.field_const(0),
+        calldata_pointer.into_pointer_value(),
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -64,13 +62,11 @@ pub fn return_data_ptr_to_active<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let calldata_pointer = context.get_global_value(crate::eravm::GLOBAL_RETURN_DATA_POINTER)?;
-    context.set_global(
-        crate::eravm::GLOBAL_ACTIVE_POINTER,
-        context.byte_type().ptr_type(AddressSpace::Generic.into()),
-        AddressSpace::Stack,
-        calldata_pointer,
-    );
+    let return_data_pointer = context.get_global_value(crate::eravm::GLOBAL_RETURN_DATA_POINTER)?;
+    context.set_active_pointer(
+        context.field_const(0),
+        return_data_pointer.into_pointer_value(),
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -84,23 +80,14 @@ pub fn active_ptr_add_assign<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let active_pointer = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer_shifted = context.build_gep(
-        Pointer::new(
-            context.byte_type(),
-            AddressSpace::Generic,
-            active_pointer.into_pointer_value(),
-        ),
+        Pointer::new(context.byte_type(), AddressSpace::Generic, active_pointer),
         &[offset],
         context.byte_type().as_basic_type_enum(),
         "active_pointer_shifted",
     );
-    context.set_global(
-        crate::eravm::GLOBAL_ACTIVE_POINTER,
-        context.byte_type().ptr_type(AddressSpace::Generic.into()),
-        AddressSpace::Stack,
-        active_pointer_shifted.value,
-    );
+    context.set_active_pointer(context.field_const(0), active_pointer_shifted.value)?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -114,20 +101,21 @@ pub fn active_ptr_shrink_assign<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let active_pointer = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer_shrunken = context
         .build_call(
             context.intrinsics().pointer_shrink,
-            &[active_pointer, offset.as_basic_value_enum()],
+            &[
+                active_pointer.as_basic_value_enum(),
+                offset.as_basic_value_enum(),
+            ],
             "active_pointer_shrunken",
         )
         .expect("Always returns a pointer");
-    context.set_global(
-        crate::eravm::GLOBAL_ACTIVE_POINTER,
-        context.byte_type().ptr_type(AddressSpace::Generic.into()),
-        AddressSpace::Stack,
-        active_pointer_shrunken,
-    );
+    context.set_active_pointer(
+        context.field_const(0),
+        active_pointer_shrunken.into_pointer_value(),
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -141,20 +129,21 @@ pub fn active_ptr_pack_assign<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let active_pointer = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer_packed = context
         .build_call(
             context.intrinsics().pointer_pack,
-            &[active_pointer, data.as_basic_value_enum()],
+            &[
+                active_pointer.as_basic_value_enum(),
+                data.as_basic_value_enum(),
+            ],
             "active_pointer_packed",
         )
         .expect("Always returns a pointer");
-    context.set_global(
-        crate::eravm::GLOBAL_ACTIVE_POINTER,
-        context.byte_type().ptr_type(AddressSpace::Generic.into()),
-        AddressSpace::Stack,
-        active_pointer_packed,
-    );
+    context.set_active_pointer(
+        context.field_const(0),
+        active_pointer_packed.into_pointer_value(),
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -168,13 +157,9 @@ pub fn active_ptr_data_load<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let active_pointer = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer = context.build_gep(
-        Pointer::new(
-            context.byte_type(),
-            AddressSpace::Generic,
-            active_pointer.into_pointer_value(),
-        ),
+        Pointer::new(context.byte_type(), AddressSpace::Generic, active_pointer),
         &[offset],
         context.field_type().as_basic_type_enum(),
         "active_pointer_with_offset",
@@ -192,9 +177,9 @@ pub fn active_ptr_data_size<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let active_pointer = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer_value = context.builder().build_ptr_to_int(
-        active_pointer.into_pointer_value(),
+        active_pointer,
         context.field_type(),
         "active_pointer_value",
     );
@@ -232,13 +217,9 @@ where
         "active_pointer_data_copy_destination_pointer",
     );
 
-    let active_pointer = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+    let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let source = context.build_gep(
-        Pointer::new(
-            context.byte_type(),
-            AddressSpace::Generic,
-            active_pointer.into_pointer_value(),
-        ),
+        Pointer::new(context.byte_type(), AddressSpace::Generic, active_pointer),
         &[source_offset],
         context.byte_type().as_basic_type_enum(),
         "active_pointer_data_copy_source_pointer",
@@ -251,6 +232,64 @@ where
         size,
         "active_pointer_data_copy_memcpy_from_child",
     );
+
+    Ok(context.field_const(1).as_basic_value_enum())
+}
+
+///
+/// Generates a return forwarding the active pointer.
+///
+pub fn active_ptr_return_forward<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let active_pointer = context.get_active_pointer(context.field_const(0))?;
+    context.build_call(
+        context.llvm_runtime().return_forward,
+        &[active_pointer.as_basic_value_enum()],
+        "active_pointer_return_forward",
+    );
+    context.build_unreachable();
+    Ok(context.field_const(1).as_basic_value_enum())
+}
+
+///
+/// Generates a revert forwarding the active pointer.
+///
+pub fn active_ptr_revert_forward<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let active_pointer = context.get_active_pointer(context.field_const(0))?;
+    context.build_call(
+        context.llvm_runtime().revert_forward,
+        &[active_pointer.as_basic_value_enum()],
+        "active_pointer_revert_forward",
+    );
+    context.build_unreachable();
+    Ok(context.field_const(1).as_basic_value_enum())
+}
+
+///
+/// Swaps active pointers.
+///
+pub fn active_ptr_swap<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    index_1: inkwell::values::IntValue<'ctx>,
+    index_2: inkwell::values::IntValue<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let pointer_1 = context.get_active_pointer(index_1)?;
+    let pointer_2 = context.get_active_pointer(index_2)?;
+
+    context.set_active_pointer(index_1, pointer_2)?;
+    context.set_active_pointer(index_2, pointer_1)?;
 
     Ok(context.field_const(1).as_basic_value_enum())
 }

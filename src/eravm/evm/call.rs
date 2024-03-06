@@ -119,7 +119,7 @@ where
             Some(era_compiler_common::ERAVM_ADDRESS_MIMIC_CALL_BYREF) => {
                 let address = gas;
                 let mimic = input_length;
-                let abi_data = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+                let abi_data = context.get_active_pointer(context.field_const(0))?;
 
                 return crate::eravm::extensions::call::mimic(
                     context,
@@ -133,7 +133,7 @@ where
             Some(era_compiler_common::ERAVM_ADDRESS_SYSTEM_MIMIC_CALL_BYREF) => {
                 let address = gas;
                 let mimic = input_length;
-                let abi_data = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+                let abi_data = context.get_active_pointer(context.field_const(0))?;
                 let extra_value_1 = output_offset;
                 let extra_value_2 = output_length;
 
@@ -142,7 +142,7 @@ where
                     context.llvm_runtime().mimic_call_byref,
                     address,
                     mimic,
-                    abi_data,
+                    abi_data.as_basic_value_enum(),
                     vec![extra_value_1, extra_value_2],
                 );
             }
@@ -161,13 +161,13 @@ where
             }
             Some(era_compiler_common::ERAVM_ADDRESS_RAW_FAR_CALL_BYREF) => {
                 let address = gas;
-                let abi_data = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+                let abi_data = context.get_active_pointer(context.field_const(0))?;
 
                 return crate::eravm::extensions::call::raw_far(
                     context,
                     context.llvm_runtime().modify(function, true)?,
                     address,
-                    abi_data,
+                    abi_data.as_basic_value_enum(),
                     output_offset,
                     output_length,
                 );
@@ -192,7 +192,7 @@ where
             }
             Some(era_compiler_common::ERAVM_ADDRESS_SYSTEM_CALL_BYREF) => {
                 let address = gas;
-                let abi_data = context.get_global_value(crate::eravm::GLOBAL_ACTIVE_POINTER)?;
+                let abi_data = context.get_active_pointer(context.field_const(0))?;
                 let extra_value_1 = value.expect("Always exists");
                 let extra_value_2 = input_offset;
                 let extra_value_3 = output_offset;
@@ -202,7 +202,7 @@ where
                     context,
                     context.llvm_runtime().modify(function, true)?,
                     address,
-                    abi_data,
+                    abi_data.as_basic_value_enum(),
                     context.field_const(0),
                     context.field_const(0),
                     vec![extra_value_1, extra_value_2, extra_value_3, extra_value_4],
@@ -420,6 +420,18 @@ where
                     size,
                 );
             }
+            Some(era_compiler_common::ERAVM_ADDRESS_ACTIVE_PTR_SWAP) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "active_ptr_swap",
+                )?;
+
+                let index_1 = gas;
+                let index_2 = input_offset;
+
+                return crate::eravm::extensions::abi::active_ptr_swap(context, index_1, index_2);
+            }
             Some(era_compiler_common::ERAVM_ADDRESS_CONST_ARRAY_DECLARE) => {
                 crate::eravm::extensions::call::validate_call_type(
                     context.llvm_runtime().static_call,
@@ -500,6 +512,24 @@ where
                 let offset = input_offset;
 
                 return crate::eravm::extensions::const_array::get(context, index, offset);
+            }
+            Some(era_compiler_common::ERAVM_ADDRESS_RETURN_FORWARD) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "return_forward",
+                )?;
+
+                return crate::eravm::extensions::abi::active_ptr_return_forward(context);
+            }
+            Some(era_compiler_common::ERAVM_ADDRESS_REVERT_FORWARD) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "revert_forward",
+                )?;
+
+                return crate::eravm::extensions::abi::active_ptr_revert_forward(context);
             }
             _ => {}
         }
@@ -744,7 +774,7 @@ where
     );
 
     context.build_memcpy(
-        context.intrinsics().memory_copy,
+        context.intrinsics().memory_move,
         destination,
         source,
         size,

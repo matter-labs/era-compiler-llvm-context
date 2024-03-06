@@ -82,6 +82,11 @@ pub struct LLVMRuntime<'ctx> {
     pub r#return: FunctionDeclaration<'ctx>,
     /// The corresponding LLVM runtime function.
     pub revert: FunctionDeclaration<'ctx>,
+
+    /// The corresponding LLVM runtime function.
+    pub return_forward: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub revert_forward: FunctionDeclaration<'ctx>,
 }
 
 impl<'ctx> LLVMRuntime<'ctx> {
@@ -165,6 +170,12 @@ impl<'ctx> LLVMRuntime<'ctx> {
 
     /// The corresponding runtime function name.
     pub const FUNCTION_REVERT: &'static str = "__revert";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_RETURN_FORWARD: &'static str = "__return_forward";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_REVERT_FORWARD: &'static str = "__revert_forward";
 
     ///
     /// A shortcut constructor.
@@ -661,6 +672,37 @@ impl<'ctx> LLVMRuntime<'ctx> {
         );
         Function::set_default_attributes(llvm, revert, optimizer);
 
+        let return_forward = Self::declare(
+            module,
+            Self::FUNCTION_RETURN_FORWARD,
+            llvm.void_type().fn_type(
+                vec![llvm
+                    .custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
+                    .ptr_type(AddressSpace::Generic.into())
+                    .as_basic_type_enum()
+                    .into()]
+                .as_slice(),
+                false,
+            ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, return_forward, optimizer);
+        let revert_forward = Self::declare(
+            module,
+            Self::FUNCTION_REVERT_FORWARD,
+            llvm.void_type().fn_type(
+                vec![llvm
+                    .custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
+                    .ptr_type(AddressSpace::Generic.into())
+                    .as_basic_type_enum()
+                    .into()]
+                .as_slice(),
+                false,
+            ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, revert_forward, optimizer);
+
         Self {
             personality,
             cxa_throw,
@@ -698,6 +740,9 @@ impl<'ctx> LLVMRuntime<'ctx> {
 
             r#return,
             revert,
+
+            return_forward,
+            revert_forward,
         }
     }
 
