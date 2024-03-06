@@ -2,6 +2,7 @@
 //! Translates the value and balance operations.
 //!
 
+use crate::context::IContext;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 

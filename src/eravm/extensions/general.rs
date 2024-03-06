@@ -5,6 +5,7 @@
 use inkwell::values::BasicValue;
 
 use crate::eravm::context::address_space::AddressSpace;
+use crate::context::IContext;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 

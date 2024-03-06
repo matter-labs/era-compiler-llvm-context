@@ -3,6 +3,7 @@
 //!
 
 pub mod evmla_data;
+pub mod key;
 
 use self::evmla_data::EVMLAData;
 

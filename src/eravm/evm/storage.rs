@@ -2,8 +2,9 @@
 //! Translates the storage operations.
 //!
 
+use crate::context::pointer::Pointer;
+use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
-use crate::eravm::context::pointer::Pointer;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 

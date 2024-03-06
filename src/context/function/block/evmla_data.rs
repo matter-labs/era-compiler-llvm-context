@@ -2,8 +2,6 @@
 //! The LLVM function block EVM legacy assembly data.
 //!
 
-pub mod key;
-
 ///
 /// The LLVM function block EVM legacy assembly data.
 ///
