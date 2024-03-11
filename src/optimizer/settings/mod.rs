@@ -27,6 +27,8 @@ pub struct Settings {
     pub is_fallback_to_size_enabled: bool,
     /// Whether the system request memoization is disabled.
     pub is_system_request_memoization_disabled: bool,
+    /// The jump table density threshold.
+    pub jump_table_density_threshold: Option<u32>,
 
     /// Whether the LLVM `verify each` option is enabled.
     pub is_verify_each_enabled: bool,
@@ -50,6 +52,7 @@ impl Settings {
 
             is_fallback_to_size_enabled: false,
             is_system_request_memoization_disabled: false,
+            jump_table_density_threshold: None,
 
             is_verify_each_enabled: false,
             is_debug_logging_enabled: false,
@@ -74,6 +77,7 @@ impl Settings {
 
             is_fallback_to_size_enabled: false,
             is_system_request_memoization_disabled: false,
+            jump_table_density_threshold: None,
 
             is_verify_each_enabled,
             is_debug_logging_enabled,
@@ -239,6 +243,13 @@ impl Settings {
     }
 
     ///
+    /// Sets the jump table density threshold.
+    ///
+    pub fn set_jump_table_density_threshold(&mut self, threshold: u32) {
+        self.jump_table_density_threshold = Some(threshold);
+    }
+
+    ///
     /// Whether the fallback to optimizing for size is enabled.
     ///
     pub fn is_fallback_to_size_enabled(&self) -> bool {
@@ -250,6 +261,13 @@ impl Settings {
     ///
     pub fn is_system_request_memoization_disabled(&self) -> bool {
         self.is_system_request_memoization_disabled
+    }
+
+    ///
+    /// Returns the jump table density threshold.
+    ///
+    pub fn jump_table_density_threshold(&self) -> Option<u32> {
+        self.jump_table_density_threshold
     }
 }
 
