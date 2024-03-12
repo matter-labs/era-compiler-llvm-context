@@ -38,11 +38,21 @@ impl TargetMachine {
     /// A separate instance for every optimization level is created.
     ///
     pub fn new(target: Target, optimizer_settings: &OptimizerSettings) -> anyhow::Result<Self> {
+        let mut arguments = Vec::with_capacity(3);
+        arguments.push(target.name().to_owned());
         if optimizer_settings.is_system_request_memoization_disabled() {
+            arguments.push("-eravm-disable-sha3-sreq-cse".to_owned());
+        }
+        if let Some(value) = optimizer_settings.jump_table_density_threshold() {
+            arguments.push("-eravm-jump-table-density-threshold".to_owned());
+            arguments.push(value.to_string());
+        }
+        if arguments.len() > 1 {
+            let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
             inkwell::support::parse_command_line_options(
-                2,
-                &[target.name(), "-eravm-disable-sha3-sreq-cse"],
-                "Disables system request memoization",
+                arguments.len() as i32,
+                arguments.as_slice(),
+                "Optimizer parameters",
             );
         }
 
