@@ -44,7 +44,8 @@ impl TargetMachine {
             arguments.push("-eravm-disable-sha3-sreq-cse".to_owned());
         }
         if let Some(value) = optimizer_settings.jump_table_density_threshold() {
-            arguments.push(format!("-eravm-jump-table-density-threshold={}", value));
+            arguments.push("-eravm-jump-table-density-threshold".to_owned());
+            arguments.push(value.to_string());
         }
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
