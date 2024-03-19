@@ -71,6 +71,23 @@ where
 }
 
 ///
+/// Loads the decommit pointer to the active pointer.
+///
+pub fn decommit_ptr_to_active<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let decommit_pointer = context.get_global_value(crate::eravm::GLOBAL_DECOMMIT_POINTER)?;
+    context.set_active_pointer(
+        context.field_const(0),
+        decommit_pointer.into_pointer_value(),
+    )?;
+    Ok(context.field_const(1).as_basic_value_enum())
+}
+
+///
 /// Shifts the active pointer by the specified `offset`.
 ///
 pub fn active_ptr_add_assign<'ctx, D>(

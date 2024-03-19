@@ -77,6 +77,18 @@ where
 
                 return crate::eravm::extensions::general::precompile(context, in_0, gas_left);
             }
+            Some(era_compiler_common::ERAVM_ADDRESS_DECOMMIT) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "decommit",
+                )?;
+
+                let in_0 = gas;
+                let gas_left = input_offset;
+
+                return crate::eravm::extensions::general::decommit(context, in_0, gas_left);
+            }
             Some(era_compiler_common::ERAVM_ADDRESS_META) => {
                 crate::eravm::extensions::call::validate_call_type(
                     context.llvm_runtime().static_call,
@@ -323,6 +335,15 @@ where
                 )?;
 
                 return crate::eravm::extensions::abi::return_data_ptr_to_active(context);
+            }
+            Some(era_compiler_common::ERAVM_ADDRESS_ACTIVE_PTR_LOAD_DECOMMIT) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "active_ptr_load_decommit",
+                )?;
+
+                return crate::eravm::extensions::abi::decommit_ptr_to_active(context);
             }
             Some(era_compiler_common::ERAVM_ADDRESS_ACTIVE_PTR_ADD) => {
                 crate::eravm::extensions::call::validate_call_type(

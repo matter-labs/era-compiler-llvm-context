@@ -37,6 +37,9 @@ pub struct Settings {
 }
 
 impl Settings {
+    /// The jump table density threshold used with the EVM interpreter.
+    pub const JUMP_TABLE_DENSITY_THRESHOLD: u32 = 10;
+
     ///
     /// A shortcut constructor.
     ///
@@ -161,6 +164,17 @@ impl Settings {
             SizeLevel::Z,
             inkwell::OptimizationLevel::Aggressive,
         )
+    }
+
+    ///
+    /// Returns the settings for the EVM interpreter.
+    ///
+    /// Based on cycles, but adds the threshold of `10` to the jump table density.
+    ///
+    pub fn evm_interpreter() -> Self {
+        let mut settings = Self::cycles();
+        settings.set_jump_table_density_threshold(Self::JUMP_TABLE_DENSITY_THRESHOLD);
+        settings
     }
 
     ///
