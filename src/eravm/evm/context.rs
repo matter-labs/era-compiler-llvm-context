@@ -189,17 +189,17 @@ where
     D: Dependency + Clone,
 {
     let meta = context
-        .build_call(context.intrinsics().meta, &[], "msize_meta")
+        .build_call(context.intrinsics().meta, &[], "msize_meta")?
         .expect("Always exists");
     let meta_shifted = context.builder().build_right_shift(
         meta.into_int_value(),
         context.field_const(era_compiler_common::BIT_LENGTH_X64 as u64),
         false,
         "msize_meta_shifted",
-    );
+    )?;
     let result =
         context
             .builder()
-            .build_and(meta_shifted, context.field_const(u32::MAX as u64), "msize");
+            .build_and(meta_shifted, context.field_const(u32::MAX as u64), "msize")?;
     Ok(result.as_basic_value_enum())
 }

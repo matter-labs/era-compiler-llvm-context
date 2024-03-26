@@ -24,7 +24,7 @@ pub fn call<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-) -> inkwell::values::BasicValueEnum<'ctx>
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency + Clone,
 {
@@ -34,16 +34,16 @@ where
         context.byte_type(),
         input_offset,
         "call_input_offset_pointer",
-    );
+    )?;
     let output_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),
         output_offset,
         "call_output_offset_pointer",
-    );
+    )?;
 
-    context
+    Ok(context
         .build_call(
             context.intrinsics().call,
             &[
@@ -56,8 +56,8 @@ where
                 output_length.as_basic_value_enum(),
             ],
             "call",
-        )
-        .expect("Always exists")
+        )?
+        .expect("Always exists"))
 }
 
 ///
@@ -72,7 +72,7 @@ pub fn static_call<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-) -> inkwell::values::BasicValueEnum<'ctx>
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency + Clone,
 {
@@ -82,16 +82,16 @@ where
         context.byte_type(),
         input_offset,
         "staticcall_input_offset_pointer",
-    );
+    )?;
     let output_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),
         output_offset,
         "staticcall_output_offset_pointer",
-    );
+    )?;
 
-    context
+    Ok(context
         .build_call(
             context.intrinsics().staticcall,
             &[
@@ -103,8 +103,8 @@ where
                 output_length.as_basic_value_enum(),
             ],
             "static_call",
-        )
-        .expect("Always exists")
+        )?
+        .expect("Always exists"))
 }
 
 ///
@@ -119,7 +119,7 @@ pub fn delegate_call<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-) -> inkwell::values::BasicValueEnum<'ctx>
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency + Clone,
 {
@@ -129,16 +129,16 @@ where
         context.byte_type(),
         input_offset,
         "delegatecall_input_offset_pointer",
-    );
+    )?;
     let output_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),
         output_offset,
         "delegatecall_output_offset_pointer",
-    );
+    )?;
 
-    context
+    Ok(context
         .build_call(
             context.intrinsics().delegatecall,
             &[
@@ -150,8 +150,8 @@ where
                 output_length.as_basic_value_enum(),
             ],
             "delegate_call",
-        )
-        .expect("Always exists")
+        )?
+        .expect("Always exists"))
 }
 
 ///

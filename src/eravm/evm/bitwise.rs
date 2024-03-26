@@ -21,7 +21,7 @@ where
 {
     Ok(context
         .builder()
-        .build_or(operand_1, operand_2, "or_result")
+        .build_or(operand_1, operand_2, "or_result")?
         .as_basic_value_enum())
 }
 
@@ -38,7 +38,7 @@ where
 {
     Ok(context
         .builder()
-        .build_xor(operand_1, operand_2, "xor_result")
+        .build_xor(operand_1, operand_2, "xor_result")?
         .as_basic_value_enum())
 }
 
@@ -55,7 +55,7 @@ where
 {
     Ok(context
         .builder()
-        .build_and(operand_1, operand_2, "and_result")
+        .build_and(operand_1, operand_2, "and_result")?
         .as_basic_value_enum())
 }
 
@@ -78,7 +78,7 @@ where
                 operand_2.as_basic_value_enum(),
             ],
             "shl_call",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -101,7 +101,7 @@ where
                 operand_2.as_basic_value_enum(),
             ],
             "shr_call",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -124,7 +124,7 @@ where
                 operand_2.as_basic_value_enum(),
             ],
             "sar_call",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -147,6 +147,6 @@ where
                 operand_2.as_basic_value_enum(),
             ],
             "byte_call",
-        )
+        )?
         .expect("Always exists"))
 }

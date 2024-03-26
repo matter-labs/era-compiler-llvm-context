@@ -79,7 +79,7 @@ where
         r#type: T,
         offset: inkwell::values::IntValue<'ctx>,
         name: &str,
-    ) -> Self
+    ) -> anyhow::Result<Self>
     where
         C: IContext<'ctx>,
         T: BasicType<'ctx>,
@@ -94,8 +94,8 @@ where
             offset,
             context.byte_type().ptr_type(address_space.into()),
             name,
-        );
-        Self::new(r#type, address_space, value)
+        )?;
+        Ok(Self::new(r#type, address_space, value))
     }
 
     ///

@@ -18,7 +18,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().gas, &[], "gas")
+        .build_call(context.intrinsics().gas, &[], "gas")?
         .expect("Always exists"))
 }
 
@@ -32,7 +32,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().callvalue, &[], "callvalue")
+        .build_call(context.intrinsics().callvalue, &[], "callvalue")?
         .expect("Always exists"))
 }
 
@@ -51,7 +51,7 @@ where
             context.intrinsics().balance,
             &[address.as_basic_value_enum()],
             "balance",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -65,7 +65,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().selfbalance, &[], "selfbalance")
+        .build_call(context.intrinsics().selfbalance, &[], "selfbalance")?
         .expect("Always exists"))
 }
 
@@ -84,6 +84,6 @@ where
             context.intrinsics().selfdestruct,
             &[address.as_basic_value_enum()],
             "selfdestruct",
-        )
+        )?
         .expect("Always exists"))
 }

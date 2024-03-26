@@ -33,11 +33,11 @@ where
                 context.field_type(),
                 context.field_const(crate::eravm::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA),
                 "immutables_offset_pointer",
-            );
+            )?;
             context.build_store(
                 immutables_offset_pointer,
                 context.field_const(era_compiler_common::BYTE_LENGTH_FIELD as u64),
-            );
+            )?;
 
             let immutables_number_pointer = Pointer::new_with_offset(
                 context,
@@ -48,33 +48,33 @@ where
                         + (era_compiler_common::BYTE_LENGTH_FIELD as u64),
                 ),
                 "immutables_number_pointer",
-            );
+            )?;
             let immutable_values_size = context.immutables_size()?;
             context.build_store(
                 immutables_number_pointer,
                 context.field_const(
                     (immutable_values_size / era_compiler_common::BYTE_LENGTH_FIELD) as u64,
                 ),
-            );
+            )?;
             let immutables_size = context.builder().build_int_mul(
                 context.field_const(immutable_values_size as u64),
                 context.field_const(2),
                 "immutables_size",
-            );
+            )?;
             let return_data_length = context.builder().build_int_add(
                 immutables_size,
                 context.field_const((era_compiler_common::BYTE_LENGTH_FIELD * 2) as u64),
                 "return_data_length",
-            );
+            )?;
 
             context.build_exit(
                 context.llvm_runtime().r#return,
                 context.field_const(crate::eravm::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA),
                 return_data_length,
-            );
+            )?;
         }
         Some(CodeType::Runtime) => {
-            context.build_exit(context.llvm_runtime().r#return, offset, length);
+            context.build_exit(context.llvm_runtime().r#return, offset, length)?;
         }
     }
 
@@ -92,7 +92,7 @@ pub fn revert<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    context.build_exit(context.llvm_runtime().revert, offset, length);
+    context.build_exit(context.llvm_runtime().revert, offset, length)?;
     Ok(())
 }
 
@@ -122,7 +122,7 @@ where
         context.field_type().const_all_ones(),
         context.field_const(0),
     )?;
-    context.build_call(context.intrinsics().trap, &[], "invalid_trap");
+    context.build_call(context.intrinsics().trap, &[], "invalid_trap")?;
     context.build_unreachable();
     Ok(())
 }

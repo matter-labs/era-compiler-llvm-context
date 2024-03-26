@@ -29,7 +29,7 @@ where
                 modulo.as_basic_value_enum(),
             ],
             "add_mod_call",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -54,7 +54,7 @@ where
                 modulo.as_basic_value_enum(),
             ],
             "mul_mod_call",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -74,7 +74,7 @@ where
             context.llvm_runtime().exp,
             &[value.as_basic_value_enum(), exponent.as_basic_value_enum()],
             "exp_call",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -94,6 +94,6 @@ where
             context.llvm_runtime().sign_extend,
             &[bytes.as_basic_value_enum(), value.as_basic_value_enum()],
             "sign_extend_call",
-        )
+        )?
         .expect("Always exists"))
 }

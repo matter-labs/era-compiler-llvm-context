@@ -71,11 +71,11 @@ where
         {
             Some(inkwell::values::InstructionOpcode::Br) => {}
             Some(inkwell::values::InstructionOpcode::Switch) => {}
-            _ => context.build_unreachable(),
+            _ => context.build_unreachable()?,
         }
 
         context.set_basic_block(context.current_function().borrow().return_block());
-        context.build_return(None);
+        context.build_return(None)?;
 
         Ok(())
     }

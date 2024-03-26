@@ -489,7 +489,7 @@ where
             0 => FunctionReturn::none(),
             1 => {
                 self.set_basic_block(entry_block);
-                let pointer = self.build_alloca(self.field_type(), "return_pointer");
+                let pointer = self.build_alloca(self.field_type(), "return_pointer")?;
                 FunctionReturn::primitive(pointer)
             }
             size => {
@@ -499,7 +499,7 @@ where
                         vec![self.field_type().as_basic_type_enum(); size].as_slice(),
                     ),
                     "return_pointer",
-                );
+                )?;
                 FunctionReturn::compound(pointer, size)
             }
         };
@@ -542,7 +542,7 @@ where
         function: FunctionDeclaration<'ctx>,
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
             .iter()
             .copied()
@@ -553,9 +553,9 @@ where
             function.value.as_global_value().as_pointer_value(),
             arguments_wrapped.as_slice(),
             name,
-        );
+        )?;
         self.modify_call_site_value(arguments, call_site_value, function);
-        call_site_value.try_as_basic_value().left()
+        Ok(call_site_value.try_as_basic_value().left())
     }
 
     fn build_invoke(
@@ -563,7 +563,7 @@ where
         function: FunctionDeclaration<'ctx>,
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         Self::build_call(self, function, arguments, name)
     }
 

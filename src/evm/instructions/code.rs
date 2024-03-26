@@ -20,7 +20,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().codesize, &[], "codesize")
+        .build_call(context.intrinsics().codesize, &[], "codesize")?
         .expect("Always exists"))
 }
 
@@ -32,7 +32,8 @@ pub fn copy<'ctx, D>(
     destination_offset: inkwell::values::IntValue<'ctx>,
     source_offset: inkwell::values::IntValue<'ctx>,
     size: inkwell::values::IntValue<'ctx>,
-) where
+) -> anyhow::Result<()>
+where
     D: Dependency + Clone,
 {
     let destination = Pointer::new_with_offset(
@@ -41,7 +42,7 @@ pub fn copy<'ctx, D>(
         context.byte_type(),
         destination_offset,
         "codecopy_destination_pointer",
-    );
+    )?;
 
     let source = Pointer::new_with_offset(
         context,
@@ -49,7 +50,7 @@ pub fn copy<'ctx, D>(
         context.byte_type(),
         source_offset,
         "codecopy_source_pointer",
-    );
+    )?;
 
     context.build_memcpy(
         context.intrinsics().memory_copy_from_code,
@@ -57,7 +58,8 @@ pub fn copy<'ctx, D>(
         source,
         size,
         "codecopy_memcpy",
-    );
+    )?;
+    Ok(())
 }
 
 ///
@@ -75,7 +77,7 @@ where
             context.intrinsics().extcodesize,
             &[address.as_basic_value_enum()],
             "extcodesize",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -98,7 +100,7 @@ where
         context.byte_type(),
         destination_offset,
         "extcodecopy_destination_offset_pointer",
-    );
+    )?;
 
     context
         .build_call(
@@ -110,7 +112,7 @@ where
                 size.as_basic_value_enum(),
             ],
             "extcodecopy",
-        )
+        )?
         .expect("Always exists");
     Ok(())
 }
@@ -130,6 +132,6 @@ where
             context.intrinsics().extcodehash,
             &[address.as_basic_value_enum()],
             "extcodehash",
-        )
+        )?
         .expect("Always exists"))
 }

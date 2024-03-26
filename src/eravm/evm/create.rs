@@ -46,7 +46,7 @@ where
                 salt.as_basic_value_enum(),
             ],
             "create_deployer_call",
-        )
+        )?
         .expect("Always exists");
 
     Ok(result)
@@ -86,7 +86,7 @@ where
                 salt.as_basic_value_enum(),
             ],
             "create2_deployer_call",
-        )
+        )?
         .expect("Always exists");
 
     Ok(result)

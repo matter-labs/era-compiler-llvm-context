@@ -18,7 +18,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().returndatasize, &[], "returndatasize")
+        .build_call(context.intrinsics().returndatasize, &[], "returndatasize")?
         .expect("Always exists"))
 }
 
@@ -30,7 +30,8 @@ pub fn copy<'ctx, D>(
     destination_offset: inkwell::values::IntValue<'ctx>,
     source_offset: inkwell::values::IntValue<'ctx>,
     size: inkwell::values::IntValue<'ctx>,
-) where
+) -> anyhow::Result<()>
+where
     D: Dependency + Clone,
 {
     let destination = Pointer::new_with_offset(
@@ -39,7 +40,7 @@ pub fn copy<'ctx, D>(
         context.byte_type(),
         destination_offset,
         "returndatacopy_destination_pointer",
-    );
+    )?;
 
     let source = Pointer::new_with_offset(
         context,
@@ -47,7 +48,7 @@ pub fn copy<'ctx, D>(
         context.byte_type(),
         source_offset,
         "returndatacopy_source_pointer",
-    );
+    )?;
 
     context.build_memcpy(
         context.intrinsics().memory_copy_from_return_data,
@@ -55,5 +56,6 @@ pub fn copy<'ctx, D>(
         source,
         size,
         "returndatacopy_memcpy",
-    );
+    )?;
+    Ok(())
 }
