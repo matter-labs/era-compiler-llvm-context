@@ -32,12 +32,12 @@ where
         is_first,
         context.field_const(0),
         "contract_call_toL1_is_first_equals_zero",
-    );
+    )?;
     context.build_conditional_branch(
         is_first_equals_zero,
         contract_call_tol1_is_not_first_block,
         contract_call_tol1_is_first_block,
-    );
+    )?;
 
     {
         context.set_basic_block(contract_call_tol1_is_not_first_block);
@@ -50,8 +50,8 @@ where
                 is_first.as_basic_value_enum(),
             ],
             "contract_call_simulation_tol1",
-        );
-        context.build_unconditional_branch(join_block);
+        )?;
+        context.build_unconditional_branch(join_block)?;
     }
 
     {
@@ -65,8 +65,8 @@ where
                 is_first.as_basic_value_enum(),
             ],
             "contract_call_simulation_tol1",
-        );
-        context.build_unconditional_branch(join_block);
+        )?;
+        context.build_unconditional_branch(join_block)?;
     }
 
     context.set_basic_block(join_block);
@@ -87,7 +87,7 @@ where
             context.intrinsics().code_source,
             &[],
             "contract_call_simulation_code_source",
-        )
+        )?
         .expect("Always exists");
     Ok(result)
 }
@@ -108,7 +108,7 @@ where
             context.intrinsics().precompile,
             &[in_0.as_basic_value_enum(), gas_left.as_basic_value_enum()],
             "contract_call_simulation_precompile",
-        )
+        )?
         .expect("Always exists");
     Ok(result)
 }
@@ -127,7 +127,7 @@ where
             context.intrinsics().meta,
             &[],
             "contract_call_simulation_meta",
-        )
+        )?
         .expect("Always exists");
     Ok(result)
 }
@@ -146,7 +146,7 @@ where
         context.intrinsics().set_u128,
         &[value.as_basic_value_enum()],
         "contract_call_simulation_set_context_value",
-    );
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -164,7 +164,7 @@ where
         context.intrinsics().set_pubdata_price,
         &[value.as_basic_value_enum()],
         "contract_call_simulation_set_pubdata_price",
-    );
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -181,7 +181,7 @@ where
         context.intrinsics().increment_tx_counter,
         &[],
         "contract_call_simulation_increment_tx_counter",
-    );
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -211,6 +211,6 @@ where
         } else {
             "event_write"
         },
-    );
+    )?;
     return Ok(context.field_const(1).as_basic_value_enum());
 }

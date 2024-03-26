@@ -46,27 +46,27 @@ impl Entry {
             context.field_type(),
             AddressSpace::Stack,
             context.field_const(0),
-        );
+        )?;
 
         context.set_global(
             crate::eravm::GLOBAL_CALLDATA_SIZE,
             context.field_type(),
             AddressSpace::Stack,
             context.field_const(0),
-        );
+        )?;
         context.set_global(
             crate::eravm::GLOBAL_RETURN_DATA_SIZE,
             context.field_type(),
             AddressSpace::Stack,
             context.field_const(0),
-        );
+        )?;
 
         context.set_global(
             crate::eravm::GLOBAL_CALL_FLAGS,
             context.field_type(),
             AddressSpace::Stack,
             context.field_const(0),
-        );
+        )?;
 
         let extra_abi_data_type = context.array_type(
             context.field_type().as_basic_type_enum(),
@@ -77,7 +77,7 @@ impl Entry {
             extra_abi_data_type,
             AddressSpace::Stack,
             extra_abi_data_type.const_zero(),
-        );
+        )?;
 
         let generic_byte_pointer_type = context.byte_type().ptr_type(AddressSpace::Generic.into());
         context.set_global(
@@ -91,7 +91,7 @@ impl Entry {
                     crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER,
                 )
                 .const_zero(),
-        );
+        )?;
 
         Ok(())
     }
@@ -155,8 +155,8 @@ where
             AddressSpace::Generic,
             calldata_abi.into_pointer_value(),
         );
-        context.write_abi_pointer(calldata_abi_pointer, crate::eravm::GLOBAL_CALLDATA_POINTER);
-        context.write_abi_data_size(calldata_abi_pointer, crate::eravm::GLOBAL_CALLDATA_SIZE);
+        context.write_abi_pointer(calldata_abi_pointer, crate::eravm::GLOBAL_CALLDATA_POINTER)?;
+        context.write_abi_data_size(calldata_abi_pointer, crate::eravm::GLOBAL_CALLDATA_SIZE)?;
         let calldata_length = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
         let calldata_end_pointer = context.build_gep(
             calldata_abi_pointer,
@@ -166,11 +166,11 @@ where
                 .ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum(),
             "return_data_abi_initializer",
-        );
+        )?;
         context.write_abi_pointer(
             calldata_end_pointer,
             crate::eravm::GLOBAL_RETURN_DATA_POINTER,
-        );
+        )?;
         for index in 0..crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER {
             context.set_active_pointer(
                 context.field_const(index as u64),
@@ -187,7 +187,7 @@ where
             call_flags.get_type(),
             AddressSpace::Stack,
             call_flags.into_int_value(),
-        );
+        )?;
 
         let extra_abi_data_global = context.get_global(crate::eravm::GLOBAL_EXTRA_ABI_DATA)?;
         for (array_index, argument_index) in (Self::MANDATORY_ARGUMENTS_COUNT
@@ -204,42 +204,42 @@ where
                 ],
                 context.field_type().as_basic_type_enum(),
                 "extra_abi_data_array_element_pointer",
-            );
+            )?;
             let argument_value = context
                 .current_function()
                 .borrow()
                 .get_nth_param(argument_index)
                 .into_int_value();
-            context.build_store(array_element_pointer, argument_value);
+            context.build_store(array_element_pointer, argument_value)?;
         }
 
         let is_deploy_call_flag_truncated = context.builder().build_and(
             call_flags.into_int_value(),
             context.field_const(1),
             "is_deploy_code_call_flag_truncated",
-        );
+        )?;
         let is_deploy_code_call_flag = context.builder().build_int_compare(
             inkwell::IntPredicate::EQ,
             is_deploy_call_flag_truncated,
             context.field_const(1),
             "is_deploy_code_call_flag",
-        );
+        )?;
         context.build_conditional_branch(
             is_deploy_code_call_flag,
             deploy_code_call_block,
             runtime_code_call_block,
-        );
+        )?;
 
         context.set_basic_block(deploy_code_call_block);
-        context.build_invoke(deploy_code.borrow().declaration, &[], "deploy_code_call");
-        context.build_unconditional_branch(context.current_function().borrow().return_block());
+        context.build_invoke(deploy_code.borrow().declaration, &[], "deploy_code_call")?;
+        context.build_unconditional_branch(context.current_function().borrow().return_block())?;
 
         context.set_basic_block(runtime_code_call_block);
-        context.build_invoke(runtime_code.borrow().declaration, &[], "runtime_code_call");
-        context.build_unconditional_branch(context.current_function().borrow().return_block());
+        context.build_invoke(runtime_code.borrow().declaration, &[], "runtime_code_call")?;
+        context.build_unconditional_branch(context.current_function().borrow().return_block())?;
 
         context.set_basic_block(context.current_function().borrow().return_block());
-        context.build_return(Some(&context.field_const(0)));
+        context.build_return(Some(&context.field_const(0)))?;
 
         Ok(())
     }

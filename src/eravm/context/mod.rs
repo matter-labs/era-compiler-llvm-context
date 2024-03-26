@@ -259,13 +259,19 @@ where
         name: &str,
     ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
         let global = self.get_global(name)?;
-        Ok(self.build_load(global.into(), name))
+        Ok(self.build_load(global.into(), name)?)
     }
 
     ///
     /// Sets the value to a global variable.
     ///
-    pub fn set_global<T, V>(&mut self, name: &str, r#type: T, address_space: AddressSpace, value: V)
+    pub fn set_global<T, V>(
+        &mut self,
+        name: &str,
+        r#type: T,
+        address_space: AddressSpace,
+        value: V,
+    ) -> anyhow::Result<()>
     where
         T: BasicType<'ctx> + Clone + Copy,
         V: BasicValue<'ctx> + Clone + Copy,
@@ -273,13 +279,14 @@ where
         match self.globals.get(name) {
             Some(global) => {
                 let global = *global;
-                self.build_store(global.into(), value);
+                self.build_store(global.into(), value)?;
             }
             None => {
                 let global = Global::new(self, r#type, address_space, value, name);
                 self.globals.insert(name.to_owned(), global);
             }
         }
+        Ok(())
     }
 
     ///
@@ -299,8 +306,8 @@ where
             &[self.field_const(0), index],
             self.byte_type().ptr_type(AddressSpace::Generic.into()),
             "active_pointer_pointer",
-        );
-        let active_pointer = self.build_load(active_pointer_pointer, "active_pointer");
+        )?;
+        let active_pointer = self.build_load(active_pointer_pointer, "active_pointer")?;
         Ok(active_pointer.into_pointer_value())
     }
 
@@ -322,8 +329,8 @@ where
             &[self.field_const(0), index],
             self.byte_type().ptr_type(AddressSpace::Generic.into()),
             "active_pointer_pointer",
-        );
-        self.build_store(active_pointer_pointer, pointer);
+        )?;
+        self.build_store(active_pointer_pointer, pointer)?;
         Ok(())
     }
 
@@ -414,12 +421,12 @@ where
         function: FunctionDeclaration<'ctx>,
         arguments: Vec<inkwell::values::BasicValueEnum<'ctx>>,
         name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         let join_block = self.append_basic_block("near_call_join_block");
 
         let return_pointer = if let Some(r#type) = function.r#type.get_return_type() {
-            let pointer = self.build_alloca(r#type, "near_call_return_pointer");
-            self.build_store(pointer, r#type.const_zero());
+            let pointer = self.build_alloca(r#type, "near_call_return_pointer")?;
+            self.build_store(pointer, r#type.const_zero())?;
             Some(pointer)
         } else {
             None
@@ -451,9 +458,9 @@ where
                     .as_basic_value_enum()],
                 false,
                 "near_call_catch_landing",
-            );
-            self.build_call(handler.borrow().declaration(), &[], "near_call_catch_call");
-            self.build_unconditional_branch(join_block);
+            )?;
+            self.build_call(handler.borrow().declaration(), &[], "near_call_catch_call")?;
+            self.build_unconditional_branch(join_block)?;
 
             self.set_basic_block(current_block);
             let call_site_value = self.builder.build_indirect_invoke(
@@ -467,7 +474,7 @@ where
                 success_block,
                 catch_block,
                 name,
-            );
+            )?;
             self.modify_call_site_value(
                 arguments.as_slice(),
                 call_site_value,
@@ -476,7 +483,7 @@ where
             self.set_basic_block(success_block);
             call_site_value.try_as_basic_value().left()
         } else {
-            self.build_call(self.intrinsics.near_call, arguments.as_slice(), name)
+            self.build_call(self.intrinsics.near_call, arguments.as_slice(), name)?
         };
 
         if let (Some(return_pointer), Some(mut return_value)) = (return_pointer, call_site_value) {
@@ -488,16 +495,19 @@ where
                             return_value.into_int_value(),
                             return_type.into_pointer_type(),
                             format!("{name}_near_call_return_pointer_casted").as_str(),
-                        )
+                        )?
                         .as_basic_value_enum();
                 }
             }
-            self.build_store(return_pointer, return_value);
+            self.build_store(return_pointer, return_value)?;
         }
-        self.build_unconditional_branch(join_block);
+        self.build_unconditional_branch(join_block)?;
 
         self.set_basic_block(join_block);
-        return_pointer.map(|pointer| self.build_load(pointer, "near_call_result"))
+        match return_pointer {
+            Some(pointer) => self.build_load(pointer, "near_call_result").map(Some),
+            None => Ok(None),
+        }
     }
 
     ///
@@ -513,29 +523,29 @@ where
         source: Pointer<'ctx, AddressSpace>,
         size: inkwell::values::IntValue<'ctx>,
         name: &str,
-    ) {
+    ) -> anyhow::Result<()> {
         let pointer_casted = self.builder.build_ptr_to_int(
             source.value,
             self.field_type(),
             format!("{name}_pointer_casted").as_str(),
-        );
+        )?;
         let return_data_size_shifted = self.builder.build_right_shift(
             pointer_casted,
             self.field_const((era_compiler_common::BIT_LENGTH_X32 * 3) as u64),
             false,
             format!("{name}_return_data_size_shifted").as_str(),
-        );
+        )?;
         let return_data_size_truncated = self.builder.build_and(
             return_data_size_shifted,
             self.field_const(u32::MAX as u64),
             format!("{name}_return_data_size_truncated").as_str(),
-        );
+        )?;
         let is_return_data_size_lesser = self.builder.build_int_compare(
             inkwell::IntPredicate::ULT,
             return_data_size_truncated,
             size,
             format!("{name}_is_return_data_size_lesser").as_str(),
-        );
+        )?;
         let min_size = self
             .builder
             .build_select(
@@ -543,7 +553,7 @@ where
                 return_data_size_truncated,
                 size,
                 format!("{name}_min_size").as_str(),
-            )
+            )?
             .into_int_value();
 
         self.build_memcpy(function, destination, source, min_size, name)
@@ -562,7 +572,7 @@ where
         return_function: FunctionDeclaration<'ctx>,
         offset: inkwell::values::IntValue<'ctx>,
         length: inkwell::values::IntValue<'ctx>,
-    ) {
+    ) -> anyhow::Result<()> {
         let return_forward_mode = if self.code_type() == Some(CodeType::Deploy)
             && return_function == self.llvm_runtime().r#return
         {
@@ -580,46 +590,58 @@ where
                     .as_basic_value_enum(),
             ],
             "exit_call",
-        );
+        )?;
         self.builder.build_unreachable();
+        Ok(())
     }
 
     ///
     /// Writes the ABI pointer to the global variable.
     ///
-    pub fn write_abi_pointer(&mut self, pointer: Pointer<'ctx, AddressSpace>, global_name: &str) {
+    pub fn write_abi_pointer(
+        &mut self,
+        pointer: Pointer<'ctx, AddressSpace>,
+        global_name: &str,
+    ) -> anyhow::Result<()> {
         self.set_global(
             global_name,
             self.byte_type().ptr_type(AddressSpace::Generic.into()),
             AddressSpace::Stack,
             pointer.value,
-        );
+        )
     }
 
     ///
     /// Writes the ABI data size to the global variable.
     ///
-    pub fn write_abi_data_size(&mut self, pointer: Pointer<'ctx, AddressSpace>, global_name: &str) {
-        let abi_pointer_value =
-            self.builder()
-                .build_ptr_to_int(pointer.value, self.field_type(), "abi_pointer_value");
+    pub fn write_abi_data_size(
+        &mut self,
+        pointer: Pointer<'ctx, AddressSpace>,
+        global_name: &str,
+    ) -> anyhow::Result<()> {
+        let abi_pointer_value = self.builder().build_ptr_to_int(
+            pointer.value,
+            self.field_type(),
+            "abi_pointer_value",
+        )?;
         let abi_pointer_value_shifted = self.builder().build_right_shift(
             abi_pointer_value,
             self.field_const((era_compiler_common::BIT_LENGTH_X32 * 3) as u64),
             false,
             "abi_pointer_value_shifted",
-        );
+        )?;
         let abi_length_value = self.builder().build_and(
             abi_pointer_value_shifted,
             self.field_const(u32::MAX as u64),
             "abi_length_value",
-        );
+        )?;
         self.set_global(
             global_name,
             self.field_type(),
             AddressSpace::Stack,
             abi_length_value,
         );
+        Ok(())
     }
 
     ///
@@ -903,7 +925,7 @@ where
             0 => FunctionReturn::none(),
             1 => {
                 self.set_basic_block(entry_block);
-                let pointer = self.build_alloca(self.field_type(), "return_pointer");
+                let pointer = self.build_alloca(self.field_type(), "return_pointer")?;
                 FunctionReturn::primitive(pointer)
             }
             size if name.starts_with(Function::ZKSYNC_NEAR_CALL_ABI_PREFIX) => {
@@ -919,7 +941,7 @@ where
                         vec![self.field_type().as_basic_type_enum(); size].as_slice(),
                     ),
                     "return_pointer",
-                );
+                )?;
                 FunctionReturn::compound(pointer, size)
             }
         };
@@ -965,7 +987,7 @@ where
         function: FunctionDeclaration<'ctx>,
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
             .iter()
             .copied()
@@ -976,9 +998,9 @@ where
             function.value.as_global_value().as_pointer_value(),
             arguments_wrapped.as_slice(),
             name,
-        );
+        )?;
         self.modify_call_site_value(arguments, call_site_value, function);
-        call_site_value.try_as_basic_value().left()
+        Ok(call_site_value.try_as_basic_value().left())
     }
 
     fn build_invoke(
@@ -986,7 +1008,7 @@ where
         function: FunctionDeclaration<'ctx>,
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>> {
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         if !self
             .functions
             .contains_key(Function::ZKSYNC_NEAR_CALL_ABI_EXCEPTION_HANDLER)
@@ -995,8 +1017,8 @@ where
         }
 
         let return_pointer = if let Some(r#type) = function.r#type.get_return_type() {
-            let pointer = self.build_alloca(r#type, "invoke_return_pointer");
-            self.build_store(pointer, r#type.const_zero());
+            let pointer = self.build_alloca(r#type, "invoke_return_pointer")?;
+            self.build_store(pointer, r#type.const_zero())?;
             Some(pointer)
         } else {
             None
@@ -1035,7 +1057,7 @@ where
             success_block,
             catch_block,
             name,
-        );
+        )?;
         self.modify_call_site_value(arguments, call_site_value, function);
 
         self.set_basic_block(success_block);
@@ -1050,13 +1072,16 @@ where
                             return_value.into_int_value(),
                             return_type.into_pointer_type(),
                             format!("{name}_invoke_return_pointer_casted").as_str(),
-                        )
+                        )?
                         .as_basic_value_enum();
                 }
             }
-            self.build_store(return_pointer, return_value);
+            self.build_store(return_pointer, return_value)?;
         }
-        return_pointer.map(|pointer| self.build_load(pointer, "invoke_result"))
+        match return_pointer {
+            Some(pointer) => self.build_load(pointer, "invoke_result").map(Some),
+            None => Ok(None),
+        }
     }
 
     fn set_solidity_data(&mut self, data: Self::SolidityData) {

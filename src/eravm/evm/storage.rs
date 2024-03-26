@@ -24,8 +24,8 @@ where
         context.field_type(),
         position,
         "storage_load_position_pointer",
-    );
-    let value = context.build_load(position_pointer, "storage_load_value");
+    )?;
+    let value = context.build_load(position_pointer, "storage_load_value")?;
     Ok(value)
 }
 
@@ -46,8 +46,8 @@ where
         context.field_type(),
         position,
         "storage_store_position_pointer",
-    );
-    context.build_store(position_pointer, value);
+    )?;
+    context.build_store(position_pointer, value)?;
     Ok(())
 }
 
@@ -67,8 +67,8 @@ where
         context.field_type(),
         position,
         "transient_storage_load_position_pointer",
-    );
-    let value = context.build_load(position_pointer, "transient_storage_load_value");
+    )?;
+    let value = context.build_load(position_pointer, "transient_storage_load_value")?;
     Ok(value)
 }
 
@@ -89,7 +89,7 @@ where
         context.field_type(),
         position,
         "transient_storage_store_position_pointer",
-    );
-    context.build_store(position_pointer, value);
+    )?;
+    context.build_store(position_pointer, value)?;
     Ok(())
 }
