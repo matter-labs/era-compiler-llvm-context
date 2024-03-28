@@ -31,7 +31,7 @@ where
                 modulo.as_basic_value_enum(),
             ],
             "addmod",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -56,7 +56,7 @@ where
                 modulo.as_basic_value_enum(),
             ],
             "mulmod",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -76,7 +76,7 @@ where
             context.intrinsics().exp,
             &[value.as_basic_value_enum(), exponent.as_basic_value_enum()],
             "mulmod",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -96,7 +96,7 @@ where
             context.intrinsics().signextend,
             &[bytes.as_basic_value_enum(), value.as_basic_value_enum()],
             "signextend",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -117,7 +117,7 @@ where
         context.byte_type(),
         input_offset,
         "keccak256_input_offset_pointer",
-    );
+    )?;
 
     Ok(context
         .build_call(
@@ -127,6 +127,6 @@ where
                 input_length.as_basic_value_enum(),
             ],
             "keccak256",
-        )
+        )?
         .expect("Always exists"))
 }

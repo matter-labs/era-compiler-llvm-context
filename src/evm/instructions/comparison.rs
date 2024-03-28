@@ -22,14 +22,16 @@ pub fn compare<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let result =
-        context
-            .builder()
-            .build_int_compare(operation, operand_1, operand_2, "comparison_result");
+    let result = context.builder().build_int_compare(
+        operation,
+        operand_1,
+        operand_2,
+        "comparison_result",
+    )?;
     let result = context.builder().build_int_z_extend_or_bit_cast(
         result,
         context.field_type(),
         "comparison_result_extended",
-    );
+    )?;
     Ok(result.as_basic_value_enum())
 }

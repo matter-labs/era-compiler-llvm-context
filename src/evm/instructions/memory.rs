@@ -28,8 +28,8 @@ where
         context.field_type(),
         offset,
         "memory_load_pointer",
-    );
-    let result = context.build_load(pointer, "memory_load_result");
+    )?;
+    let result = context.build_load(pointer, "memory_load_result")?;
     Ok(result)
 }
 
@@ -52,8 +52,8 @@ where
         context.field_type(),
         offset,
         "memory_store_pointer",
-    );
-    context.build_store(pointer, value);
+    )?;
+    context.build_store(pointer, value)?;
     Ok(())
 }
 
@@ -76,12 +76,12 @@ where
         context.byte_type(),
         offset,
         "store_byte_pointer",
-    );
+    )?;
 
     context.build_call(
         context.intrinsics().mstore8,
         &[pointer.as_basic_value_enum(), value.as_basic_value_enum()],
         "mstore8",
-    );
+    )?;
     Ok(())
 }

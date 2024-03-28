@@ -55,22 +55,19 @@ where
             )
             .as_slice(),
             "event_writer_call_external",
-        )
+        )?
         .expect("Always returns a value");
 
-    let result_status_code_boolean = context
-        .builder()
-        .build_extract_value(
-            result.into_struct_value(),
-            1,
-            "event_writer_external_result_status_code_boolean",
-        )
-        .expect("Always exists");
+    let result_status_code_boolean = context.builder().build_extract_value(
+        result.into_struct_value(),
+        1,
+        "event_writer_external_result_status_code_boolean",
+    )?;
     context.build_conditional_branch(
         result_status_code_boolean.into_int_value(),
         join_block,
         failure_block,
-    );
+    )?;
 
     context.set_basic_block(failure_block);
     crate::eravm::evm::r#return::revert(context, context.field_const(0), context.field_const(0))?;

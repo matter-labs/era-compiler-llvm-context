@@ -158,8 +158,8 @@ where
         let status_code_result_pointer = context.build_alloca(
             context.field_type(),
             "contract_call_result_status_code_pointer",
-        );
-        context.build_store(status_code_result_pointer, context.field_const(0));
+        )?;
+        context.build_store(status_code_result_pointer, context.field_const(0))?;
 
         let abi_data = crate::eravm::utils::abi_data(
             context,
@@ -183,17 +183,14 @@ where
                 )
                 .as_slice(),
                 "contract_call_external",
-            )
+            )?
             .expect("IntrinsicFunction always returns a flag");
 
-        let result_abi_data = context
-            .builder()
-            .build_extract_value(
-                result.into_struct_value(),
-                0,
-                "contract_call_external_result_abi_data",
-            )
-            .expect("Always exists");
+        let result_abi_data = context.builder().build_extract_value(
+            result.into_struct_value(),
+            0,
+            "contract_call_external_result_abi_data",
+        )?;
         let result_abi_data_pointer = Pointer::new(
             context.byte_type(),
             AddressSpace::Generic,
@@ -201,20 +198,17 @@ where
         );
         let result_abi_data_casted = result_abi_data_pointer.cast(context.field_type());
 
-        let result_status_code_boolean = context
-            .builder()
-            .build_extract_value(
-                result.into_struct_value(),
-                1,
-                "contract_call_external_result_status_code_boolean",
-            )
-            .expect("Always exists");
+        let result_status_code_boolean = context.builder().build_extract_value(
+            result.into_struct_value(),
+            1,
+            "contract_call_external_result_status_code_boolean",
+        )?;
         let result_status_code = context.builder().build_int_z_extend_or_bit_cast(
             result_status_code_boolean.into_int_value(),
             context.field_type(),
             "contract_call_external_result_status_code",
-        );
-        context.build_store(status_code_result_pointer, result_status_code);
+        )?;
+        context.build_store(status_code_result_pointer, result_status_code)?;
 
         let source = result_abi_data_casted;
 
@@ -224,7 +218,7 @@ where
             context.byte_type(),
             output_offset,
             "contract_call_destination",
-        );
+        )?;
 
         context.build_memcpy_return_data(
             context.intrinsics().memory_copy_from_generic,
@@ -232,22 +226,22 @@ where
             source,
             output_length,
             "contract_call_memcpy_from_child",
-        );
+        )?;
 
         context.write_abi_pointer(
             result_abi_data_pointer,
             crate::eravm::GLOBAL_RETURN_DATA_POINTER,
-        );
+        )?;
         context.write_abi_data_size(
             result_abi_data_pointer,
             crate::eravm::GLOBAL_RETURN_DATA_SIZE,
-        );
-        context.build_unconditional_branch(context.current_function().borrow().return_block());
+        )?;
+        context.build_unconditional_branch(context.current_function().borrow().return_block())?;
 
         context.set_basic_block(context.current_function().borrow().return_block());
         let status_code_result =
-            context.build_load(status_code_result_pointer, "contract_call_status_code");
-        context.build_return(Some(&status_code_result));
+            context.build_load(status_code_result_pointer, "contract_call_status_code")?;
+        context.build_return(Some(&status_code_result))?;
 
         Ok(())
     }

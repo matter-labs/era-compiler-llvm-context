@@ -74,7 +74,7 @@ where
         array_type,
         AddressSpace::Code,
         array_value,
-    );
+    )?;
 
     Ok(context.field_const(1).as_basic_value_enum())
 }
@@ -103,8 +103,8 @@ where
         &[context.field_const(0), offset],
         context.field_type().as_basic_type_enum(),
         format!("{}_pointer", identifier).as_str(),
-    );
-    let value = context.build_load(pointer, format!("{}_value", identifier).as_str());
+    )?;
+    let value = context.build_load(pointer, format!("{}_value", identifier).as_str())?;
 
     Ok(value)
 }

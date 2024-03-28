@@ -30,8 +30,8 @@ where
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),
         "mimic_call_result_status_code_pointer",
-    );
-    context.build_store(status_code_result_pointer, context.field_const(0));
+    )?;
+    context.build_store(status_code_result_pointer, context.field_const(0))?;
 
     let far_call_result = context
         .build_call(
@@ -45,49 +45,43 @@ where
             )
             .as_slice(),
             "mimic_call_external",
-        )
+        )?
         .expect("IntrinsicFunction always returns a flag");
 
-    let result_abi_data = context
-        .builder()
-        .build_extract_value(
-            far_call_result.into_struct_value(),
-            0,
-            "mimic_call_external_result_abi_data",
-        )
-        .expect("Always exists");
+    let result_abi_data = context.builder().build_extract_value(
+        far_call_result.into_struct_value(),
+        0,
+        "mimic_call_external_result_abi_data",
+    )?;
     let result_abi_data_pointer = Pointer::<AddressSpace>::new(
         context.byte_type(),
         AddressSpace::Generic,
         result_abi_data.into_pointer_value(),
     );
 
-    let result_status_code_boolean = context
-        .builder()
-        .build_extract_value(
-            far_call_result.into_struct_value(),
-            1,
-            "mimic_call_external_result_status_code_boolean",
-        )
-        .expect("Always exists");
+    let result_status_code_boolean = context.builder().build_extract_value(
+        far_call_result.into_struct_value(),
+        1,
+        "mimic_call_external_result_status_code_boolean",
+    )?;
     let result_status_code = context.builder().build_int_z_extend_or_bit_cast(
         result_status_code_boolean.into_int_value(),
         context.field_type(),
         "mimic_call_external_result_status_code",
-    );
-    context.build_store(status_code_result_pointer, result_status_code);
+    )?;
+    context.build_store(status_code_result_pointer, result_status_code)?;
 
     context.write_abi_pointer(
         result_abi_data_pointer,
         crate::eravm::GLOBAL_RETURN_DATA_POINTER,
-    );
+    )?;
     context.write_abi_data_size(
         result_abi_data_pointer,
         crate::eravm::GLOBAL_RETURN_DATA_SIZE,
-    );
+    )?;
 
     let status_code_result =
-        context.build_load(status_code_result_pointer, "mimic_call_status_code");
+        context.build_load(status_code_result_pointer, "mimic_call_status_code")?;
     Ok(status_code_result)
 }
 
@@ -110,8 +104,8 @@ where
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),
         "system_far_call_result_status_code_pointer",
-    );
-    context.build_store(status_code_result_pointer, context.field_const(0));
+    )?;
+    context.build_store(status_code_result_pointer, context.field_const(0))?;
 
     let far_call_result = context
         .build_call(
@@ -119,37 +113,31 @@ where
             crate::eravm::utils::external_call_arguments(context, abi_data, address, vec![], None)
                 .as_slice(),
             "system_far_call_external",
-        )
+        )?
         .expect("IntrinsicFunction always returns a flag");
 
-    let result_abi_data = context
-        .builder()
-        .build_extract_value(
-            far_call_result.into_struct_value(),
-            0,
-            "system_far_call_external_result_abi_data",
-        )
-        .expect("Always exists");
+    let result_abi_data = context.builder().build_extract_value(
+        far_call_result.into_struct_value(),
+        0,
+        "system_far_call_external_result_abi_data",
+    )?;
     let result_abi_data_pointer = Pointer::<AddressSpace>::new(
         context.byte_type(),
         AddressSpace::Generic,
         result_abi_data.into_pointer_value(),
     );
 
-    let result_status_code_boolean = context
-        .builder()
-        .build_extract_value(
-            far_call_result.into_struct_value(),
-            1,
-            "system_far_call_external_result_status_code_boolean",
-        )
-        .expect("Always exists");
+    let result_status_code_boolean = context.builder().build_extract_value(
+        far_call_result.into_struct_value(),
+        1,
+        "system_far_call_external_result_status_code_boolean",
+    )?;
     let result_status_code = context.builder().build_int_z_extend_or_bit_cast(
         result_status_code_boolean.into_int_value(),
         context.field_type(),
         "system_far_call_external_result_status_code",
-    );
-    context.build_store(status_code_result_pointer, result_status_code);
+    )?;
+    context.build_store(status_code_result_pointer, result_status_code)?;
 
     let source = result_abi_data_pointer;
 
@@ -159,7 +147,7 @@ where
         context.byte_type(),
         output_offset,
         "system_far_call_destination",
-    );
+    )?;
 
     context.build_memcpy_return_data(
         context.intrinsics().memory_copy_from_generic,
@@ -167,19 +155,19 @@ where
         source,
         output_length,
         "system_far_call_memcpy_from_child",
-    );
+    )?;
 
     context.write_abi_pointer(
         result_abi_data_pointer,
         crate::eravm::GLOBAL_RETURN_DATA_POINTER,
-    );
+    )?;
     context.write_abi_data_size(
         result_abi_data_pointer,
         crate::eravm::GLOBAL_RETURN_DATA_SIZE,
-    );
+    )?;
 
     let status_code_result =
-        context.build_load(status_code_result_pointer, "system_call_status_code");
+        context.build_load(status_code_result_pointer, "system_call_status_code")?;
     Ok(status_code_result)
 }
 
@@ -204,8 +192,8 @@ where
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),
         "system_far_call_result_status_code_pointer",
-    );
-    context.build_store(status_code_result_pointer, context.field_const(0));
+    )?;
+    context.build_store(status_code_result_pointer, context.field_const(0))?;
 
     let far_call_result = context
         .build_call(
@@ -219,37 +207,31 @@ where
             )
             .as_slice(),
             "system_far_call_external",
-        )
+        )?
         .expect("IntrinsicFunction always returns a flag");
 
-    let result_abi_data = context
-        .builder()
-        .build_extract_value(
-            far_call_result.into_struct_value(),
-            0,
-            "system_far_call_external_result_abi_data",
-        )
-        .expect("Always exists");
+    let result_abi_data = context.builder().build_extract_value(
+        far_call_result.into_struct_value(),
+        0,
+        "system_far_call_external_result_abi_data",
+    )?;
     let result_abi_data_pointer = Pointer::<AddressSpace>::new(
         context.byte_type(),
         AddressSpace::Generic,
         result_abi_data.into_pointer_value(),
     );
 
-    let result_status_code_boolean = context
-        .builder()
-        .build_extract_value(
-            far_call_result.into_struct_value(),
-            1,
-            "system_far_call_external_result_status_code_boolean",
-        )
-        .expect("Always exists");
+    let result_status_code_boolean = context.builder().build_extract_value(
+        far_call_result.into_struct_value(),
+        1,
+        "system_far_call_external_result_status_code_boolean",
+    )?;
     let result_status_code = context.builder().build_int_z_extend_or_bit_cast(
         result_status_code_boolean.into_int_value(),
         context.field_type(),
         "system_far_call_external_result_status_code",
-    );
-    context.build_store(status_code_result_pointer, result_status_code);
+    )?;
+    context.build_store(status_code_result_pointer, result_status_code)?;
 
     let source = result_abi_data_pointer;
 
@@ -259,7 +241,7 @@ where
         context.byte_type(),
         output_offset,
         "system_far_call_destination",
-    );
+    )?;
 
     context.build_memcpy_return_data(
         context.intrinsics().memory_copy_from_generic,
@@ -267,19 +249,19 @@ where
         source,
         output_length,
         "system_far_call_memcpy_from_child",
-    );
+    )?;
 
     context.write_abi_pointer(
         result_abi_data_pointer,
         crate::eravm::GLOBAL_RETURN_DATA_POINTER,
-    );
+    )?;
     context.write_abi_data_size(
         result_abi_data_pointer,
         crate::eravm::GLOBAL_RETURN_DATA_SIZE,
-    );
+    )?;
 
     let status_code_result =
-        context.build_load(status_code_result_pointer, "system_call_status_code");
+        context.build_load(status_code_result_pointer, "system_call_status_code")?;
     Ok(status_code_result)
 }
 

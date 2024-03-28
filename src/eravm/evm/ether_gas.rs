@@ -16,7 +16,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().gas_left, &[], "gas_left")
+        .build_call(context.intrinsics().gas_left, &[], "gas_left")?
         .expect("Always exists"))
 }
 
@@ -30,7 +30,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().get_u128, &[], "get_u128_value")
+        .build_call(context.intrinsics().get_u128, &[], "get_u128_value")?
         .expect("Always exists"))
 }
 

@@ -168,17 +168,21 @@ pub trait IContext<'ctx> {
     ///
     /// Sets the alignment to 256 bits.
     ///
-    fn build_alloca<T>(&self, r#type: T, name: &str) -> Pointer<'ctx, Self::AddressSpace>
+    fn build_alloca<T>(
+        &self,
+        r#type: T,
+        name: &str,
+    ) -> anyhow::Result<Pointer<'ctx, Self::AddressSpace>>
     where
         T: BasicType<'ctx> + Clone + Copy,
     {
-        let pointer = self.builder().build_alloca(r#type, name);
+        let pointer = self.builder().build_alloca(r#type, name)?;
         self.basic_block()
             .get_last_instruction()
             .expect("Always exists")
             .set_alignment(era_compiler_common::BYTE_LENGTH_FIELD as u32)
-            .expect("Alignment is valid");
-        Pointer::new(r#type, Self::AddressSpace::stack(), pointer)
+            .map_err(|error| anyhow::anyhow!(error))?;
+        Ok(Pointer::new(r#type, Self::AddressSpace::stack(), pointer))
     }
 
     ///
@@ -190,10 +194,10 @@ pub trait IContext<'ctx> {
         &self,
         pointer: Pointer<'ctx, Self::AddressSpace>,
         name: &str,
-    ) -> inkwell::values::BasicValueEnum<'ctx> {
+    ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
         let value = self
             .builder()
-            .build_load(pointer.r#type, pointer.value, name);
+            .build_load(pointer.r#type, pointer.value, name)?;
 
         let alignment = if Self::AddressSpace::stack() == pointer.address_space {
             era_compiler_common::BYTE_LENGTH_FIELD
@@ -205,8 +209,8 @@ pub trait IContext<'ctx> {
             .get_last_instruction()
             .expect("Always exists")
             .set_alignment(alignment as u32)
-            .expect("Alignment is valid");
-        value
+            .map_err(|error| anyhow::anyhow!(error))?;
+        Ok(value)
     }
 
     ///
@@ -214,11 +218,15 @@ pub trait IContext<'ctx> {
     ///
     /// Sets the alignment to 256 bits for the stack and 1 bit for the heap, parent, and child.
     ///
-    fn build_store<V>(&self, pointer: Pointer<'ctx, Self::AddressSpace>, value: V)
+    fn build_store<V>(
+        &self,
+        pointer: Pointer<'ctx, Self::AddressSpace>,
+        value: V,
+    ) -> anyhow::Result<()>
     where
         V: BasicValue<'ctx>,
     {
-        let instruction = self.builder().build_store(pointer.value, value);
+        let instruction = self.builder().build_store(pointer.value, value)?;
 
         let alignment = if Self::AddressSpace::stack() == pointer.address_space {
             era_compiler_common::BYTE_LENGTH_FIELD
@@ -228,7 +236,8 @@ pub trait IContext<'ctx> {
 
         instruction
             .set_alignment(alignment as u32)
-            .expect("Alignment is valid");
+            .map_err(|error| anyhow::anyhow!(error))?;
+        Ok(())
     }
 
     ///
@@ -240,15 +249,15 @@ pub trait IContext<'ctx> {
         indexes: &[inkwell::values::IntValue<'ctx>],
         element_type: T,
         name: &str,
-    ) -> Pointer<'ctx, Self::AddressSpace>
+    ) -> anyhow::Result<Pointer<'ctx, Self::AddressSpace>>
     where
         T: BasicType<'ctx>,
     {
         let value = unsafe {
             self.builder()
-                .build_gep(pointer.r#type, pointer.value, indexes, name)
+                .build_gep(pointer.r#type, pointer.value, indexes, name)?
         };
-        Pointer::new(element_type, pointer.address_space, value)
+        Ok(Pointer::new(element_type, pointer.address_space, value))
     }
 
     ///
@@ -261,13 +270,14 @@ pub trait IContext<'ctx> {
         comparison: inkwell::values::IntValue<'ctx>,
         then_block: inkwell::basic_block::BasicBlock<'ctx>,
         else_block: inkwell::basic_block::BasicBlock<'ctx>,
-    ) {
+    ) -> anyhow::Result<()> {
         if self.basic_block().get_terminator().is_some() {
-            return;
+            return Ok(());
         }
 
         self.builder()
-            .build_conditional_branch(comparison, then_block, else_block);
+            .build_conditional_branch(comparison, then_block, else_block)?;
+        Ok(())
     }
 
     ///
@@ -278,12 +288,14 @@ pub trait IContext<'ctx> {
     fn build_unconditional_branch(
         &self,
         destination_block: inkwell::basic_block::BasicBlock<'ctx>,
-    ) {
+    ) -> anyhow::Result<()> {
         if self.basic_block().get_terminator().is_some() {
-            return;
+            return Ok(());
         }
 
-        self.builder().build_unconditional_branch(destination_block);
+        self.builder()
+            .build_unconditional_branch(destination_block)?;
+        Ok(())
     }
 
     ///
@@ -294,7 +306,7 @@ pub trait IContext<'ctx> {
         function: FunctionDeclaration<'ctx>,
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>>;
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>;
 
     ///
     /// Builds an invoke.
@@ -306,7 +318,7 @@ pub trait IContext<'ctx> {
         function: FunctionDeclaration<'ctx>,
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
-    ) -> Option<inkwell::values::BasicValueEnum<'ctx>>;
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>;
 
     ///
     /// Builds a memory copy call.
@@ -320,7 +332,7 @@ pub trait IContext<'ctx> {
         source: Pointer<'ctx, Self::AddressSpace>,
         size: inkwell::values::IntValue<'ctx>,
         name: &str,
-    ) {
+    ) -> anyhow::Result<()> {
         let call_site_value = self.builder().build_indirect_call(
             function.r#type,
             function.value.as_global_value().as_pointer_value(),
@@ -331,10 +343,11 @@ pub trait IContext<'ctx> {
                 self.bool_type().const_zero().as_basic_value_enum().into(),
             ],
             name,
-        );
+        )?;
 
         call_site_value.set_alignment_attribute(inkwell::attributes::AttributeLoc::Param(0), 1);
         call_site_value.set_alignment_attribute(inkwell::attributes::AttributeLoc::Param(1), 1);
+        Ok(())
     }
 
     ///
@@ -342,12 +355,13 @@ pub trait IContext<'ctx> {
     ///
     /// Checks if there are no other terminators in the block.
     ///
-    fn build_return(&self, value: Option<&dyn BasicValue<'ctx>>) {
+    fn build_return(&self, value: Option<&dyn BasicValue<'ctx>>) -> anyhow::Result<()> {
         if self.basic_block().get_terminator().is_some() {
-            return;
+            return Ok(());
         }
 
-        self.builder().build_return(value);
+        self.builder().build_return(value)?;
+        Ok(())
     }
 
     ///
@@ -355,12 +369,13 @@ pub trait IContext<'ctx> {
     ///
     /// Checks if there are no other terminators in the block.
     ///
-    fn build_unreachable(&self) {
+    fn build_unreachable(&self) -> anyhow::Result<()> {
         if self.basic_block().get_terminator().is_some() {
-            return;
+            return Ok(());
         }
 
-        self.builder().build_unreachable();
+        self.builder().build_unreachable()?;
+        Ok(())
     }
 
     ///
@@ -445,6 +460,13 @@ pub trait IContext<'ctx> {
     ///
     fn field_type(&self) -> inkwell::types::IntType<'ctx> {
         self.integer_type(era_compiler_common::BIT_LENGTH_FIELD)
+    }
+
+    ///
+    /// Returns the pointer type with a specified address space.
+    ///
+    fn ptr_type(&self, address_space: inkwell::AddressSpace) -> inkwell::types::PointerType<'ctx> {
+        self.llvm().ptr_type(address_space)
     }
 
     ///

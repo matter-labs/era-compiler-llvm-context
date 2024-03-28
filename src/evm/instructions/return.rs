@@ -27,7 +27,7 @@ where
         context.byte_type(),
         offset,
         "revert_offset_pointer",
-    );
+    )?;
 
     context.build_call(
         context.intrinsics().r#return,
@@ -36,8 +36,8 @@ where
             length.as_basic_value_enum(),
         ],
         "return",
-    );
-    context.build_unreachable();
+    )?;
+    context.build_unreachable()?;
     Ok(())
 }
 
@@ -58,7 +58,7 @@ where
         context.byte_type(),
         offset,
         "revert_offset_pointer",
-    );
+    )?;
 
     context.build_call(
         context.intrinsics().revert,
@@ -67,8 +67,8 @@ where
             length.as_basic_value_enum(),
         ],
         "revert",
-    );
-    context.build_unreachable();
+    )?;
+    context.build_unreachable()?;
     Ok(())
 }
 
@@ -79,8 +79,8 @@ pub fn stop<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
     D: Dependency + Clone,
 {
-    context.build_call(context.intrinsics().stop, &[], "stop");
-    context.build_unreachable();
+    context.build_call(context.intrinsics().stop, &[], "stop")?;
+    context.build_unreachable()?;
     Ok(())
 }
 
@@ -91,7 +91,7 @@ pub fn invalid<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
     D: Dependency + Clone,
 {
-    context.build_call(context.intrinsics().invalid, &[], "invalid");
-    context.build_unreachable();
+    context.build_call(context.intrinsics().invalid, &[], "invalid")?;
+    context.build_unreachable()?;
     Ok(())
 }

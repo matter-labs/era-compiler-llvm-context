@@ -284,13 +284,12 @@ impl<'ctx> Intrinsics<'ctx> {
     ) -> Self {
         let void_type = llvm.void_type();
         let bool_type = llvm.bool_type();
-        let byte_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32);
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
 
-        let heap_byte_pointer_type = byte_type.ptr_type(AddressSpace::Heap.into());
-        let calldata_byte_pointer_type = byte_type.ptr_type(AddressSpace::Calldata.into());
-        let return_data_byte_pointer_type = byte_type.ptr_type(AddressSpace::ReturnData.into());
-        let code_byte_pointer_type = byte_type.ptr_type(AddressSpace::Code.into());
+        let heap_byte_pointer_type = llvm.ptr_type(AddressSpace::Heap.into());
+        let calldata_byte_pointer_type = llvm.ptr_type(AddressSpace::Calldata.into());
+        let return_data_byte_pointer_type = llvm.ptr_type(AddressSpace::ReturnData.into());
+        let code_byte_pointer_type = llvm.ptr_type(AddressSpace::Code.into());
 
         let exp = Self::declare(
             llvm,
@@ -876,43 +875,34 @@ impl<'ctx> Intrinsics<'ctx> {
         llvm: &'ctx inkwell::context::Context,
         name: &str,
     ) -> Vec<inkwell::types::BasicTypeEnum<'ctx>> {
-        let byte_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32);
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
 
         match name {
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_HEAP => vec![
-                byte_type
-                    .ptr_type(AddressSpace::Heap.into())
+                llvm.ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
-                byte_type
-                    .ptr_type(AddressSpace::Heap.into())
+                llvm.ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 field_type.as_basic_type_enum(),
             ],
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_CALLDATA => vec![
-                byte_type
-                    .ptr_type(AddressSpace::Heap.into())
+                llvm.ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
-                byte_type
-                    .ptr_type(AddressSpace::Calldata.into())
+                llvm.ptr_type(AddressSpace::Calldata.into())
                     .as_basic_type_enum(),
                 field_type.as_basic_type_enum(),
             ],
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_RETURN_DATA => vec![
-                byte_type
-                    .ptr_type(AddressSpace::Heap.into())
+                llvm.ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
-                byte_type
-                    .ptr_type(AddressSpace::ReturnData.into())
+                llvm.ptr_type(AddressSpace::ReturnData.into())
                     .as_basic_type_enum(),
                 field_type.as_basic_type_enum(),
             ],
             name if name == Self::FUNCTION_MEMORY_COPY_FROM_CODE => vec![
-                byte_type
-                    .ptr_type(AddressSpace::Heap.into())
+                llvm.ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
-                byte_type
-                    .ptr_type(AddressSpace::Code.into())
+                llvm.ptr_type(AddressSpace::Code.into())
                     .as_basic_type_enum(),
                 field_type.as_basic_type_enum(),
             ],

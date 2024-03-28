@@ -22,7 +22,7 @@ where
 {
     let calldata_pointer_global = context.get_global(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
     let calldata_pointer_pointer = calldata_pointer_global.into();
-    let calldata_pointer = context.build_load(calldata_pointer_pointer, "calldata_pointer");
+    let calldata_pointer = context.build_load(calldata_pointer_pointer, "calldata_pointer")?;
     let calldata_pointer = context.build_gep(
         Pointer::new(
             context.byte_type(),
@@ -32,8 +32,8 @@ where
         &[offset],
         context.field_type().as_basic_type_enum(),
         "calldata_pointer_with_offset",
-    );
-    let value = context.build_load(calldata_pointer, "calldata_value");
+    )?;
+    let value = context.build_load(calldata_pointer, "calldata_value")?;
     Ok(value)
 }
 
@@ -69,11 +69,11 @@ where
         context.byte_type(),
         destination_offset,
         "calldata_copy_destination_pointer",
-    );
+    )?;
 
     let calldata_pointer_global = context.get_global(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
     let calldata_pointer_pointer = calldata_pointer_global.into();
-    let calldata_pointer = context.build_load(calldata_pointer_pointer, "calldata_pointer");
+    let calldata_pointer = context.build_load(calldata_pointer_pointer, "calldata_pointer")?;
     let source = context.build_gep(
         Pointer::new(
             context.byte_type(),
@@ -83,7 +83,7 @@ where
         &[source_offset],
         context.byte_type().as_basic_type_enum(),
         "calldata_source_pointer",
-    );
+    )?;
 
     context.build_memcpy(
         context.intrinsics().memory_copy_from_generic,
@@ -91,7 +91,6 @@ where
         source,
         size,
         "calldata_copy_memcpy_from_child",
-    );
-
+    )?;
     Ok(())
 }
