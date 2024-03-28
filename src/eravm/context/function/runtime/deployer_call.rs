@@ -210,7 +210,6 @@ where
         context.build_store(result_pointer, context.field_const(0))?;
         let deployer_call_result_type = context.structure_type(&[
             context
-                .byte_type()
                 .ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum(),
             context.bool_type().as_basic_type_enum(),
@@ -279,7 +278,6 @@ where
                     .const_zero(),
             ],
             context
-                .byte_type()
                 .ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum(),
             "deployer_call_result_abi_data_pointer",

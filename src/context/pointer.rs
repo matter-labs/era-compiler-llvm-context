@@ -39,7 +39,6 @@ where
         + PartialEq
         + Eq
         + Into<inkwell::AddressSpace>
-        + std::fmt::Debug
         + std::fmt::Debug,
 {
     ///
@@ -92,7 +91,7 @@ where
 
         let value = context.builder().build_int_to_ptr(
             offset,
-            context.byte_type().ptr_type(address_space.into()),
+            context.ptr_type(address_space.into()),
             name,
         )?;
         Ok(Self::new(r#type, address_space, value))

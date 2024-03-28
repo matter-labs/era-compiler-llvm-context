@@ -56,13 +56,12 @@ where
     context.build_call(
         context.llvm_runtime().cxa_throw,
         &[context
-            .byte_type()
             .ptr_type(AddressSpace::stack().into())
             .get_undef()
             .as_basic_value_enum(); 3],
         LLVMRuntime::FUNCTION_CXA_THROW,
     )?;
-    context.build_unreachable();
+    context.build_unreachable()?;
     Ok(())
 }
 

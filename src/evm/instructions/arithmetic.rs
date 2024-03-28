@@ -90,7 +90,7 @@ where
         context.field_const(0),
         "division_is_divider_zero",
     )?;
-    context.build_conditional_branch(condition, zero_block, non_zero_block);
+    context.build_conditional_branch(condition, zero_block, non_zero_block)?;
 
     context.set_basic_block(non_zero_block);
     let result = context.builder().build_int_unsigned_div(
@@ -99,11 +99,11 @@ where
         "division_result_non_zero",
     )?;
     context.build_store(result_pointer, result)?;
-    context.build_unconditional_branch(join_block);
+    context.build_unconditional_branch(join_block)?;
 
     context.set_basic_block(zero_block);
     context.build_store(result_pointer, context.field_const(0))?;
-    context.build_unconditional_branch(join_block);
+    context.build_unconditional_branch(join_block)?;
 
     context.set_basic_block(join_block);
     let result = context.build_load(result_pointer, "division_result")?;

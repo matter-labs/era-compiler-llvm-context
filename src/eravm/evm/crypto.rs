@@ -23,7 +23,7 @@ where
 {
     let offset_pointer = context.builder().build_int_to_ptr(
         offset,
-        context.byte_type().ptr_type(AddressSpace::Heap.into()),
+        context.ptr_type(AddressSpace::Heap.into()),
         "sha3_offset_pointer",
     )?;
 

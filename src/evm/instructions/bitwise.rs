@@ -84,11 +84,11 @@ where
         context.field_const((era_compiler_common::BIT_LENGTH_FIELD - 1) as u64),
         "shift_left_is_overflow",
     )?;
-    context.build_conditional_branch(condition_is_overflow, overflow_block, non_overflow_block);
+    context.build_conditional_branch(condition_is_overflow, overflow_block, non_overflow_block)?;
 
     context.set_basic_block(overflow_block);
     context.build_store(result_pointer, context.field_const(0))?;
-    context.build_unconditional_branch(join_block);
+    context.build_unconditional_branch(join_block)?;
 
     context.set_basic_block(non_overflow_block);
     let value = context.builder().build_left_shift(
@@ -97,7 +97,7 @@ where
         "shift_left_non_overflow_result",
     )?;
     context.build_store(result_pointer, value)?;
-    context.build_unconditional_branch(join_block);
+    context.build_unconditional_branch(join_block)?;
 
     context.set_basic_block(join_block);
     let result = context.build_load(result_pointer, "shift_left_result")?;

@@ -556,7 +556,7 @@ where
         context.set_basic_block(identity_block);
         let result = identity(context, output_offset, input_offset, output_length)?;
         context.build_store(result_pointer, result)?;
-        context.build_unconditional_branch(join_block);
+        context.build_unconditional_branch(join_block)?;
     }
 
     context.set_basic_block(ordinary_block);
@@ -590,7 +590,7 @@ where
             .expect("Always exists")
     };
     context.build_store(result_pointer, result)?;
-    context.build_unconditional_branch(join_block);
+    context.build_unconditional_branch(join_block)?;
 
     context.set_basic_block(join_block);
     let result = context.build_load(result_pointer, "contract_call_result")?;
@@ -696,7 +696,7 @@ where
         context.field_const(0),
         "contract_call_is_value_zero",
     )?;
-    context.build_conditional_branch(is_value_zero, value_zero_block, value_non_zero_block);
+    context.build_conditional_branch(is_value_zero, value_zero_block, value_non_zero_block)?;
 
     context.set_basic_block(value_non_zero_block);
     let abi_data = crate::eravm::utils::abi_data(
@@ -721,7 +721,7 @@ where
         ],
     )?;
     context.build_store(result_pointer, result)?;
-    context.build_unconditional_branch(value_join_block);
+    context.build_unconditional_branch(value_join_block)?;
 
     context.set_basic_block(value_zero_block);
     let function = Runtime::default_call(context, function);
@@ -740,7 +740,7 @@ where
         )?
         .expect("Always exists");
     context.build_store(result_pointer, result)?;
-    context.build_unconditional_branch(value_join_block);
+    context.build_unconditional_branch(value_join_block)?;
 
     context.set_basic_block(value_join_block);
     let result = context.build_load(result_pointer, "contract_call_address_result")?;

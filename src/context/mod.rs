@@ -463,6 +463,13 @@ pub trait IContext<'ctx> {
     }
 
     ///
+    /// Returns the pointer type with a specified address space.
+    ///
+    fn ptr_type(&self, address_space: inkwell::AddressSpace) -> inkwell::types::PointerType<'ctx> {
+        self.llvm().ptr_type(address_space)
+    }
+
+    ///
     /// Returns the array type with the specified length.
     ///
     fn array_type<T>(&self, element_type: T, length: usize) -> inkwell::types::ArrayType<'ctx>
