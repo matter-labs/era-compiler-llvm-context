@@ -31,7 +31,7 @@ impl<'ctx> Global<'ctx> {
         address_space: AddressSpace,
         initializer: V,
         name: &str,
-    ) -> Self
+    ) -> anyhow::Result<Self>
     where
         D: EraVMDependency + Clone,
         T: BasicType<'ctx>,
@@ -56,9 +56,9 @@ impl<'ctx> Global<'ctx> {
             global.value.set_initializer(&initializer);
         } else {
             global.value.set_initializer(&r#type.const_zero());
-            context.build_store(global.into(), initializer);
+            context.build_store(global.into(), initializer)?;
         }
 
-        global
+        Ok(global)
     }
 }

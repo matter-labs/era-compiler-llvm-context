@@ -259,7 +259,7 @@ where
         name: &str,
     ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
         let global = self.get_global(name)?;
-        Ok(self.build_load(global.into(), name)?)
+        self.build_load(global.into(), name)
     }
 
     ///
@@ -282,7 +282,7 @@ where
                 self.build_store(global.into(), value)?;
             }
             None => {
-                let global = Global::new(self, r#type, address_space, value, name);
+                let global = Global::new(self, r#type, address_space, value, name)?;
                 self.globals.insert(name.to_owned(), global);
             }
         }
@@ -304,7 +304,7 @@ where
         let active_pointer_pointer = self.build_gep(
             active_pointer_array_global.into(),
             &[self.field_const(0), index],
-            self.byte_type().ptr_type(AddressSpace::Generic.into()),
+            self.ptr_type(AddressSpace::Generic.into()),
             "active_pointer_pointer",
         )?;
         let active_pointer = self.build_load(active_pointer_pointer, "active_pointer")?;
@@ -327,7 +327,7 @@ where
         let active_pointer_pointer = self.build_gep(
             active_pointer_array_global.into(),
             &[self.field_const(0), index],
-            self.byte_type().ptr_type(AddressSpace::Generic.into()),
+            self.ptr_type(AddressSpace::Generic.into()),
             "active_pointer_pointer",
         )?;
         self.build_store(active_pointer_pointer, pointer)?;
@@ -442,8 +442,7 @@ where
 
             self.set_basic_block(catch_block);
             let landing_pad_type = self.structure_type(&[
-                self.byte_type()
-                    .ptr_type(AddressSpace::Stack.into())
+                self.ptr_type(AddressSpace::Stack.into())
                     .as_basic_type_enum(),
                 self.integer_type(era_compiler_common::BIT_LENGTH_X32)
                     .as_basic_type_enum(),
@@ -452,7 +451,6 @@ where
                 landing_pad_type,
                 self.llvm_runtime.personality.value,
                 &[self
-                    .byte_type()
                     .ptr_type(AddressSpace::Stack.into())
                     .const_zero()
                     .as_basic_value_enum()],
@@ -591,7 +589,7 @@ where
             ],
             "exit_call",
         )?;
-        self.builder.build_unreachable();
+        self.builder.build_unreachable()?;
         Ok(())
     }
 
@@ -605,7 +603,7 @@ where
     ) -> anyhow::Result<()> {
         self.set_global(
             global_name,
-            self.byte_type().ptr_type(AddressSpace::Generic.into()),
+            self.ptr_type(AddressSpace::Generic.into()),
             AddressSpace::Stack,
             pointer.value,
         )
@@ -640,7 +638,7 @@ where
             self.field_type(),
             AddressSpace::Stack,
             abi_length_value,
-        );
+        )?;
         Ok(())
     }
 
@@ -668,11 +666,8 @@ where
                 .void_type()
                 .fn_type(argument_types.as_slice(), false),
             1 => self.field_type().fn_type(argument_types.as_slice(), false),
-            size if is_near_call_abi && self.is_system_mode() => {
-                let return_types: Vec<_> = vec![self.field_type().as_basic_type_enum(); size];
-                let return_type = self
-                    .structure_type(return_types.as_slice())
-                    .ptr_type(AddressSpace::Stack.into());
+            _size if is_near_call_abi && self.is_system_mode() => {
+                let return_type = self.ptr_type(AddressSpace::Stack.into());
                 argument_types.insert(0, return_type.as_basic_type_enum().into());
                 return_type.fn_type(argument_types.as_slice(), false)
             }
@@ -1030,8 +1025,7 @@ where
 
         self.set_basic_block(catch_block);
         let landing_pad_type = self.structure_type(&[
-            self.byte_type()
-                .ptr_type(AddressSpace::Stack.into())
+            self.ptr_type(AddressSpace::Stack.into())
                 .as_basic_type_enum(),
             self.integer_type(era_compiler_common::BIT_LENGTH_X32)
                 .as_basic_type_enum(),
@@ -1040,14 +1034,13 @@ where
             landing_pad_type,
             self.llvm_runtime.personality.value,
             &[self
-                .byte_type()
                 .ptr_type(AddressSpace::Stack.into())
                 .const_zero()
                 .as_basic_value_enum()],
             false,
             "invoke_catch_landing",
-        );
-        crate::eravm::utils::throw(self);
+        )?;
+        crate::eravm::utils::throw(self)?;
 
         self.set_basic_block(current_block);
         let call_site_value = self.builder.build_indirect_invoke(

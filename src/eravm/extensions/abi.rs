@@ -250,7 +250,7 @@ where
         &[active_pointer.as_basic_value_enum()],
         "active_pointer_return_forward",
     )?;
-    context.build_unreachable();
+    context.build_unreachable()?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -269,7 +269,7 @@ where
         &[active_pointer.as_basic_value_enum()],
         "active_pointer_revert_forward",
     )?;
-    context.build_unreachable();
+    context.build_unreachable()?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 

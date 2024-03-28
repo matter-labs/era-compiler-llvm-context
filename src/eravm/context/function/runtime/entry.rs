@@ -79,7 +79,7 @@ impl Entry {
             extra_abi_data_type.const_zero(),
         )?;
 
-        let generic_byte_pointer_type = context.byte_type().ptr_type(AddressSpace::Generic.into());
+        let generic_byte_pointer_type = context.ptr_type(AddressSpace::Generic.into());
         context.set_global(
             crate::eravm::GLOBAL_ACTIVE_POINTER_ARRAY,
             generic_byte_pointer_type
@@ -106,7 +106,6 @@ where
             Vec::with_capacity(Self::MANDATORY_ARGUMENTS_COUNT + crate::eravm::EXTRA_ABI_DATA_SIZE);
         entry_arguments.push(
             context
-                .byte_type()
                 .ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum(),
         );
@@ -162,7 +161,6 @@ where
             calldata_abi_pointer,
             &[calldata_length.into_int_value()],
             context
-                .byte_type()
                 .ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum(),
             "return_data_abi_initializer",

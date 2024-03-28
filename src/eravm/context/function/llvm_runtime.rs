@@ -197,8 +197,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Self::FUNCTION_CXA_THROW,
             llvm.void_type().fn_type(
                 vec![
-                    llvm.i8_type()
-                        .ptr_type(AddressSpace::Stack.into())
+                    llvm.ptr_type(AddressSpace::Stack.into())
                         .as_basic_type_enum()
                         .into();
                     3
@@ -443,8 +442,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Self::FUNCTION_MSTORE8,
             llvm.void_type().fn_type(
                 vec![
-                    llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
-                        .ptr_type(AddressSpace::Heap.into())
+                    llvm.ptr_type(AddressSpace::Heap.into())
                         .as_basic_type_enum()
                         .into(),
                     llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
@@ -474,8 +472,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
                 .fn_type(
                     vec![
-                        llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
-                            .ptr_type(AddressSpace::Heap.into())
+                        llvm.ptr_type(AddressSpace::Heap.into())
                             .as_basic_type_enum()
                             .into(),
                         llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
@@ -513,8 +510,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                         llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
                             .as_basic_type_enum()
                             .into(),
-                        llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
-                            .ptr_type(AddressSpace::Stack.into())
+                        llvm.ptr_type(AddressSpace::Stack.into())
                             .as_basic_type_enum()
                             .into(),
                     ]
@@ -546,8 +542,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
         );
 
         let mut external_call_arguments_by_ref: Vec<inkwell::types::BasicMetadataTypeEnum> = vec![
-            llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
-                .ptr_type(AddressSpace::Generic.into())
+            llvm.ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum()
                 .into(),
             llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
@@ -572,8 +567,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
         let external_call_result_type = llvm
             .struct_type(
                 &[
-                    llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
-                        .ptr_type(AddressSpace::Generic.into())
+                    llvm.ptr_type(AddressSpace::Generic.into())
                         .as_basic_type_enum(),
                     llvm.bool_type().as_basic_type_enum(),
                 ],
@@ -677,7 +671,6 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Self::FUNCTION_RETURN_FORWARD,
             llvm.void_type().fn_type(
                 vec![llvm
-                    .custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
                     .ptr_type(AddressSpace::Generic.into())
                     .as_basic_type_enum()
                     .into()]
@@ -692,7 +685,6 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Self::FUNCTION_REVERT_FORWARD,
             llvm.void_type().fn_type(
                 vec![llvm
-                    .custom_width_int_type(era_compiler_common::BIT_LENGTH_BYTE as u32)
                     .ptr_type(AddressSpace::Generic.into())
                     .as_basic_type_enum()
                     .into()]
