@@ -8,7 +8,7 @@ use serde::Serialize;
 ///
 /// The LLVM attribute.
 ///
-/// In order to check the real order in a new major version of LLVM, find the `Attribute.inc` file
+/// In order to check the real order in a new major version of LLVM, find the `Attributes.inc` file
 /// inside of the LLVM build directory. This order is actually generated during the building.
 ///
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -39,10 +39,6 @@ pub enum Attribute {
     ImmArg,
     /// The eponymous LLVM attribute.
     InReg,
-    /// The eponymous LLVM attribute.
-    InaccessibleMemOnly,
-    /// The eponymous LLVM attribute.
-    InaccessibleMemOrArgMemOnly,
     /// The eponymous LLVM attribute.
     InlineHint,
     /// The eponymous LLVM attribute.
@@ -132,6 +128,8 @@ pub enum Attribute {
     /// The eponymous LLVM attribute.
     ShadowCallStack,
     /// The eponymous LLVM attribute.
+    SkipProfile,
+    /// The eponymous LLVM attribute.
     Speculatable,
     /// The eponymous LLVM attribute.
     SpeculativeLoadHardening,
@@ -178,6 +176,10 @@ pub enum Attribute {
     /// The eponymous LLVM attribute.
     DereferenceableOrNull,
     /// The eponymous LLVM attribute.
+    Memory,
+    /// The eponymous LLVM attribute.
+    NoFPClass,
+    /// The eponymous LLVM attribute.
     StackAlignment,
     /// The eponymous LLVM attribute.
     UWTable,
@@ -201,7 +203,6 @@ impl TryFrom<&str> for Attribute {
             "ReadNone" => Ok(Attribute::ReadNone),
             "ReadOnly" => Ok(Attribute::ReadOnly),
             "NoReturn" => Ok(Attribute::NoReturn),
-            "InaccessibleMemOnly" => Ok(Attribute::InaccessibleMemOnly),
             "MustProgress" => Ok(Attribute::MustProgress),
             _ => Err(value.to_owned()),
         }
