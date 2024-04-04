@@ -141,10 +141,10 @@ impl<'ctx> Function<'ctx> {
     pub fn set_attributes(
         llvm: &'ctx inkwell::context::Context,
         declaration: FunctionDeclaration<'ctx>,
-        attributes: Vec<Attribute>,
+        attributes: Vec<(Attribute, Option<&str>)>,
         force: bool,
     ) {
-        for attribute_kind in attributes.into_iter() {
+        for (attribute_kind, value) in attributes.into_iter() {
             match attribute_kind {
                 attribute_kind @ Attribute::AlwaysInline if force => {
                     let is_optimize_none_set = declaration
@@ -175,6 +175,15 @@ impl<'ctx> Function<'ctx> {
                         llvm.create_enum_attribute(attribute_kind as u32, 0),
                     );
                 }
+                Attribute::Memory => {
+                    declaration.value.add_attribute(
+                        inkwell::attributes::AttributeLoc::Function,
+                        llvm.create_string_attribute(
+                            "memory",
+                            value.expect("The `memory` attribute must have a value"),
+                        ),
+                    );
+                }
                 attribute_kind => declaration.value.add_attribute(
                     inkwell::attributes::AttributeLoc::Function,
                     llvm.create_enum_attribute(attribute_kind as u32, 0),
@@ -197,14 +206,17 @@ impl<'ctx> Function<'ctx> {
             Self::set_attributes(
                 llvm,
                 declaration,
-                vec![Attribute::OptimizeNone, Attribute::NoInline],
+                vec![(Attribute::OptimizeNone, None), (Attribute::NoInline, None)],
                 false,
             );
         } else if optimizer.settings().level_middle_end_size == SizeLevel::Z {
             Self::set_attributes(
                 llvm,
                 declaration,
-                vec![Attribute::OptimizeForSize, Attribute::MinSize],
+                vec![
+                    (Attribute::OptimizeForSize, None),
+                    (Attribute::MinSize, None),
+                ],
                 false,
             );
         }
@@ -212,7 +224,10 @@ impl<'ctx> Function<'ctx> {
         Self::set_attributes(
             llvm,
             declaration,
-            vec![Attribute::NoFree, Attribute::NullPointerIsValid],
+            vec![
+                (Attribute::NoFree, None),
+                (Attribute::NullPointerIsValid, None),
+            ],
             false,
         );
     }
@@ -226,7 +241,7 @@ impl<'ctx> Function<'ctx> {
         optimizer: &Optimizer,
     ) {
         if optimizer.settings().level_middle_end_size == SizeLevel::Z {
-            Self::set_attributes(llvm, declaration, vec![Attribute::NoInline], false);
+            Self::set_attributes(llvm, declaration, vec![(Attribute::NoInline, None)], false);
         }
     }
 
@@ -237,7 +252,7 @@ impl<'ctx> Function<'ctx> {
         llvm: &'ctx inkwell::context::Context,
         declaration: FunctionDeclaration<'ctx>,
     ) {
-        Self::set_attributes(llvm, declaration, vec![Attribute::NoInline], false);
+        Self::set_attributes(llvm, declaration, vec![(Attribute::NoInline, None)], false);
     }
 
     ///
@@ -247,7 +262,7 @@ impl<'ctx> Function<'ctx> {
         llvm: &'ctx inkwell::context::Context,
         declaration: FunctionDeclaration<'ctx>,
     ) {
-        Self::set_attributes(llvm, declaration, vec![Attribute::NoProfile], false);
+        Self::set_attributes(llvm, declaration, vec![(Attribute::NoProfile, None)], false);
     }
 
     ///
@@ -261,10 +276,10 @@ impl<'ctx> Function<'ctx> {
             llvm,
             declaration,
             vec![
-                Attribute::MustProgress,
-                Attribute::NoUnwind,
-                Attribute::ReadNone,
-                Attribute::WillReturn,
+                (Attribute::MustProgress, None),
+                (Attribute::NoUnwind, None),
+                (Attribute::WillReturn, None),
+                (Attribute::Memory, Some("none")),
             ],
             false,
         );

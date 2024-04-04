@@ -14,177 +14,175 @@ use serde::Serialize;
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Attribute {
     /// Unused.
-    Unused,
+    Unused = 0,
     /// The eponymous LLVM attribute.
-    AllocAlign,
+    AllocAlign = 1,
     /// The eponymous LLVM attribute.
-    AllocatedPointer,
+    AllocatedPointer = 2,
     /// The eponymous LLVM attribute.
-    AlwaysInline,
+    AlwaysInline = 3,
     /// The eponymous LLVM attribute.
-    ArgMemOnly,
+    Builtin = 4,
     /// The eponymous LLVM attribute.
-    Builtin,
+    Cold = 5,
     /// The eponymous LLVM attribute.
-    Cold,
+    Convergent = 6,
     /// The eponymous LLVM attribute.
-    Convergent,
+    DisableSanitizerInstrumentation = 7,
     /// The eponymous LLVM attribute.
-    DisableSanitizerInstrumentation,
+    FnRetThunkExtern = 8,
     /// The eponymous LLVM attribute.
-    FnRetThunkExtern,
+    Hot = 9,
     /// The eponymous LLVM attribute.
-    Hot,
+    ImmArg = 10,
     /// The eponymous LLVM attribute.
-    ImmArg,
+    InReg = 11,
     /// The eponymous LLVM attribute.
-    InReg,
+    InlineHint = 12,
     /// The eponymous LLVM attribute.
-    InlineHint,
+    JumpTable = 13,
     /// The eponymous LLVM attribute.
-    JumpTable,
+    MinSize = 14,
     /// The eponymous LLVM attribute.
-    MinSize,
+    MustProgress = 15,
     /// The eponymous LLVM attribute.
-    MustProgress,
+    Naked = 16,
     /// The eponymous LLVM attribute.
-    Naked,
+    Nest = 17,
     /// The eponymous LLVM attribute.
-    Nest,
+    NoAlias = 18,
     /// The eponymous LLVM attribute.
-    NoAlias,
+    NoBuiltin = 19,
     /// The eponymous LLVM attribute.
-    NoBuiltin,
+    NoCallback = 20,
     /// The eponymous LLVM attribute.
-    NoCallback,
+    NoCapture = 21,
     /// The eponymous LLVM attribute.
-    NoCapture,
+    NoCfCheck = 22,
     /// The eponymous LLVM attribute.
-    NoCfCheck,
+    NoDuplicate = 23,
     /// The eponymous LLVM attribute.
-    NoDuplicate,
+    NoFree = 24,
     /// The eponymous LLVM attribute.
-    NoFree,
+    NoImplicitFloat = 25,
     /// The eponymous LLVM attribute.
-    NoImplicitFloat,
+    NoInline = 26,
     /// The eponymous LLVM attribute.
-    NoInline,
+    NoMerge = 27,
     /// The eponymous LLVM attribute.
-    NoMerge,
+    NoProfile = 28,
     /// The eponymous LLVM attribute.
-    NoProfile,
+    NoRecurse = 29,
     /// The eponymous LLVM attribute.
-    NoRecurse,
+    NoRedZone = 30,
     /// The eponymous LLVM attribute.
-    NoRedZone,
+    NoReturn = 31,
     /// The eponymous LLVM attribute.
-    NoReturn,
+    NoSanitizeBounds = 32,
     /// The eponymous LLVM attribute.
-    NoSanitizeBounds,
+    NoSanitizeCoverage = 33,
     /// The eponymous LLVM attribute.
-    NoSanitizeCoverage,
+    NoSync = 34,
     /// The eponymous LLVM attribute.
-    NoSync,
+    NoUndef = 35,
     /// The eponymous LLVM attribute.
-    NoUndef,
+    NoUnwind = 36,
     /// The eponymous LLVM attribute.
-    NoUnwind,
+    NonLazyBind = 37,
     /// The eponymous LLVM attribute.
-    NonLazyBind,
+    NonNull = 38,
     /// The eponymous LLVM attribute.
-    NonNull,
+    NullPointerIsValid = 39,
     /// The eponymous LLVM attribute.
-    NullPointerIsValid,
+    OptForFuzzing = 40,
     /// The eponymous LLVM attribute.
-    OptForFuzzing,
+    OptimizeForSize = 41,
     /// The eponymous LLVM attribute.
-    OptimizeForSize,
+    OptimizeNone = 42,
     /// The eponymous LLVM attribute.
-    OptimizeNone,
+    PresplitCoroutine = 43,
     /// The eponymous LLVM attribute.
-    PresplitCoroutine,
+    ReadNone = 44,
     /// The eponymous LLVM attribute.
-    ReadNone,
+    ReadOnly = 45,
     /// The eponymous LLVM attribute.
-    ReadOnly,
+    Returned = 46,
     /// The eponymous LLVM attribute.
-    Returned,
+    ReturnsTwice = 47,
     /// The eponymous LLVM attribute.
-    ReturnsTwice,
+    SExt = 48,
     /// The eponymous LLVM attribute.
-    SExt,
+    SafeStack = 49,
     /// The eponymous LLVM attribute.
-    SafeStack,
+    SanitizeAddress = 50,
     /// The eponymous LLVM attribute.
-    SanitizeAddress,
+    SanitizeHWAddress = 51,
     /// The eponymous LLVM attribute.
-    SanitizeHWAddress,
+    SanitizeMemTag = 52,
     /// The eponymous LLVM attribute.
-    SanitizeMemTag,
+    SanitizeMemory = 53,
     /// The eponymous LLVM attribute.
-    SanitizeMemory,
+    SanitizeThread = 54,
     /// The eponymous LLVM attribute.
-    SanitizeThread,
+    ShadowCallStack = 55,
     /// The eponymous LLVM attribute.
-    ShadowCallStack,
+    SkipProfile = 56,
     /// The eponymous LLVM attribute.
-    SkipProfile,
+    Speculatable = 57,
     /// The eponymous LLVM attribute.
-    Speculatable,
+    SpeculativeLoadHardening = 58,
     /// The eponymous LLVM attribute.
-    SpeculativeLoadHardening,
+    StackProtect = 59,
     /// The eponymous LLVM attribute.
-    StackProtect,
+    StackProtectReq = 60,
     /// The eponymous LLVM attribute.
-    StackProtectReq,
+    StackProtectStrong = 61,
     /// The eponymous LLVM attribute.
-    StackProtectStrong,
+    StrictFP = 62,
     /// The eponymous LLVM attribute.
-    StrictFP,
+    SwiftAsync = 63,
     /// The eponymous LLVM attribute.
-    SwiftAsync,
+    SwiftError = 64,
     /// The eponymous LLVM attribute.
-    SwiftError,
+    SwiftSelf = 65,
     /// The eponymous LLVM attribute.
-    SwiftSelf,
+    WillReturn = 66,
     /// The eponymous LLVM attribute.
-    WillReturn,
+    WriteOnly = 67,
     /// The eponymous LLVM attribute.
-    WriteOnly,
+    ZExt = 68,
     /// The eponymous LLVM attribute.
-    ZExt,
+    ByRef = 69,
     /// The eponymous LLVM attribute.
-    ByRef,
+    ByVal = 70,
     /// The eponymous LLVM attribute.
-    ByVal,
+    ElementType = 71,
     /// The eponymous LLVM attribute.
-    ElementType,
+    InAlloca = 72,
     /// The eponymous LLVM attribute.
-    InAlloca,
+    Preallocated = 73,
     /// The eponymous LLVM attribute.
-    Preallocated,
+    StructRet = 74,
     /// The eponymous LLVM attribute.
-    StructRet,
+    Alignment = 75,
     /// The eponymous LLVM attribute.
-    Alignment,
+    AllocKind = 76,
     /// The eponymous LLVM attribute.
-    AllocKind,
+    AllocSize = 77,
     /// The eponymous LLVM attribute.
-    AllocSize,
+    Dereferenceable = 78,
     /// The eponymous LLVM attribute.
-    Dereferenceable,
+    DereferenceableOrNull = 79,
     /// The eponymous LLVM attribute.
-    DereferenceableOrNull,
+    Memory = 80,
     /// The eponymous LLVM attribute.
-    Memory,
+    NoFPClass = 81,
     /// The eponymous LLVM attribute.
-    NoFPClass,
+    StackAlignment = 82,
     /// The eponymous LLVM attribute.
-    StackAlignment,
+    UWTable = 83,
     /// The eponymous LLVM attribute.
-    UWTable,
-    /// The eponymous LLVM attribute.
-    VScaleRange,
+    VScaleRange = 84,
 }
 
 impl TryFrom<&str> for Attribute {
@@ -199,9 +197,6 @@ impl TryFrom<&str> for Attribute {
             "OptimizeForSize" => Ok(Attribute::OptimizeForSize),
             "NoInline" => Ok(Attribute::NoInline),
             "WillReturn" => Ok(Attribute::WillReturn),
-            "WriteOnly" => Ok(Attribute::WriteOnly),
-            "ReadNone" => Ok(Attribute::ReadNone),
-            "ReadOnly" => Ok(Attribute::ReadOnly),
             "NoReturn" => Ok(Attribute::NoReturn),
             "MustProgress" => Ok(Attribute::MustProgress),
             _ => Err(value.to_owned()),

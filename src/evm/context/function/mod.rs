@@ -187,7 +187,6 @@ impl<'ctx> Function<'ctx> {
         for attribute_kind in [
             Attribute::MustProgress,
             Attribute::NoUnwind,
-            Attribute::ReadNone,
             Attribute::WillReturn,
         ]
         .into_iter()
@@ -197,6 +196,10 @@ impl<'ctx> Function<'ctx> {
                 llvm.create_enum_attribute(attribute_kind as u32, 0),
             );
         }
+        declaration.value.add_attribute(
+            inkwell::attributes::AttributeLoc::Function,
+            llvm.create_string_attribute("memory", "none"),
+        );
     }
 
     ///

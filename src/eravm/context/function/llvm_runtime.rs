@@ -459,9 +459,9 @@ impl<'ctx> LLVMRuntime<'ctx> {
             llvm,
             mstore8,
             vec![
-                Attribute::MustProgress,
-                Attribute::NoUnwind,
-                Attribute::WillReturn,
+                (Attribute::MustProgress, None),
+                (Attribute::NoUnwind, None),
+                (Attribute::WillReturn, None),
             ],
             false,
         );
@@ -491,7 +491,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
         Function::set_attributes(
             llvm,
             sha3,
-            vec![Attribute::ArgMemOnly, Attribute::ReadOnly],
+            vec![(Attribute::Memory, Some("argmem: read"))],
             false,
         );
 
@@ -523,7 +523,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
         Function::set_attributes(
             llvm,
             system_request,
-            vec![Attribute::ArgMemOnly, Attribute::ReadOnly],
+            vec![(Attribute::Memory, Some("argmem: read"))],
             false,
         );
 
