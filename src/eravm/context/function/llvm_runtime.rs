@@ -4,6 +4,7 @@
 
 use inkwell::types::BasicType;
 
+use crate::context::attribute::memory::Memory as MemoryAttribute;
 use crate::context::attribute::Attribute;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::eravm::context::address_space::AddressSpace;
@@ -491,7 +492,10 @@ impl<'ctx> LLVMRuntime<'ctx> {
         Function::set_attributes(
             llvm,
             sha3,
-            vec![(Attribute::Memory, Some("argmem: read"))],
+            vec![(
+                Attribute::Memory,
+                Some(MemoryAttribute::ArgMemReadOnly as u64),
+            )],
             false,
         );
 
@@ -523,7 +527,10 @@ impl<'ctx> LLVMRuntime<'ctx> {
         Function::set_attributes(
             llvm,
             system_request,
-            vec![(Attribute::Memory, Some("argmem: read"))],
+            vec![(
+                Attribute::Memory,
+                Some(MemoryAttribute::ArgMemReadOnly as u64),
+            )],
             false,
         );
 

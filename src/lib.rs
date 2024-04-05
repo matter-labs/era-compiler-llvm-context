@@ -11,6 +11,7 @@ pub(crate) mod evm;
 pub(crate) mod optimizer;
 pub(crate) mod target_machine;
 
+pub use self::context::attribute::memory::Memory as MemoryAttribute;
 pub use self::context::attribute::Attribute;
 pub use self::context::code_type::CodeType;
 pub use self::context::function::block::evmla_data::EVMLAData as FunctionBlockEVMLAData;

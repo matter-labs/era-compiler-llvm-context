@@ -10,6 +10,7 @@ pub mod yul_data;
 
 use std::collections::HashMap;
 
+use crate::context::attribute::memory::Memory as MemoryAttribute;
 use crate::context::attribute::Attribute;
 use crate::context::function::block::key::Key as BlockKey;
 use crate::context::function::block::Block;
@@ -141,7 +142,7 @@ impl<'ctx> Function<'ctx> {
     pub fn set_attributes(
         llvm: &'ctx inkwell::context::Context,
         declaration: FunctionDeclaration<'ctx>,
-        attributes: Vec<(Attribute, Option<&str>)>,
+        attributes: Vec<(Attribute, Option<u64>)>,
         force: bool,
     ) {
         for (attribute_kind, value) in attributes.into_iter() {
@@ -175,12 +176,12 @@ impl<'ctx> Function<'ctx> {
                         llvm.create_enum_attribute(attribute_kind as u32, 0),
                     );
                 }
-                Attribute::Memory => {
+                attribute_kind @ Attribute::Memory => {
                     declaration.value.add_attribute(
                         inkwell::attributes::AttributeLoc::Function,
-                        llvm.create_string_attribute(
-                            "memory",
-                            value.expect("The `memory` attribute must have a value"),
+                        llvm.create_enum_attribute(
+                            attribute_kind as u32,
+                            value.expect("The `memory` attribute always requires a value"),
                         ),
                     );
                 }
@@ -279,7 +280,7 @@ impl<'ctx> Function<'ctx> {
                 (Attribute::MustProgress, None),
                 (Attribute::NoUnwind, None),
                 (Attribute::WillReturn, None),
-                (Attribute::Memory, Some("none")),
+                (Attribute::Memory, Some(MemoryAttribute::None as u64)),
             ],
             false,
         );

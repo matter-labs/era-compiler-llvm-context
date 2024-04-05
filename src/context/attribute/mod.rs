@@ -2,6 +2,8 @@
 //! The LLVM attribute.
 //!
 
+pub mod memory;
+
 use serde::Deserialize;
 use serde::Serialize;
 
