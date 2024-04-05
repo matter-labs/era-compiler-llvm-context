@@ -280,7 +280,7 @@ impl<'ctx> Function<'ctx> {
                 (Attribute::MustProgress, None),
                 (Attribute::NoUnwind, None),
                 (Attribute::WillReturn, None),
-                (Attribute::Memory, Some(MemoryAttribute::None as u64)),
+                // (Attribute::Memory, Some(MemoryAttribute::None as u64)),
             ],
             false,
         );

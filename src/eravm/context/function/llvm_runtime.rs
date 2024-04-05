@@ -489,15 +489,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, sha3, optimizer);
-        Function::set_attributes(
-            llvm,
-            sha3,
-            vec![(
-                Attribute::Memory,
-                Some(MemoryAttribute::ArgMemReadOnly as u64),
-            )],
-            false,
-        );
+        Function::set_attributes(llvm, sha3, vec![], false);
 
         let system_request = Self::declare(
             module,
@@ -524,15 +516,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, system_request, optimizer);
-        Function::set_attributes(
-            llvm,
-            system_request,
-            vec![(
-                Attribute::Memory,
-                Some(MemoryAttribute::ArgMemReadOnly as u64),
-            )],
-            false,
-        );
+        Function::set_attributes(llvm, system_request, vec![], false);
 
         let external_call_arguments: Vec<inkwell::types::BasicMetadataTypeEnum> = vec![
                 llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
