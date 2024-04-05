@@ -10,7 +10,6 @@ pub mod yul_data;
 
 use std::collections::HashMap;
 
-use crate::context::attribute::memory::Memory as MemoryAttribute;
 use crate::context::attribute::Attribute;
 use crate::context::function::block::key::Key as BlockKey;
 use crate::context::function::block::Block;
@@ -254,36 +253,6 @@ impl<'ctx> Function<'ctx> {
         declaration: FunctionDeclaration<'ctx>,
     ) {
         Self::set_attributes(llvm, declaration, vec![(Attribute::NoInline, None)], false);
-    }
-
-    ///
-    /// Sets the CXA-throw attributes.
-    ///
-    pub fn set_cxa_throw_attributes(
-        llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
-    ) {
-        Self::set_attributes(llvm, declaration, vec![(Attribute::NoProfile, None)], false);
-    }
-
-    ///
-    /// Sets the pure function attributes.
-    ///
-    pub fn set_pure_function_attributes(
-        llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
-    ) {
-        Self::set_attributes(
-            llvm,
-            declaration,
-            vec![
-                (Attribute::MustProgress, None),
-                (Attribute::NoUnwind, None),
-                (Attribute::WillReturn, None),
-                // (Attribute::Memory, Some(MemoryAttribute::None as u64)),
-            ],
-            false,
-        );
     }
 
     ///

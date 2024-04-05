@@ -178,31 +178,6 @@ impl<'ctx> Function<'ctx> {
     }
 
     ///
-    /// Sets the LLVM runtime attributes.
-    ///
-    pub fn set_llvm_runtime_attributes(
-        llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
-    ) {
-        for attribute_kind in [
-            Attribute::MustProgress,
-            Attribute::NoUnwind,
-            Attribute::WillReturn,
-        ]
-        .into_iter()
-        {
-            declaration.value.add_attribute(
-                inkwell::attributes::AttributeLoc::Function,
-                llvm.create_enum_attribute(attribute_kind as u32, 0),
-            );
-        }
-        declaration.value.add_attribute(
-            inkwell::attributes::AttributeLoc::Function,
-            llvm.create_string_attribute("memory", "none"),
-        );
-    }
-
-    ///
     /// Saves the pointer to a stack variable, returning the pointer to the shadowed variable,
     /// if it exists.
     ///
