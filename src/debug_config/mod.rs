@@ -46,8 +46,8 @@ impl DebugConfig {
     ///
     pub fn create_subdirectory(&self, directory_name: &str) -> anyhow::Result<Self> {
         let sanitized_name = &Self::sanitize_filename_fragment(directory_name);
-        let subdirectory_path = self.output_directory.join(sanitized_name);
-        std::fs::create_dir_all(subdirectory_path.clone())?;
+        let subdirectory_path = self.output_directory.join(&sanitized_name);
+        std::fs::create_dir_all(&subdirectory_path)?;
         Ok(Self {
             output_directory: subdirectory_path,
         })
