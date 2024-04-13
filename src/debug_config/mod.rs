@@ -31,7 +31,7 @@ impl DebugConfig {
     }
 
     ///
-    /// Rules to encode a string into a valid filename
+    /// Rules to encode a string into a valid filename.
     ///
     fn sanitize(string: &str) -> String {
         string
@@ -42,7 +42,7 @@ impl DebugConfig {
     }
 
     ///
-    /// Create a subdirectory and return a copy of `DebugConfig` pointing there
+    /// Create a subdirectory and return a copy of `DebugConfig` pointing there.
     ///
     pub fn create_subdirectory(&self, directory_name: &str) -> anyhow::Result<Self> {
         let sanitized_name = &Self::sanitize(directory_name);
