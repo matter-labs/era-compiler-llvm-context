@@ -33,7 +33,7 @@ impl DebugConfig {
     ///
     /// Rules to encode a string into a valid filename.
     ///
-    fn sanitize(string: &str) -> String {
+    fn sanitize_filename_fragment(string: &str) -> String {
         string
             .replace('/', "_")
             .replace(' ', "_")
@@ -45,7 +45,7 @@ impl DebugConfig {
     /// Create a subdirectory and return a copy of `DebugConfig` pointing there.
     ///
     pub fn create_subdirectory(&self, directory_name: &str) -> anyhow::Result<Self> {
-        let sanitized_name = &Self::sanitize(directory_name);
+        let sanitized_name = &Self::sanitize_filename_fragment(directory_name);
         let subdirectory_path = self.output_directory.join(sanitized_name);
         std::fs::create_dir_all(subdirectory_path.clone())?;
         Ok(Self {
@@ -187,7 +187,7 @@ impl DebugConfig {
         suffix: Option<&str>,
         ir_type: IRType,
     ) -> String {
-        let mut full_file_name = Self::sanitize(contract_path);
+        let mut full_file_name = Self::sanitize_filename_fragment(contract_path);
 
         if let Some(code_type) = code_type {
             full_file_name.push('.');
