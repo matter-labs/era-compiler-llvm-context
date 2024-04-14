@@ -31,6 +31,18 @@ impl DebugConfig {
     }
 
     ///
+    /// Create a subdirectory and return a copy of `DebugConfig` pointing there.
+    ///
+    pub fn create_subdirectory(&self, directory_name: &str) -> anyhow::Result<Self> {
+        let sanitized_name = Self::sanitize_filename_fragment(directory_name);
+        let subdirectory_path = self.output_directory.join(sanitized_name.as_str());
+        std::fs::create_dir_all(subdirectory_path.as_path())?;
+        Ok(Self {
+            output_directory: subdirectory_path,
+        })
+    }
+
+    ///
     /// Dumps the Yul IR.
     ///
     pub fn dump_yul(
@@ -156,6 +168,13 @@ impl DebugConfig {
     }
 
     ///
+    /// Rules to encode a string into a valid filename.
+    ///
+    fn sanitize_filename_fragment(string: &str) -> String {
+        string.replace(['/', ' ', '\t'], "_")
+    }
+
+    ///
     /// Creates a full file name, given the contract full path, suffix, and extension.
     ///
     fn full_file_name(
@@ -164,7 +183,8 @@ impl DebugConfig {
         suffix: Option<&str>,
         ir_type: IRType,
     ) -> String {
-        let mut full_file_name = contract_path.replace('/', "_").replace(':', ".");
+        let mut full_file_name = Self::sanitize_filename_fragment(contract_path);
+
         if let Some(code_type) = code_type {
             full_file_name.push('.');
             full_file_name.push_str(code_type.to_string().as_str());
