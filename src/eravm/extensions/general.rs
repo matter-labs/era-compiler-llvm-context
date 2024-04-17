@@ -130,14 +130,14 @@ where
             context.intrinsics().decommit,
             &[in_0.as_basic_value_enum(), gas_left.as_basic_value_enum()],
             "contract_call_simulation_decommit",
-        )
+        )?
         .expect("Always exists");
     context.set_global(
         crate::eravm::GLOBAL_DECOMMIT_POINTER,
-        context.byte_type().ptr_type(AddressSpace::Generic.into()),
+        context.ptr_type(AddressSpace::Generic.into()),
         AddressSpace::Stack,
         result,
-    );
+    )?;
     Ok(result)
 }
 
