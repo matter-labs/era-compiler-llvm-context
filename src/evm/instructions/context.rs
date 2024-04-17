@@ -18,7 +18,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().gaslimit, &[], "gaslimit")
+        .build_call(context.intrinsics().gaslimit, &[], "gaslimit")?
         .expect("Always exists"))
 }
 
@@ -32,7 +32,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().gasprice, &[], "gasprice")
+        .build_call(context.intrinsics().gasprice, &[], "gasprice")?
         .expect("Always exists"))
 }
 
@@ -46,7 +46,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().origin, &[], "origin")
+        .build_call(context.intrinsics().origin, &[], "origin")?
         .expect("Always exists"))
 }
 
@@ -60,7 +60,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().chainid, &[], "chainid")
+        .build_call(context.intrinsics().chainid, &[], "chainid")?
         .expect("Always exists"))
 }
 
@@ -74,7 +74,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().number, &[], "number")
+        .build_call(context.intrinsics().number, &[], "number")?
         .expect("Always exists"))
 }
 
@@ -88,7 +88,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().timestamp, &[], "timestamp")
+        .build_call(context.intrinsics().timestamp, &[], "timestamp")?
         .expect("Always exists"))
 }
 
@@ -107,7 +107,7 @@ where
             context.intrinsics().blockhash,
             &[index.as_basic_value_enum()],
             "blockhash",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -121,7 +121,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().difficulty, &[], "difficulty")
+        .build_call(context.intrinsics().difficulty, &[], "difficulty")?
         .expect("Always exists"))
 }
 
@@ -135,7 +135,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().coinbase, &[], "coinbase")
+        .build_call(context.intrinsics().coinbase, &[], "coinbase")?
         .expect("Always exists"))
 }
 
@@ -149,7 +149,7 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().basefee, &[], "basefee")
+        .build_call(context.intrinsics().basefee, &[], "basefee")?
         .expect("Always exists"))
 }
 
@@ -163,6 +163,6 @@ where
     D: Dependency + Clone,
 {
     Ok(context
-        .build_call(context.intrinsics().msize, &[], "msize")
+        .build_call(context.intrinsics().msize, &[], "msize")?
         .expect("Always exists"))
 }

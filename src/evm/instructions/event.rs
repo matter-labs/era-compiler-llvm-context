@@ -18,7 +18,8 @@ pub fn log<'ctx, D>(
     topics: Vec<inkwell::values::IntValue<'ctx>>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
-) where
+) -> anyhow::Result<()>
+where
     D: Dependency + Clone,
 {
     let input_offset_pointer = Pointer::new_with_offset(
@@ -27,7 +28,7 @@ pub fn log<'ctx, D>(
         context.byte_type(),
         input_offset,
         format!("log{}_input_offset_pointer", topics.len()).as_str(),
-    );
+    )?;
 
     match topics.len() {
         0 => context.build_call(
@@ -81,5 +82,6 @@ pub fn log<'ctx, D>(
             "log4",
         ),
         length => panic!("The number of topics must be from 0 to 4, found {}", length),
-    };
+    }?;
+    Ok(())
 }

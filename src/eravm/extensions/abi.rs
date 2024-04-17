@@ -28,11 +28,11 @@ where
         &[context.field_const(0), index],
         context.field_type().as_basic_type_enum(),
         "extra_active_data_element_pointer",
-    );
+    )?;
     let extra_active_data_element = context.build_load(
         extra_active_data_element_pointer,
         "extra_active_data_element_value",
-    );
+    )?;
     Ok(extra_active_data_element)
 }
 
@@ -103,7 +103,7 @@ where
         &[offset],
         context.byte_type().as_basic_type_enum(),
         "active_pointer_shifted",
-    );
+    )?;
     context.set_active_pointer(context.field_const(0), active_pointer_shifted.value)?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
@@ -127,7 +127,7 @@ where
                 offset.as_basic_value_enum(),
             ],
             "active_pointer_shrunken",
-        )
+        )?
         .expect("Always returns a pointer");
     context.set_active_pointer(
         context.field_const(0),
@@ -155,7 +155,7 @@ where
                 data.as_basic_value_enum(),
             ],
             "active_pointer_packed",
-        )
+        )?
         .expect("Always returns a pointer");
     context.set_active_pointer(
         context.field_const(0),
@@ -180,8 +180,8 @@ where
         &[offset],
         context.field_type().as_basic_type_enum(),
         "active_pointer_with_offset",
-    );
-    let value = context.build_load(active_pointer, "active_pointer_value");
+    )?;
+    let value = context.build_load(active_pointer, "active_pointer_value")?;
     Ok(value)
 }
 
@@ -199,18 +199,18 @@ where
         active_pointer,
         context.field_type(),
         "active_pointer_value",
-    );
+    )?;
     let active_pointer_value_shifted = context.builder().build_right_shift(
         active_pointer_value,
         context.field_const((era_compiler_common::BIT_LENGTH_X32 * 3) as u64),
         false,
         "active_pointer_value_shifted",
-    );
+    )?;
     let active_pointer_length = context.builder().build_and(
         active_pointer_value_shifted,
         context.field_const(u32::MAX as u64),
         "active_pointer_length",
-    );
+    )?;
     Ok(active_pointer_length.as_basic_value_enum())
 }
 
@@ -232,7 +232,7 @@ where
         context.byte_type(),
         destination_offset,
         "active_pointer_data_copy_destination_pointer",
-    );
+    )?;
 
     let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let source = context.build_gep(
@@ -240,7 +240,7 @@ where
         &[source_offset],
         context.byte_type().as_basic_type_enum(),
         "active_pointer_data_copy_source_pointer",
-    );
+    )?;
 
     context.build_memcpy(
         context.intrinsics().memory_copy_from_generic,
@@ -248,8 +248,7 @@ where
         source,
         size,
         "active_pointer_data_copy_memcpy_from_child",
-    );
-
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -267,8 +266,8 @@ where
         context.llvm_runtime().return_forward,
         &[active_pointer.as_basic_value_enum()],
         "active_pointer_return_forward",
-    );
-    context.build_unreachable();
+    )?;
+    context.build_unreachable()?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 
@@ -286,8 +285,8 @@ where
         context.llvm_runtime().revert_forward,
         &[active_pointer.as_basic_value_enum()],
         "active_pointer_revert_forward",
-    );
-    context.build_unreachable();
+    )?;
+    context.build_unreachable()?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
 

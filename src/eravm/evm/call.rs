@@ -263,7 +263,7 @@ where
                     pointer.into_pointer_value(),
                     context.field_type(),
                     "calldata_abi_integer",
-                );
+                )?;
                 return Ok(value.as_basic_value_enum());
             }
             Some(era_compiler_common::ERAVM_ADDRESS_GET_GLOBAL_CALL_FLAGS) => {
@@ -287,7 +287,7 @@ where
                     pointer.into_pointer_value(),
                     context.field_type(),
                     "return_data_abi_integer",
-                );
+                )?;
                 return Ok(value.as_basic_value_enum());
             }
             Some(era_compiler_common::ERAVM_ADDRESS_EVENT_INITIALIZE) => {
@@ -560,8 +560,9 @@ where
     let ordinary_block = context.append_basic_block("contract_call_ordinary_block");
     let join_block = context.append_basic_block("contract_call_join_block");
 
-    let result_pointer = context.build_alloca(context.field_type(), "contract_call_result_pointer");
-    context.build_store(result_pointer, context.field_const(0));
+    let result_pointer =
+        context.build_alloca(context.field_type(), "contract_call_result_pointer")?;
+    context.build_store(result_pointer, context.field_const(0))?;
 
     context.builder().build_switch(
         address,
@@ -570,13 +571,13 @@ where
             context.field_const(zkevm_opcode_defs::ADDRESS_IDENTITY.into()),
             identity_block,
         )],
-    );
+    )?;
 
     {
         context.set_basic_block(identity_block);
         let result = identity(context, output_offset, input_offset, output_length)?;
-        context.build_store(result_pointer, result);
-        context.build_unconditional_branch(join_block);
+        context.build_store(result_pointer, result)?;
+        context.build_unconditional_branch(join_block)?;
     }
 
     context.set_basic_block(ordinary_block);
@@ -606,14 +607,14 @@ where
                     output_length.as_basic_value_enum(),
                 ],
                 "default_call",
-            )
+            )?
             .expect("Always exists")
     };
-    context.build_store(result_pointer, result);
-    context.build_unconditional_branch(join_block);
+    context.build_store(result_pointer, result)?;
+    context.build_unconditional_branch(join_block)?;
 
     context.set_basic_block(join_block);
-    let result = context.build_load(result_pointer, "contract_call_result");
+    let result = context.build_load(result_pointer, "contract_call_result")?;
     Ok(result)
 }
 
@@ -660,15 +661,15 @@ where
     let calldata_array_pointer = context.build_alloca(
         context.array_type(context.field_type(), arguments.len()),
         "system_request_calldata_array_pointer",
-    );
+    )?;
     for (index, argument) in arguments.into_iter().enumerate() {
         let argument_pointer = context.build_gep(
             calldata_array_pointer,
             &[context.field_const(0), context.field_const(index as u64)],
             context.field_type(),
             "system_request_calldata_array_pointer",
-        );
-        context.build_store(argument_pointer, argument);
+        )?;
+        context.build_store(argument_pointer, argument)?;
     }
     Ok(context
         .build_invoke(
@@ -680,7 +681,7 @@ where
                 calldata_array_pointer.value.as_basic_value_enum(),
             ],
             "system_request_call",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -708,15 +709,15 @@ where
     let value_join_block = context.append_basic_block("contract_call_value_join_block");
 
     let result_pointer =
-        context.build_alloca(context.field_type(), "contract_call_address_result_pointer");
-    context.build_store(result_pointer, context.field_const(0));
+        context.build_alloca(context.field_type(), "contract_call_address_result_pointer")?;
+    context.build_store(result_pointer, context.field_const(0))?;
     let is_value_zero = context.builder().build_int_compare(
         inkwell::IntPredicate::EQ,
         value,
         context.field_const(0),
         "contract_call_is_value_zero",
-    );
-    context.build_conditional_branch(is_value_zero, value_zero_block, value_non_zero_block);
+    )?;
+    context.build_conditional_branch(is_value_zero, value_zero_block, value_non_zero_block)?;
 
     context.set_basic_block(value_non_zero_block);
     let abi_data = crate::eravm::utils::abi_data(
@@ -740,8 +741,8 @@ where
             context.field_const(u64::from(crate::eravm::r#const::NO_SYSTEM_CALL_BIT)),
         ],
     )?;
-    context.build_store(result_pointer, result);
-    context.build_unconditional_branch(value_join_block);
+    context.build_store(result_pointer, result)?;
+    context.build_unconditional_branch(value_join_block)?;
 
     context.set_basic_block(value_zero_block);
     let function = Runtime::default_call(context, function);
@@ -757,13 +758,13 @@ where
                 output_length.as_basic_value_enum(),
             ],
             "default_call",
-        )
+        )?
         .expect("Always exists");
-    context.build_store(result_pointer, result);
-    context.build_unconditional_branch(value_join_block);
+    context.build_store(result_pointer, result)?;
+    context.build_unconditional_branch(value_join_block)?;
 
     context.set_basic_block(value_join_block);
-    let result = context.build_load(result_pointer, "contract_call_address_result");
+    let result = context.build_load(result_pointer, "contract_call_address_result")?;
     Ok(result)
 }
 
@@ -785,14 +786,14 @@ where
         context.byte_type(),
         destination,
         "contract_call_identity_destination",
-    );
+    )?;
     let source = Pointer::<AddressSpace>::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),
         source,
         "contract_call_identity_source",
-    );
+    )?;
 
     context.build_memcpy(
         context.intrinsics().memory_move,
@@ -800,7 +801,6 @@ where
         source,
         size,
         "contract_call_memcpy_to_child",
-    );
-
+    )?;
     Ok(context.field_const(1).as_basic_value_enum())
 }
