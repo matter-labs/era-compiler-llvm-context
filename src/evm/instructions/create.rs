@@ -28,7 +28,7 @@ where
         context.byte_type(),
         input_offset,
         "create_input_offset_pointer",
-    );
+    )?;
 
     Ok(context
         .build_call(
@@ -39,7 +39,7 @@ where
                 input_length.as_basic_value_enum(),
             ],
             "create",
-        )
+        )?
         .expect("Always exists"))
 }
 
@@ -62,7 +62,7 @@ where
         context.byte_type(),
         input_offset,
         "create2_input_offset_pointer",
-    );
+    )?;
 
     Ok(context
         .build_call(
@@ -74,6 +74,6 @@ where
                 salt.as_basic_value_enum(),
             ],
             "create2",
-        )
+        )?
         .expect("Always exists"))
 }

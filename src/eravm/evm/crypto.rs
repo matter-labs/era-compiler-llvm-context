@@ -23,9 +23,9 @@ where
 {
     let offset_pointer = context.builder().build_int_to_ptr(
         offset,
-        context.byte_type().ptr_type(AddressSpace::Heap.into()),
+        context.ptr_type(AddressSpace::Heap.into()),
         "sha3_offset_pointer",
-    );
+    )?;
 
     Ok(context
         .build_invoke(
@@ -42,6 +42,6 @@ where
                     .as_basic_value_enum(),
             ],
             "sha3_call",
-        )
+        )?
         .expect("Always exists"))
 }
