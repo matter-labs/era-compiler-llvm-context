@@ -50,7 +50,6 @@ impl TargetMachine {
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
             inkwell::support::parse_command_line_options(
-                arguments.len() as i32,
                 arguments.as_slice(),
                 "Optimizer parameters",
             );

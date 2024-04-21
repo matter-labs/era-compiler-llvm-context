@@ -171,7 +171,7 @@ impl DebugConfig {
     /// Rules to encode a string into a valid filename.
     ///
     fn sanitize_filename_fragment(string: &str) -> String {
-        string.replace(['/', ' ', '\t'], "_").replace(':',".")
+        string.replace(['/', ' ', '\t'], "_").replace(':', ".")
     }
 
     ///
