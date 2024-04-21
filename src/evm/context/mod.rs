@@ -126,7 +126,7 @@ where
     pub fn build(
         self,
         contract_path: &str,
-        runtime_code: Option<inkwell::memory_buffer::MemoryBuffer>,
+        runtime_code: Option<&inkwell::memory_buffer::MemoryBuffer>,
     ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
         let target_machine = TargetMachine::new(Target::EVM, self.optimizer.settings())?;
         target_machine.set_target_data(self.module());
@@ -194,7 +194,7 @@ where
                 })?;
 
                 inkwell::memory_buffer::MemoryBuffer::link_memory_buffers(
-                    vec![buffer, runtime_code_memory_buffer],
+                    &[&buffer, runtime_code_memory_buffer],
                     &[
                         "ld.lld",
                         "--evm-link-deploy",
