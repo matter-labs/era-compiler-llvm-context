@@ -77,7 +77,6 @@ pub use self::eravm::DummyDependency as EraVMDummyDependency;
 pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
 pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
 pub use self::evm::context::address_space::AddressSpace as EVMAddressSpace;
-pub use self::evm::context::build::Build as EVMBuild;
 pub use self::evm::context::evmla_data::EVMLAData as EVMContextEVMLAData;
 pub use self::evm::context::function::intrinsics::Intrinsics as EVMIntrinsicFunction;
 pub use self::evm::context::function::runtime::entry::Entry as EVMEntryFunction;
