@@ -63,6 +63,56 @@ where
 }
 
 ///
+/// Translates the `dataoffset` instruction.
+///
+pub fn data_offset<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    object_name: &str,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let module_id = context.field_const(if object_name.ends_with("_deployed") {
+        1
+    } else {
+        0
+    });
+
+    Ok(context
+        .build_call(
+            context.intrinsics().dataoffset,
+            &[module_id.as_basic_value_enum()],
+            "codesize",
+        )?
+        .expect("Always exists"))
+}
+
+///
+/// Translates the `datasize` instruction.
+///
+pub fn data_size<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    object_name: &str,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let module_id = context.field_const(if object_name.ends_with("_deployed") {
+        1
+    } else {
+        0
+    });
+
+    Ok(context
+        .build_call(
+            context.intrinsics().datasize,
+            &[module_id.as_basic_value_enum()],
+            "codesize",
+        )?
+        .expect("Always exists"))
+}
+
+///
 /// Translates the `extcodesize` instruction.
 ///
 pub fn ext_size<'ctx, D>(

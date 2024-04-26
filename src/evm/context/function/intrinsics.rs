@@ -43,6 +43,10 @@ pub struct Intrinsics<'ctx> {
     pub extcodecopy: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub extcodehash: FunctionDeclaration<'ctx>,
+    /// The corresponding intrinsic function name.
+    pub dataoffset: FunctionDeclaration<'ctx>,
+    /// The corresponding intrinsic function name.
+    pub datasize: FunctionDeclaration<'ctx>,
 
     /// The corresponding intrinsic function name.
     pub log0: FunctionDeclaration<'ctx>,
@@ -166,6 +170,12 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_EXTCODEHASH: &'static str = "llvm.evm.extcodehash";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_DATAOFFSET: &'static str = "llvm.evm.dataoffset";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_DATASIZE: &'static str = "llvm.evm.datasize";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LOG0: &'static str = "llvm.evm.log0";
@@ -428,6 +438,19 @@ impl<'ctx> Intrinsics<'ctx> {
             Self::FUNCTION_EXTCODEHASH,
             field_type.fn_type(&[field_type.as_basic_type_enum().into()], false),
         );
+        let dataoffset = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_DATAOFFSET,
+            field_type.fn_type(&[field_type.as_basic_type_enum().into()], false),
+        );
+        let datasize = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_DATASIZE,
+            field_type.fn_type(&[field_type.as_basic_type_enum().into()], false),
+        );
+
         let log0 = Self::declare(
             llvm,
             module,
@@ -804,6 +827,8 @@ impl<'ctx> Intrinsics<'ctx> {
             extcodesize,
             extcodecopy,
             extcodehash,
+            dataoffset,
+            datasize,
 
             log0,
             log1,
