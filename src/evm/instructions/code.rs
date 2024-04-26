@@ -72,19 +72,26 @@ pub fn data_offset<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let module_id = context.field_const(if object_name.ends_with("_deployed") {
-        1
-    } else {
-        0
-    });
+    if !object_name.ends_with("_deployed") {
+        return Ok(context.field_const(0).as_basic_value_enum());
+    }
 
-    Ok(context
+    let deploy_code_size = context
+        .build_call(context.intrinsics().datasize, &[], "deploy_code_size")?
+        .expect("Always exists");
+    let runtime_code_size = context
         .build_call(
-            context.intrinsics().dataoffset,
-            &[module_id.as_basic_value_enum()],
-            "codesize",
+            context.intrinsics().datasize_runtime,
+            &[],
+            "runtime_code_size",
         )?
-        .expect("Always exists"))
+        .expect("Always exists");
+    let data_offset = context.builder().build_int_sub(
+        deploy_code_size.into_int_value(),
+        runtime_code_size.into_int_value(),
+        "data_offset",
+    )?;
+    Ok(data_offset.as_basic_value_enum())
 }
 
 ///
@@ -97,18 +104,14 @@ pub fn data_size<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let module_id = context.field_const(if object_name.ends_with("_deployed") {
-        1
+    let intrinsic = if object_name.ends_with("_deployed") {
+        context.intrinsics().datasize
     } else {
-        0
-    });
+        context.intrinsics().datasize_runtime
+    };
 
     Ok(context
-        .build_call(
-            context.intrinsics().datasize,
-            &[module_id.as_basic_value_enum()],
-            "codesize",
-        )?
+        .build_call(intrinsic, &[], "codesize")?
         .expect("Always exists"))
 }
 
