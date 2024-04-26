@@ -188,8 +188,10 @@ where
             CodeType::Deploy => {
                 let runtime_code_memory_buffer = runtime_code.ok_or_else(|| {
                     anyhow::anyhow!(
-                        "The contract `{}` deploy code linking error: the runtime code is missing",
-                        contract_path
+                        "The contract `{}` {} code linking error: the {} code is missing",
+                        contract_path,
+                        self.code_type,
+                        CodeType::Runtime,
                     )
                 })?;
 
@@ -204,15 +206,19 @@ where
                         "1",
                     ],
                 )
-                .map_err(|_| {
-                    anyhow::anyhow!(
-                        "The contract `{}` deploy code linking error: the linking process failed",
-                        contract_path
-                    )
-                })
             }
-            CodeType::Runtime => Ok(buffer),
+            CodeType::Runtime => inkwell::memory_buffer::MemoryBuffer::link_memory_buffers(
+                &[&buffer],
+                &["ld.lld", "--evm-link-runtime", "--evm-runtime-binary", "0"],
+            ),
         }
+        .map_err(|_| {
+            anyhow::anyhow!(
+                "The contract `{}` {} code linking error: the linking process failed",
+                contract_path,
+                self.code_type,
+            )
+        })
     }
 
     ///
