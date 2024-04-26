@@ -127,7 +127,10 @@ where
         self,
         contract_path: &str,
         runtime_code: Option<&inkwell::memory_buffer::MemoryBuffer>,
-    ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
+    ) -> anyhow::Result<(
+        inkwell::memory_buffer::MemoryBuffer,
+        inkwell::memory_buffer::MemoryBuffer,
+    )> {
         let target_machine = TargetMachine::new(Target::EVM, self.optimizer.settings())?;
         target_machine.set_target_data(self.module());
 
@@ -184,7 +187,7 @@ where
                 )
             })?;
 
-        match self.code_type {
+        let linked = match self.code_type {
             CodeType::Deploy => {
                 let runtime_code_memory_buffer = runtime_code.ok_or_else(|| {
                     anyhow::anyhow!(
@@ -218,7 +221,9 @@ where
                 contract_path,
                 self.code_type,
             )
-        })
+        })?;
+
+        Ok((buffer, linked))
     }
 
     ///
