@@ -20,6 +20,9 @@ pub static GLOBAL_RETURN_DATA_POINTER: &str = "ptr_return_data";
 /// The return data size pointer global variable name.
 pub static GLOBAL_RETURN_DATA_SIZE: &str = "returndatasize";
 
+/// The decommit pointer global variable name.
+pub static GLOBAL_DECOMMIT_POINTER: &str = "ptr_decommit";
+
 /// The call flags global variable name.
 pub static GLOBAL_CALL_FLAGS: &str = "call_flags";
 

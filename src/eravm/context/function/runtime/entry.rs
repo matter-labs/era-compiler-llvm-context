@@ -169,6 +169,7 @@ where
             calldata_end_pointer,
             crate::eravm::GLOBAL_RETURN_DATA_POINTER,
         )?;
+        context.write_abi_pointer(calldata_end_pointer, crate::eravm::GLOBAL_DECOMMIT_POINTER)?;
         for index in 0..crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER {
             context.set_active_pointer(
                 context.field_const(index as u64),

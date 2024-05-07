@@ -5,6 +5,7 @@
 use inkwell::values::BasicValue;
 
 use crate::context::IContext;
+use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -110,6 +111,33 @@ where
             "contract_call_simulation_precompile",
         )?
         .expect("Always exists");
+    Ok(result)
+}
+
+///
+/// Generates a decommit call.
+///
+pub fn decommit<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    in_0: inkwell::values::IntValue<'ctx>,
+    gas_left: inkwell::values::IntValue<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let result = context
+        .build_call(
+            context.intrinsics().decommit,
+            &[in_0.as_basic_value_enum(), gas_left.as_basic_value_enum()],
+            "contract_call_simulation_decommit",
+        )?
+        .expect("Always exists");
+    context.set_global(
+        crate::eravm::GLOBAL_DECOMMIT_POINTER,
+        context.ptr_type(AddressSpace::Generic.into()),
+        AddressSpace::Stack,
+        result,
+    )?;
     Ok(result)
 }
 

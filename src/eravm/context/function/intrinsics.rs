@@ -28,6 +28,8 @@ pub struct Intrinsics<'ctx> {
     pub to_l1: FunctionDeclaration<'ctx>,
     /// The precompile call.
     pub precompile: FunctionDeclaration<'ctx>,
+    /// The decommit call.
+    pub decommit: FunctionDeclaration<'ctx>,
     /// The near call with ABI data.
     pub near_call: FunctionDeclaration<'ctx>,
     /// The current contract's address.
@@ -72,6 +74,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_PRECOMPILE: &'static str = "llvm.eravm.precompile";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_DECOMMIT: &'static str = "llvm.eravm.decommit";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_NEAR_CALL: &'static str = "llvm.eravm.nearcall";
@@ -196,6 +201,18 @@ impl<'ctx> Intrinsics<'ctx> {
                 false,
             ),
         );
+        let decommit = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_DECOMMIT,
+            generic_byte_pointer_type.fn_type(
+                &[
+                    field_type.as_basic_type_enum().into(),
+                    field_type.as_basic_type_enum().into(),
+                ],
+                false,
+            ),
+        );
         let near_call = Self::declare(
             llvm,
             module,
@@ -295,6 +312,7 @@ impl<'ctx> Intrinsics<'ctx> {
             event,
             to_l1,
             precompile,
+            decommit,
             near_call,
             address,
             caller,
