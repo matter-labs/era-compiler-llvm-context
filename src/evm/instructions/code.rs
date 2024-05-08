@@ -63,6 +63,59 @@ where
 }
 
 ///
+/// Translates the `dataoffset` instruction.
+///
+pub fn data_offset<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    object_name: &str,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    if !object_name.ends_with("_deployed") {
+        return Ok(context.field_const(0).as_basic_value_enum());
+    }
+
+    let deploy_code_size = context
+        .build_call(context.intrinsics().datasize, &[], "deploy_code_size")?
+        .expect("Always exists");
+    let runtime_code_size = context
+        .build_call(
+            context.intrinsics().datasize_runtime,
+            &[],
+            "runtime_code_size",
+        )?
+        .expect("Always exists");
+    let data_offset = context.builder().build_int_sub(
+        deploy_code_size.into_int_value(),
+        runtime_code_size.into_int_value(),
+        "data_offset",
+    )?;
+    Ok(data_offset.as_basic_value_enum())
+}
+
+///
+/// Translates the `datasize` instruction.
+///
+pub fn data_size<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    object_name: &str,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let intrinsic = if object_name.ends_with("_deployed") {
+        context.intrinsics().datasize
+    } else {
+        context.intrinsics().datasize_runtime
+    };
+
+    Ok(context
+        .build_call(intrinsic, &[], "codesize")?
+        .expect("Always exists"))
+}
+
+///
 /// Translates the `extcodesize` instruction.
 ///
 pub fn ext_size<'ctx, D>(

@@ -3,7 +3,6 @@
 //!
 
 pub mod address_space;
-pub mod build;
 pub mod evmla_data;
 pub mod function;
 
@@ -27,7 +26,6 @@ use crate::target_machine::target::Target;
 use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
-use self::build::Build;
 use self::evmla_data::EVMLAData;
 use self::function::intrinsics::Intrinsics;
 use self::function::Function;
@@ -128,8 +126,11 @@ where
     pub fn build(
         self,
         contract_path: &str,
-        metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
-    ) -> anyhow::Result<Build> {
+        runtime_code: Option<&inkwell::memory_buffer::MemoryBuffer>,
+    ) -> anyhow::Result<(
+        inkwell::memory_buffer::MemoryBuffer,
+        inkwell::memory_buffer::MemoryBuffer,
+    )> {
         let target_machine = TargetMachine::new(Target::EVM, self.optimizer.settings())?;
         target_machine.set_target_data(self.module());
 
@@ -186,11 +187,43 @@ where
                 )
             })?;
 
-        Ok(Build::new(
-            String::new(),
-            metadata_hash,
-            buffer.as_slice().to_vec(),
-        ))
+        let linked = match self.code_type {
+            CodeType::Deploy => {
+                let runtime_code_memory_buffer = runtime_code.ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "The contract `{}` {} code linking error: the {} code is missing",
+                        contract_path,
+                        self.code_type,
+                        CodeType::Runtime,
+                    )
+                })?;
+
+                inkwell::memory_buffer::MemoryBuffer::link_memory_buffers(
+                    &[&buffer, runtime_code_memory_buffer],
+                    &[
+                        "ld.lld",
+                        "--evm-link-deploy",
+                        "--evm-deploy-binary",
+                        "0",
+                        "--evm-runtime-binary",
+                        "1",
+                    ],
+                )
+            }
+            CodeType::Runtime => inkwell::memory_buffer::MemoryBuffer::link_memory_buffers(
+                &[&buffer],
+                &["ld.lld", "--evm-link-runtime", "--evm-runtime-binary", "0"],
+            ),
+        }
+        .map_err(|_| {
+            anyhow::anyhow!(
+                "The contract `{}` {} code linking error: the linking process failed",
+                contract_path,
+                self.code_type,
+            )
+        })?;
+
+        Ok((buffer, linked))
     }
 
     ///
