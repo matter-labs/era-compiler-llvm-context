@@ -365,7 +365,7 @@ where
                     self.optimizer.settings().to_owned(),
                     self.yul_data
                         .as_ref()
-                        .map(|data| data.is_system_mode())
+                        .map(|data| data.are_eravm_extensions_enabled())
                         .unwrap_or_default(),
                     self.include_metadata_hash,
                     self.debug_config.clone(),
@@ -666,7 +666,7 @@ where
                 .void_type()
                 .fn_type(argument_types.as_slice(), false),
             1 => self.field_type().fn_type(argument_types.as_slice(), false),
-            _size if is_near_call_abi && self.is_system_mode() => {
+            _size if is_near_call_abi && self.are_eravm_extensions_enabled() => {
                 let return_type = self.ptr_type(AddressSpace::Stack.into());
                 argument_types.insert(0, return_type.as_basic_type_enum().into());
                 return_type.fn_type(argument_types.as_slice(), false)
@@ -809,12 +809,12 @@ where
     }
 
     ///
-    /// Whether the system mode is enabled.
+    /// Whether the EraVM extensions are enabled.
     ///
-    pub fn is_system_mode(&self) -> bool {
+    pub fn are_eravm_extensions_enabled(&self) -> bool {
         self.yul_data
             .as_ref()
-            .map(|data| data.is_system_mode())
+            .map(|data| data.are_eravm_extensions_enabled())
             .unwrap_or_default()
     }
 }
@@ -903,7 +903,7 @@ where
         return_values_length: usize,
         mut linkage: Option<inkwell::module::Linkage>,
     ) -> anyhow::Result<Rc<RefCell<Function<'ctx>>>> {
-        if Function::is_near_call_abi(name) && self.is_system_mode() {
+        if Function::is_near_call_abi(name) && self.are_eravm_extensions_enabled() {
             linkage = Some(inkwell::module::Linkage::External);
         }
 
@@ -947,7 +947,7 @@ where
             return_block,
         );
         Function::set_default_attributes(self.llvm, function.declaration(), &self.optimizer);
-        if Function::is_near_call_abi(function.name()) && self.is_system_mode() {
+        if Function::is_near_call_abi(function.name()) && self.are_eravm_extensions_enabled() {
             Function::set_exception_handler_attributes(self.llvm, function.declaration());
         }
 

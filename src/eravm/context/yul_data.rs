@@ -13,9 +13,9 @@ use num::Zero;
 ///
 #[derive(Debug, Default)]
 pub struct YulData {
-    /// The system mode flag.
+    /// The EraVM extensions flag.
     /// The call simulations only work if this mode is enabled.
-    is_system_mode: bool,
+    are_eravm_extensions_enabled: bool,
     /// The list of constant arrays in the code section.
     /// It is a temporary storage used until the finalization method is called.
     const_arrays: BTreeMap<u8, Vec<num::BigUint>>,
@@ -25,18 +25,18 @@ impl YulData {
     ///
     /// A shortcut constructor.
     ///
-    pub fn new(is_system_mode: bool) -> Self {
+    pub fn new(are_eravm_extensions_enabled: bool) -> Self {
         Self {
-            is_system_mode,
+            are_eravm_extensions_enabled,
             const_arrays: BTreeMap::new(),
         }
     }
 
     ///
-    /// Whether the system mode is enabled.
+    /// Whether the EraVM extensions is enabled.
     ///
-    pub fn is_system_mode(&self) -> bool {
-        self.is_system_mode
+    pub fn are_eravm_extensions_enabled(&self) -> bool {
+        self.are_eravm_extensions_enabled
     }
 
     ///
