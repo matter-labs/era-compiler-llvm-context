@@ -6,7 +6,7 @@ authors = [
 ]
 license = "MIT OR Apache-2.0"
 edition = "2021"
-description = "Shared front end code of the EraVM compilers"
+description = "Shared front-end code of the compilers for ZKsync"
 
 [lib]
 doctest = false
@@ -14,13 +14,10 @@ doctest = false
 [dependencies]
 anyhow = "1.0"
 semver = "1.0"
-itertools = "0.12"
+itertools = "0.13"
 serde = { version = "1.0", "features" = [ "derive" ] }
-regex = "1.10"
-once_cell = "1.19"
 num = "0.4"
 hex = "0.4"
-sha2 = "0.10"
 sha3 = "0.10"
 md5 = "0.7"
 

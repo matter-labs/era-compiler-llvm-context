@@ -12,7 +12,7 @@ use crate::eravm::Dependency;
 ///
 /// Translates the `return` instruction.
 ///
-/// Unlike in EVM, zkSync constructors return the array of contract immutables.
+/// Unlike in EVM, ZKsync constructors return the array of contract immutables.
 ///
 pub fn r#return<'ctx, D>(
     context: &mut Context<'ctx, D>,

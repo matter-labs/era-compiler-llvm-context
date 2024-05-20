@@ -13,7 +13,7 @@ use crate::eravm::Dependency;
 /// Generates a mimic call.
 ///
 /// The mimic call is a special type of call that can only be used in the system contracts of
-/// zkSync. The call allows to call a contract with custom `msg.sender`, allowing to insert
+/// ZKsync. The call allows to call a contract with custom `msg.sender`, allowing to insert
 /// system contracts as middlewares.
 ///
 pub fn mimic<'ctx, D>(
