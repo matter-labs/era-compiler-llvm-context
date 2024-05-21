@@ -41,3 +41,26 @@ where
         vec![address],
     )
 }
+
+///
+/// Translates the `extcodecopy` instruction.
+///
+pub fn copy<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    address: inkwell::values::IntValue<'ctx>,
+    destination_offset: inkwell::values::IntValue<'ctx>,
+    source_offset: inkwell::values::IntValue<'ctx>,
+    size: inkwell::values::IntValue<'ctx>,
+) -> anyhow::Result<()>
+where
+    D: Dependency + Clone,
+{
+    let hash = hash(context, address)?;
+    crate::eravm::evm::call::request_fallback(
+        context,
+        context.field_const(0x8012), // TODO
+        vec![hash.into_int_value()],
+    )?;
+    crate::eravm::evm::return_data::copy(context, destination_offset, source_offset, size)?;
+    Ok(())
+}

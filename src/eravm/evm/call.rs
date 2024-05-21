@@ -686,6 +686,46 @@ where
 }
 
 ///
+/// Generates a custom request to a system contract fallback.
+///
+pub fn request_fallback<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    address: inkwell::values::IntValue<'ctx>,
+    arguments: Vec<inkwell::values::IntValue<'ctx>>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let calldata_size =
+        context.field_const((era_compiler_common::BYTE_LENGTH_FIELD * arguments.len()) as u64);
+
+    let calldata_array_pointer = context.build_alloca(
+        context.array_type(context.field_type(), arguments.len()),
+        "system_request_fallback_calldata_array_pointer",
+    )?;
+    for (index, argument) in arguments.into_iter().enumerate() {
+        let argument_pointer = context.build_gep(
+            calldata_array_pointer,
+            &[context.field_const(0), context.field_const(index as u64)],
+            context.field_type(),
+            "system_request_fallback_calldata_array_pointer",
+        )?;
+        context.build_store(argument_pointer, argument)?;
+    }
+    Ok(context
+        .build_invoke(
+            context.llvm_runtime().system_request_fallback,
+            &[
+                address.as_basic_value_enum(),
+                calldata_size.as_basic_value_enum(),
+                calldata_array_pointer.value.as_basic_value_enum(),
+            ],
+            "system_request_fallback_call",
+        )?
+        .expect("Always exists"))
+}
+
+///
 /// The default call wrapper, which redirects the call to the `msg.value` simulator if `msg.value`
 /// is not zero.
 ///
