@@ -498,22 +498,21 @@ impl<'ctx> LLVMRuntime<'ctx> {
         let system_request_fallback = Self::declare(
             module,
             Self::FUNCTION_SYSTEM_REQUEST_FALLBACK,
-            llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
-                .fn_type(
-                    vec![
-                        llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
-                            .as_basic_type_enum()
-                            .into(),
-                        llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
-                            .as_basic_type_enum()
-                            .into(),
-                        llvm.ptr_type(AddressSpace::Stack.into())
-                            .as_basic_type_enum()
-                            .into(),
-                    ]
-                    .as_slice(),
-                    false,
-                ),
+            llvm.ptr_type(AddressSpace::Generic.into()).fn_type(
+                vec![
+                    llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
+                        .as_basic_type_enum()
+                        .into(),
+                    llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
+                        .as_basic_type_enum()
+                        .into(),
+                    llvm.ptr_type(AddressSpace::Stack.into())
+                        .as_basic_type_enum()
+                        .into(),
+                ]
+                .as_slice(),
+                false,
+            ),
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, system_request_fallback, optimizer);
