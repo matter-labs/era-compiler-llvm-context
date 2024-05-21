@@ -714,7 +714,7 @@ where
     }
     Ok(context
         .build_invoke(
-            context.llvm_runtime().system_request_fallback,
+            context.llvm_runtime().system_request_slice_fallback,
             &[
                 address.as_basic_value_enum(),
                 calldata_size.as_basic_value_enum(),
