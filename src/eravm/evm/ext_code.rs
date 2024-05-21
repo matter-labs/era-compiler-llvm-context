@@ -58,7 +58,7 @@ where
     let hash = hash(context, address)?;
     crate::eravm::evm::call::request_fallback(
         context,
-        context.field_const(0x8012), // TODO
+        context.field_const(zkevm_opcode_defs::ADDRESS_CODE_ORACLE.into()),
         vec![hash.into_int_value()],
     )?;
     crate::eravm::evm::return_data::copy(context, destination_offset, source_offset, size)?;
