@@ -56,6 +56,8 @@ pub struct LLVMRuntime<'ctx> {
 
     /// The corresponding LLVM runtime function.
     pub system_request: FunctionDeclaration<'ctx>,
+    /// The corresponding LLVM runtime function.
+    pub system_request_slice_fallback: FunctionDeclaration<'ctx>,
 
     /// The corresponding LLVM runtime function.
     pub far_call: FunctionDeclaration<'ctx>,
@@ -139,6 +141,10 @@ impl<'ctx> LLVMRuntime<'ctx> {
 
     /// The corresponding runtime function name.
     pub const FUNCTION_SYSTEM_REQUEST: &'static str = "__system_request";
+
+    /// The corresponding runtime function name.
+    pub const FUNCTION_SYSTEM_REQUEST_SLICE_FALLBACK: &'static str =
+        "__system_request_slice_fallback";
 
     /// The corresponding runtime function name.
     pub const FUNCTION_FARCALL: &'static str = "__farcall";
@@ -490,6 +496,27 @@ impl<'ctx> LLVMRuntime<'ctx> {
             Some(inkwell::module::Linkage::External),
         );
         Function::set_default_attributes(llvm, system_request, optimizer);
+        let system_request_slice_fallback = Self::declare(
+            module,
+            Self::FUNCTION_SYSTEM_REQUEST_SLICE_FALLBACK,
+            llvm.ptr_type(AddressSpace::Generic.into()).fn_type(
+                vec![
+                    llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
+                        .as_basic_type_enum()
+                        .into(),
+                    llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
+                        .as_basic_type_enum()
+                        .into(),
+                    llvm.ptr_type(AddressSpace::Stack.into())
+                        .as_basic_type_enum()
+                        .into(),
+                ]
+                .as_slice(),
+                false,
+            ),
+            Some(inkwell::module::Linkage::External),
+        );
+        Function::set_default_attributes(llvm, system_request_slice_fallback, optimizer);
 
         let external_call_arguments: Vec<inkwell::types::BasicMetadataTypeEnum> = vec![
                 llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
@@ -683,6 +710,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             sha3,
 
             system_request,
+            system_request_slice_fallback,
 
             far_call,
             static_call,
