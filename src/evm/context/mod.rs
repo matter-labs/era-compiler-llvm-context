@@ -129,8 +129,10 @@ where
         self,
         contract_path: &str,
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+        extra_arguments: &[String],
     ) -> anyhow::Result<Build> {
-        let target_machine = TargetMachine::new(Target::EVM, self.optimizer.settings())?;
+        let target_machine =
+            TargetMachine::new(Target::EVM, self.optimizer.settings(), extra_arguments)?;
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
