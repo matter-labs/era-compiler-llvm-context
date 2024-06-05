@@ -107,7 +107,7 @@ where
 {
     let code_type = context
         .code_type()
-        .ok_or_else(|| anyhow::anyhow!("The contract code part type is undefined"))?;
+        .expect("Contract code part type is undefined");
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
@@ -126,7 +126,7 @@ where
             num::BigUint::zero(),
         ));
     } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
-        anyhow::bail!("type({}).runtimeCode is not supported", identifier);
+        anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
     let hash_string = context.compile_dependency(identifier.as_str())?;
@@ -159,7 +159,7 @@ where
 {
     let code_type = context
         .code_type()
-        .ok_or_else(|| anyhow::anyhow!("The contract code part type is undefined"))?;
+        .expect("Contract code part type is undefined");
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
@@ -178,7 +178,7 @@ where
             num::BigUint::zero(),
         ));
     } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
-        anyhow::bail!("type({}).runtimeCode is not supported", identifier);
+        anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
     let size_bigint = num::BigUint::from(crate::eravm::DEPLOYER_CALL_HEADER_SIZE);

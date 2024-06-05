@@ -24,7 +24,7 @@ where
 {
     match context.code_type() {
         None => {
-            anyhow::bail!("Return is not available if the contract part is undefined");
+            anyhow::bail!("code part is undefined");
         }
         Some(CodeType::Deploy) => {
             let immutables_offset_pointer = Pointer::new_with_offset(
@@ -49,7 +49,7 @@ where
                 ),
                 "immutables_number_pointer",
             )?;
-            let immutable_values_size = context.immutables_size()?;
+            let immutable_values_size = context.immutables_size();
             context.build_store(
                 immutables_number_pointer,
                 context.field_const(

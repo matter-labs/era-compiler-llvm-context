@@ -65,6 +65,8 @@ where
     optimizer: Optimizer,
     /// The current module.
     module: inkwell::module::Module<'ctx>,
+    /// The extra LLVM options.
+    llvm_options: Vec<String>,
     /// The current contract code type, which can be deploy or runtime.
     code_type: Option<CodeType>,
     /// The global variables.
@@ -120,6 +122,7 @@ where
     pub fn new(
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
+        llvm_options: Vec<String>,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
         include_metadata_hash: bool,
@@ -133,6 +136,7 @@ where
         Self {
             llvm,
             builder,
+            llvm_options,
             optimizer,
             module,
             code_type: None,
@@ -165,49 +169,31 @@ where
     ) -> anyhow::Result<Build> {
         let module_clone = self.module.clone();
 
-        let target_machine = TargetMachine::new(Target::EraVM, self.optimizer.settings())?;
+        let target_machine = TargetMachine::new(
+            Target::EraVM,
+            self.optimizer.settings(),
+            self.llvm_options.as_slice(),
+        )?;
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(contract_path, self.code_type, self.module())?;
         }
-        self.verify().map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` unoptimized LLVM IR verification error: {}",
-                contract_path,
-                error
-            )
-        })?;
+        self.verify()
+            .map_err(|error| anyhow::anyhow!("unoptimized LLVM IR verification: {error}",))?;
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` optimizing error: {}",
-                    contract_path,
-                    error
-                )
-            })?;
+            .map_err(|error| anyhow::anyhow!("optimizing: {error}",))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(contract_path, self.code_type, self.module())?;
         }
-        self.verify().map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` optimized LLVM IR verification error: {}",
-                contract_path,
-                error
-            )
-        })?;
+        self.verify()
+            .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;
 
         let buffer = target_machine
             .write_to_memory_buffer(self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` assembly generating error: {}",
-                    contract_path,
-                    error
-                )
-            })?;
+            .map_err(|error| anyhow::anyhow!("assembly emitting: {error}",))?;
 
         let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
 
@@ -247,7 +233,7 @@ where
     pub fn get_global(&self, name: &str) -> anyhow::Result<Global<'ctx>> {
         match self.globals.get(name) {
             Some(global) => Ok(*global),
-            None => anyhow::bail!("Global variable {} is not declared", name),
+            None => anyhow::bail!("global variable `{name}` is not declared"),
         }
     }
 
@@ -363,6 +349,7 @@ where
                     manager,
                     name,
                     self.optimizer.settings().to_owned(),
+                    self.llvm_options.as_slice(),
                     self.yul_data
                         .as_ref()
                         .map(|data| data.is_system_mode())
@@ -795,16 +782,16 @@ where
     ///
     /// Returns the current number of immutables values in the contract.
     ///
-    /// If the size is set manually, then it is returned. Otherwise, the number of elements in
-    /// the identifier-to-offset mapping tree is returned.
+    /// # Panics
+    /// If the value is not set is any of the data sources.
     ///
-    pub fn immutables_size(&self) -> anyhow::Result<usize> {
+    pub fn immutables_size(&self) -> usize {
         if let Some(solidity) = self.solidity_data.as_ref() {
-            Ok(solidity.immutables_size())
+            solidity.immutables_size()
         } else if let Some(vyper) = self.vyper_data.as_ref() {
-            Ok(vyper.immutables_size())
+            vyper.immutables_size()
         } else {
-            anyhow::bail!("The immutable size data is not available");
+            panic!("The immutable size data is not available");
         }
     }
 
