@@ -150,23 +150,14 @@ where
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` {} code unoptimized LLVM IR verification error: {}",
-                contract_path,
+                "{} code unoptimized LLVM IR verification: {error}",
                 self.code_type,
-                error
             )
         })?;
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` {} code optimizing error: {}",
-                    contract_path,
-                    self.code_type,
-                    error
-                )
-            })?;
+            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_type,))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
                 contract_path,
@@ -176,22 +167,15 @@ where
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` {} code optimized LLVM IR verification error: {}",
-                contract_path,
+                "{} code optimized LLVM IR verification: {error}",
                 self.code_type,
-                error
             )
         })?;
 
         let buffer = target_machine
             .write_to_memory_buffer(self.module())
             .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` {} code assembly generating error: {}",
-                    contract_path,
-                    self.code_type,
-                    error
-                )
+                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type,)
             })?;
 
         Ok(Build::new(

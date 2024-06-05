@@ -179,43 +179,21 @@ where
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(contract_path, self.code_type, self.module())?;
         }
-        self.verify().map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` unoptimized LLVM IR verification error: {}",
-                contract_path,
-                error
-            )
-        })?;
+        self.verify()
+            .map_err(|error| anyhow::anyhow!("unoptimized LLVM IR verification: {error}",))?;
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` optimizing error: {}",
-                    contract_path,
-                    error
-                )
-            })?;
+            .map_err(|error| anyhow::anyhow!("optimizing: {error}",))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(contract_path, self.code_type, self.module())?;
         }
-        self.verify().map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` optimized LLVM IR verification error: {}",
-                contract_path,
-                error
-            )
-        })?;
+        self.verify()
+            .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;
 
         let buffer = target_machine
             .write_to_memory_buffer(self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` assembly generating error: {}",
-                    contract_path,
-                    error
-                )
-            })?;
+            .map_err(|error| anyhow::anyhow!("assembly emitting: {error}",))?;
 
         let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
 

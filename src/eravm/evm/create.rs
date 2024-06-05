@@ -107,7 +107,7 @@ where
 {
     let code_type = context
         .code_type()
-        .ok_or_else(|| anyhow::anyhow!("The contract code part type is undefined"))?;
+        .expect("Contract code part type is undefined");
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
@@ -159,7 +159,7 @@ where
 {
     let code_type = context
         .code_type()
-        .ok_or_else(|| anyhow::anyhow!("The contract code part type is undefined"))?;
+        .expect("Contract code part type is undefined");
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
