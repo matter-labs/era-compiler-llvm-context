@@ -126,7 +126,7 @@ where
             num::BigUint::zero(),
         ));
     } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
-        anyhow::bail!("type({}).runtimeCode is not supported", identifier);
+        anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
     let hash_string = context.compile_dependency(identifier.as_str())?;
@@ -178,7 +178,7 @@ where
             num::BigUint::zero(),
         ));
     } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
-        anyhow::bail!("type({}).runtimeCode is not supported", identifier);
+        anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
     let size_bigint = num::BigUint::from(crate::eravm::DEPLOYER_CALL_HEADER_SIZE);

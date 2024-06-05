@@ -164,7 +164,7 @@ where
 
                 return crate::eravm::extensions::call::raw_far(
                     context,
-                    context.llvm_runtime().modify(function, false)?,
+                    context.llvm_runtime().modify(function, false),
                     address,
                     abi_data.as_basic_value_enum(),
                     output_offset,
@@ -177,7 +177,7 @@ where
 
                 return crate::eravm::extensions::call::raw_far(
                     context,
-                    context.llvm_runtime().modify(function, true)?,
+                    context.llvm_runtime().modify(function, true),
                     address,
                     abi_data.as_basic_value_enum(),
                     output_offset,
@@ -194,7 +194,7 @@ where
 
                 return crate::eravm::extensions::call::system(
                     context,
-                    context.llvm_runtime().modify(function, false)?,
+                    context.llvm_runtime().modify(function, false),
                     address,
                     abi_data.as_basic_value_enum(),
                     context.field_const(0),
@@ -212,7 +212,7 @@ where
 
                 return crate::eravm::extensions::call::system(
                     context,
-                    context.llvm_runtime().modify(function, true)?,
+                    context.llvm_runtime().modify(function, true),
                     address,
                     abi_data.as_basic_value_enum(),
                     context.field_const(0),
@@ -730,7 +730,7 @@ where
     )?;
     let result = crate::eravm::extensions::call::system(
         context,
-        context.llvm_runtime().modify(function, false)?,
+        context.llvm_runtime().modify(function, false),
         context.field_const(zkevm_opcode_defs::ADDRESS_MSG_VALUE.into()),
         abi_data,
         output_offset,

@@ -275,9 +275,8 @@ pub fn validate_call_type<'ctx>(
 ) -> anyhow::Result<()> {
     if expected != found {
         anyhow::bail!(
-            "Only `{}` is allowed for the `{}` simulation, found `{}`",
+            "only `{}` is allowed for `{instruction_name}` simulation, found `{}`",
             expected.value.get_name().to_string_lossy(),
-            instruction_name,
             found.value.get_name().to_string_lossy()
         );
     }

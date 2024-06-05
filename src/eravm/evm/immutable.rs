@@ -24,7 +24,7 @@ where
 {
     match context.code_type() {
         None => {
-            anyhow::bail!("Immutables are not available if the contract part is undefined");
+            panic!("code part is undefined");
         }
         Some(CodeType::Deploy) => {
             let index_double = context.builder().build_int_mul(
@@ -87,7 +87,7 @@ where
 {
     match context.code_type() {
         None => {
-            anyhow::bail!("Immutables are not available if the contract part is undefined");
+            anyhow::bail!("code part is undefined");
         }
         Some(CodeType::Deploy) => {
             let index_double = context.builder().build_int_mul(
@@ -129,7 +129,7 @@ where
             Ok(())
         }
         Some(CodeType::Runtime) => {
-            anyhow::bail!("Immutable writes are not available in the runtime code");
+            anyhow::bail!("immutable writes are not available in runtime code");
         }
     }
 }

@@ -27,7 +27,7 @@ impl FromStr for MetadataHash {
         match string {
             "none" => Ok(Self::None),
             "keccak256" => Ok(Self::Keccak256),
-            _ => anyhow::bail!("Unknown bytecode hash mode: `{}`", string),
+            string => anyhow::bail!("unknown bytecode hash mode: `{string}`"),
         }
     }
 }

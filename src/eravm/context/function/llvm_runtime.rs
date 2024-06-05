@@ -722,8 +722,8 @@ impl<'ctx> LLVMRuntime<'ctx> {
         &self,
         function: FunctionDeclaration<'ctx>,
         is_byref: bool,
-    ) -> anyhow::Result<FunctionDeclaration<'ctx>> {
-        let modified = if function == self.far_call {
+    ) -> FunctionDeclaration<'ctx> {
+        if function == self.far_call {
             match is_byref {
                 false => self.far_call,
                 true => self.far_call_byref,
@@ -744,12 +744,10 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 true => self.mimic_call_byref,
             }
         } else {
-            anyhow::bail!(
+            panic!(
                 "Cannot modify an external call function `{}`",
                 function.value.get_name().to_string_lossy()
             );
-        };
-
-        Ok(modified)
+        }
     }
 }

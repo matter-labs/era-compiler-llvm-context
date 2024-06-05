@@ -233,7 +233,7 @@ where
     pub fn get_global(&self, name: &str) -> anyhow::Result<Global<'ctx>> {
         match self.globals.get(name) {
             Some(global) => Ok(*global),
-            None => anyhow::bail!("Global variable {} is not declared", name),
+            None => anyhow::bail!("global variable `{name}` is not declared"),
         }
     }
 
@@ -782,16 +782,16 @@ where
     ///
     /// Returns the current number of immutables values in the contract.
     ///
-    /// If the size is set manually, then it is returned. Otherwise, the number of elements in
-    /// the identifier-to-offset mapping tree is returned.
+    /// # Panics
+    /// If the value is not set is any of the data sources.
     ///
-    pub fn immutables_size(&self) -> anyhow::Result<usize> {
+    pub fn immutables_size(&self) -> usize {
         if let Some(solidity) = self.solidity_data.as_ref() {
-            Ok(solidity.immutables_size())
+            solidity.immutables_size()
         } else if let Some(vyper) = self.vyper_data.as_ref() {
-            Ok(vyper.immutables_size())
+            vyper.immutables_size()
         } else {
-            anyhow::bail!("The immutable size data is not available");
+            panic!("The immutable size data is not available");
         }
     }
 
