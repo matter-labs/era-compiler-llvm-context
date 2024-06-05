@@ -2,6 +2,8 @@
 //! The LLVM context library.
 //!
 
+#![allow(clippy::too_many_arguments)]
+
 pub(crate) mod r#const;
 pub(crate) mod context;
 pub(crate) mod debug_config;

@@ -65,6 +65,8 @@ where
     optimizer: Optimizer,
     /// The current module.
     module: inkwell::module::Module<'ctx>,
+    /// The extra LLVM options.
+    llvm_options: Vec<String>,
     /// The current contract code type, which can be deploy or runtime.
     code_type: Option<CodeType>,
     /// The global variables.
@@ -120,6 +122,7 @@ where
     pub fn new(
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
+        llvm_options: Vec<String>,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
         include_metadata_hash: bool,
@@ -133,6 +136,7 @@ where
         Self {
             llvm,
             builder,
+            llvm_options,
             optimizer,
             module,
             code_type: None,
@@ -162,12 +166,14 @@ where
         mut self,
         contract_path: &str,
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
-        extra_arguments: &[String],
     ) -> anyhow::Result<Build> {
         let module_clone = self.module.clone();
 
-        let target_machine =
-            TargetMachine::new(Target::EraVM, self.optimizer.settings(), extra_arguments)?;
+        let target_machine = TargetMachine::new(
+            Target::EraVM,
+            self.optimizer.settings(),
+            self.llvm_options.as_slice(),
+        )?;
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
@@ -226,7 +232,7 @@ where
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
                 self.module = module_clone;
-                self.build(contract_path, metadata_hash, extra_arguments)?
+                self.build(contract_path, metadata_hash)?
             }
             Err(error) => Err(error)?,
         };
@@ -365,6 +371,7 @@ where
                     manager,
                     name,
                     self.optimizer.settings().to_owned(),
+                    self.llvm_options.as_slice(),
                     self.yul_data
                         .as_ref()
                         .map(|data| data.is_system_mode())

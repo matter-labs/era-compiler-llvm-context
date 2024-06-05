@@ -40,9 +40,9 @@ impl TargetMachine {
     pub fn new(
         target: Target,
         optimizer_settings: &OptimizerSettings,
-        extra_arguments: &[String],
+        llvm_options: &[String],
     ) -> anyhow::Result<Self> {
-        let mut arguments = Vec::with_capacity(3 + extra_arguments.len());
+        let mut arguments = Vec::with_capacity(3 + llvm_options.len());
         arguments.push(target.name().to_owned());
         if optimizer_settings.is_system_request_memoization_disabled() {
             arguments.push("-eravm-disable-sha3-sreq-cse".to_owned());
@@ -51,7 +51,7 @@ impl TargetMachine {
             arguments.push("-eravm-jump-table-density-threshold".to_owned());
             arguments.push(value.to_string());
         }
-        arguments.extend_from_slice(extra_arguments);
+        arguments.extend_from_slice(llvm_options);
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
             inkwell::support::parse_command_line_options(

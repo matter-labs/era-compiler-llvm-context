@@ -50,6 +50,8 @@ where
     optimizer: Optimizer,
     /// The current module.
     module: inkwell::module::Module<'ctx>,
+    /// The extra LLVM options.
+    llvm_options: Vec<String>,
     /// The current contract code type, which can be deploy or runtime.
     code_type: CodeType,
     /// The LLVM intrinsic functions, defined on the LLVM side.
@@ -92,6 +94,7 @@ where
     pub fn new(
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
+        llvm_options: Vec<String>,
         code_type: CodeType,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
@@ -105,6 +108,7 @@ where
         Self {
             llvm,
             builder,
+            llvm_options,
             optimizer,
             module,
             code_type,
@@ -129,10 +133,12 @@ where
         self,
         contract_path: &str,
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
-        extra_arguments: &[String],
     ) -> anyhow::Result<Build> {
-        let target_machine =
-            TargetMachine::new(Target::EVM, self.optimizer.settings(), extra_arguments)?;
+        let target_machine = TargetMachine::new(
+            Target::EVM,
+            self.optimizer.settings(),
+            self.llvm_options.as_slice(),
+        )?;
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
@@ -223,6 +229,7 @@ where
                     manager,
                     name,
                     self.optimizer.settings().to_owned(),
+                    self.llvm_options.as_slice(),
                     self.include_metadata_hash,
                     self.debug_config.clone(),
                 )
