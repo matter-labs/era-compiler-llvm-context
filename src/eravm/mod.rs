@@ -127,7 +127,7 @@ pub trait Dependency {
         path: &str,
         optimizer_settings: OptimizerSettings,
         llvm_options: &[String],
-        is_system_mode: bool,
+        enable_eravm_extensions: bool,
         include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
     ) -> anyhow::Result<String>;
@@ -155,7 +155,7 @@ impl Dependency for DummyDependency {
         _path: &str,
         _optimizer_settings: OptimizerSettings,
         _llvm_options: &[String],
-        _is_system_mode: bool,
+        _enable_eravm_extensions: bool,
         _include_metadata_hash: bool,
         _debug_config: Option<DebugConfig>,
     ) -> anyhow::Result<String> {

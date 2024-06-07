@@ -36,7 +36,7 @@ pub fn default<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    if context.is_system_mode() {
+    if context.are_eravm_extensions_enabled() {
         let simulation_address = constants
             .get_mut(1)
             .and_then(|option| option.take())
