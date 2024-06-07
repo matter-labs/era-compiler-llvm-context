@@ -35,29 +35,24 @@ impl TargetMachine {
     ///
     /// A shortcut constructor.
     ///
-    /// A separate instance for every optimization level is created.
+    /// Supported LLVM options:
+    /// `-eravm-disable-sha3-sreq-cse`
+    /// `-eravm-jump-table-density-threshold <value>`
     ///
     pub fn new(
         target: Target,
         optimizer_settings: &OptimizerSettings,
         llvm_options: &[String],
     ) -> anyhow::Result<Self> {
-        let mut arguments = Vec::with_capacity(3 + llvm_options.len());
+        let mut arguments = Vec::with_capacity(1 + llvm_options.len());
         arguments.push(target.name().to_owned());
-        if optimizer_settings.is_system_request_memoization_disabled() {
-            arguments.push("-eravm-disable-sha3-sreq-cse".to_owned());
-        }
-        if let Some(value) = optimizer_settings.jump_table_density_threshold() {
-            arguments.push("-eravm-jump-table-density-threshold".to_owned());
-            arguments.push(value.to_string());
-        }
         arguments.extend_from_slice(llvm_options);
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
             inkwell::support::parse_command_line_options(
                 arguments.len() as i32,
                 arguments.as_slice(),
-                "Optimizer and extra parameters",
+                "LLVM options",
             );
         }
 
