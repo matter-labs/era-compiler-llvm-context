@@ -38,15 +38,8 @@ pub fn build_assembly_text(
     }
 
     let mut assembly =
-        zkevm_assembly::Assembly::from_string(assembly_text.to_owned(), metadata_hash).map_err(
-            |error| {
-                anyhow::anyhow!(
-                    "The contract `{}` assembly parsing error: {}",
-                    contract_path,
-                    error,
-                )
-            },
-        )?;
+        zkevm_assembly::Assembly::from_string(assembly_text.to_owned(), metadata_hash)
+            .map_err(|error| anyhow::anyhow!("assembly parsing: {error}"))?;
 
     let bytecode_words = match zkevm_assembly::get_encoding_mode() {
         zkevm_assembly::RunningVmEncodingMode::Production => { assembly.compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
@@ -54,9 +47,7 @@ pub fn build_assembly_text(
     }
         .map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` assembly-to-bytecode conversion error: {}",
-                contract_path,
-                error,
+                "assembly-to-bytecode conversion: {error}",
             )
         })?;
 
@@ -75,9 +66,7 @@ pub fn build_assembly_text(
         }
     }
     .map(hex::encode)
-    .map_err(|_error| {
-        anyhow::anyhow!("The contract `{}` bytecode hashing error", contract_path,)
-    })?;
+    .map_err(|_error| anyhow::anyhow!("bytecode hashing"))?;
 
     let bytecode = bytecode_words.into_iter().flatten().collect();
 
@@ -137,6 +126,7 @@ pub trait Dependency {
         dependency: Self,
         path: &str,
         optimizer_settings: OptimizerSettings,
+        llvm_options: &[String],
         enable_eravm_extensions: bool,
         include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
@@ -164,6 +154,7 @@ impl Dependency for DummyDependency {
         _dependency: Self,
         _path: &str,
         _optimizer_settings: OptimizerSettings,
+        _llvm_options: &[String],
         _enable_eravm_extensions: bool,
         _include_metadata_hash: bool,
         _debug_config: Option<DebugConfig>,

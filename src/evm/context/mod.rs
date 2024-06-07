@@ -50,6 +50,8 @@ where
     optimizer: Optimizer,
     /// The current module.
     module: inkwell::module::Module<'ctx>,
+    /// The extra LLVM options.
+    llvm_options: Vec<String>,
     /// The current contract code type, which can be deploy or runtime.
     code_type: CodeType,
     /// The LLVM intrinsic functions, defined on the LLVM side.
@@ -92,6 +94,7 @@ where
     pub fn new(
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
+        llvm_options: Vec<String>,
         code_type: CodeType,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
@@ -105,6 +108,7 @@ where
         Self {
             llvm,
             builder,
+            llvm_options,
             optimizer,
             module,
             code_type,
@@ -130,7 +134,11 @@ where
         contract_path: &str,
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     ) -> anyhow::Result<Build> {
-        let target_machine = TargetMachine::new(Target::EVM, self.optimizer.settings())?;
+        let target_machine = TargetMachine::new(
+            Target::EVM,
+            self.optimizer.settings(),
+            self.llvm_options.as_slice(),
+        )?;
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
@@ -142,23 +150,14 @@ where
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` {} code unoptimized LLVM IR verification error: {}",
-                contract_path,
+                "{} code unoptimized LLVM IR verification: {error}",
                 self.code_type,
-                error
             )
         })?;
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` {} code optimizing error: {}",
-                    contract_path,
-                    self.code_type,
-                    error
-                )
-            })?;
+            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_type,))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
                 contract_path,
@@ -168,22 +167,15 @@ where
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` {} code optimized LLVM IR verification error: {}",
-                contract_path,
+                "{} code optimized LLVM IR verification: {error}",
                 self.code_type,
-                error
             )
         })?;
 
         let buffer = target_machine
             .write_to_memory_buffer(self.module())
             .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` {} code assembly generating error: {}",
-                    contract_path,
-                    self.code_type,
-                    error
-                )
+                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type,)
             })?;
 
         Ok(Build::new(
@@ -221,6 +213,7 @@ where
                     manager,
                     name,
                     self.optimizer.settings().to_owned(),
+                    self.llvm_options.as_slice(),
                     self.include_metadata_hash,
                     self.debug_config.clone(),
                 )

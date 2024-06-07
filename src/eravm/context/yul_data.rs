@@ -44,10 +44,7 @@ impl YulData {
     ///
     pub fn const_array_declare(&mut self, index: u8, size: u16) -> anyhow::Result<()> {
         if self.const_arrays.contains_key(&index) {
-            anyhow::bail!(
-                "The constant array with index {} is already declared",
-                index
-            );
+            anyhow::bail!("constant array with index {index} is already declared",);
         }
 
         self.const_arrays
@@ -70,10 +67,8 @@ impl YulData {
         })?;
         if offset >= array.len() as u16 {
             anyhow::bail!(
-                "The constant array with index {} has size {} but the offset is {}",
-                index,
+                "constant array with index {index} has size {}, but the offset is {offset}",
                 array.len(),
-                offset,
             );
         }
         array[offset as usize] = value;

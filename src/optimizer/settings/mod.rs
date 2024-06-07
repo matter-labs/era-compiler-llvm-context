@@ -129,7 +129,7 @@ impl Settings {
                 SizeLevel::Z,
                 inkwell::OptimizationLevel::Aggressive,
             ),
-            char => anyhow::bail!("Unexpected optimization option '{}'", char),
+            char => anyhow::bail!("unexpected optimization option '{char}'"),
         })
     }
 
