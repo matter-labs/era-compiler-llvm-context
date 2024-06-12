@@ -17,7 +17,7 @@ pub fn addition<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .builder()
@@ -34,7 +34,7 @@ pub fn subtraction<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .builder()
@@ -51,7 +51,7 @@ pub fn multiplication<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .builder()
@@ -68,7 +68,7 @@ pub fn division<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -91,7 +91,7 @@ pub fn remainder<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -118,7 +118,7 @@ pub fn division_signed<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -141,7 +141,7 @@ pub fn remainder_signed<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(

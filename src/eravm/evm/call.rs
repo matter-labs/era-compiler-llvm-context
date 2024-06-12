@@ -34,7 +34,7 @@ pub fn default<'ctx, D>(
     mut constants: Vec<Option<num::BigUint>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     if context.are_eravm_extensions_enabled() {
         let simulation_address = constants
@@ -626,7 +626,7 @@ pub fn linker_symbol<'ctx, D>(
     mut arguments: [Value<'ctx>; 1],
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let path = arguments[0]
         .original
@@ -648,7 +648,7 @@ pub fn request<'ctx, D>(
     arguments: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let signature_hash = crate::eravm::utils::keccak256(signature.as_bytes());
     let signature_value = context.field_const_str_hex(signature_hash.as_str());
@@ -702,7 +702,7 @@ fn default_wrapped<'ctx, D>(
     output_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let value_zero_block = context.append_basic_block("contract_call_value_zero_block");
     let value_non_zero_block = context.append_basic_block("contract_call_value_non_zero_block");
@@ -778,7 +778,7 @@ fn identity<'ctx, D>(
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let destination = Pointer::<AddressSpace>::new_with_offset(
         context,

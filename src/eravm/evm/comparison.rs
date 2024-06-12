@@ -20,7 +20,7 @@ pub fn compare<'ctx, D>(
     operation: inkwell::IntPredicate,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let result = context.builder().build_int_compare(
         operation,

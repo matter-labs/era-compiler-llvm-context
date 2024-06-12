@@ -16,7 +16,7 @@ pub fn load<'ctx, D>(
     offset: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let pointer = Pointer::new_with_offset(
         context,
@@ -36,7 +36,7 @@ pub fn size<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().calldatasize, &[], "calldatasize")?
@@ -53,7 +53,7 @@ pub fn copy<'ctx, D>(
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let destination = Pointer::new_with_offset(
         context,

@@ -83,7 +83,7 @@ pub fn build_assembly_text(
 ///
 pub trait WriteLLVM<D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     ///
     /// Declares the entity in the LLVM IR.
@@ -107,7 +107,7 @@ pub struct DummyLLVMWritable {}
 
 impl<D> WriteLLVM<D> for DummyLLVMWritable
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     fn into_llvm(self, _context: &mut Context<D>) -> anyhow::Result<()> {
         Ok(())

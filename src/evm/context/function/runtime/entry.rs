@@ -18,7 +18,7 @@ use crate::evm::WriteLLVM;
 pub struct Entry<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The runtime code AST representation.
     inner: B,
@@ -29,7 +29,7 @@ where
 impl<B, D> Entry<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency + Clone,
+    D: Dependency,
 {
     ///
     /// A shortcut constructor.
@@ -45,7 +45,7 @@ where
 impl<B, D> WriteLLVM<D> for Entry<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency + Clone,
+    D: Dependency,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let function_type = context.function_type::<inkwell::types::BasicTypeEnum>(vec![], 0);

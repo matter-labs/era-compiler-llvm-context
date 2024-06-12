@@ -33,7 +33,7 @@ impl<'ctx> Global<'ctx> {
         name: &str,
     ) -> anyhow::Result<Self>
     where
-        D: Dependency + Clone,
+        D: Dependency,
         T: BasicType<'ctx>,
         V: BasicValue<'ctx>,
     {

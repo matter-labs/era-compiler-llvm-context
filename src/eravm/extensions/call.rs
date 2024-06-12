@@ -25,7 +25,7 @@ pub fn mimic<'ctx, D>(
     extra_abi_data: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),
@@ -99,7 +99,7 @@ pub fn raw_far<'ctx, D>(
     output_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),
@@ -187,7 +187,7 @@ pub fn system<'ctx, D>(
     extra_abi_data: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),

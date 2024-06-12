@@ -26,7 +26,7 @@ pub fn create<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let signature_hash_string =
         crate::eravm::utils::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
@@ -66,7 +66,7 @@ pub fn create2<'ctx, D>(
     salt: Option<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let signature_hash_string =
         crate::eravm::utils::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE2.as_bytes());
@@ -103,7 +103,7 @@ pub fn contract_hash<'ctx, D>(
     identifier: String,
 ) -> anyhow::Result<Value<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let code_type = context
         .code_type()
@@ -155,7 +155,7 @@ pub fn header_size<'ctx, D>(
     identifier: String,
 ) -> anyhow::Result<Value<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let code_type = context
         .code_type()

@@ -19,7 +19,7 @@ pub fn declare<'ctx, D>(
     size: u16,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.yul_mut().const_array_declare(index, size)?;
 
@@ -36,7 +36,7 @@ pub fn set<'ctx, D>(
     value: num::BigUint,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.yul_mut().const_array_set(index, offset, value)?;
 
@@ -52,7 +52,7 @@ pub fn finalize<'ctx, D>(
     index: u8,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let const_array = context.yul_mut().const_array_take(index)?;
     let array_type = context.field_type().array_type(const_array.len() as u32);
@@ -88,7 +88,7 @@ pub fn get<'ctx, D>(
     offset: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let identifier = format!(
         "{}{:03}",

@@ -55,7 +55,7 @@ use self::yul_data::YulData;
 ///
 pub struct Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The inner LLVM context.
     llvm: &'ctx inkwell::context::Context,
@@ -103,7 +103,7 @@ where
 
 impl<'ctx, D> Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
@@ -200,13 +200,14 @@ where
             self.debug_config(),
         ) {
             Ok(build) => build,
-            Err(_error)
+            Err(error)
                 if self.optimizer.settings() != &OptimizerSettings::size()
                     && self.optimizer.settings().is_fallback_to_size_enabled() =>
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
                 self.module = module_clone;
-                self.build(contract_path, metadata_hash)?
+                self.build(contract_path, metadata_hash)
+                    .map_err(|size_error| anyhow::anyhow!("falling back to optimizing for size: {size_error} (with optimizing for cycles: {error})"))?
             }
             Err(error) => Err(error)?,
         };
@@ -333,14 +334,14 @@ where
     ///
     /// Get the contract dependency data.
     ///
-    pub fn get_dependency_data(&mut self, path: &str) -> anyhow::Result<String> {
+    pub fn get_dependency_data(&mut self, identifier: &str) -> anyhow::Result<String> {
         if let Some(vyper_data) = self.vyper_data.as_mut() {
             vyper_data.set_is_minimal_proxy_used();
         }
         self.dependency_manager
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| manager.get(path))
+            .and_then(|manager| manager.get(identifier))
     }
 
     ///
@@ -348,7 +349,7 @@ where
     ///
     pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
                 let full_path = manager.resolve_path(identifier)?;
@@ -359,24 +360,18 @@ where
     ///
     /// Gets a deployed library address from the dependency manager.
     ///
-    pub fn resolve_library(&self, path: &str) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
+    pub fn resolve_library(
+        &self,
+        identifier: &str,
+    ) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
-                let address = manager.resolve_library(path)?;
+                let address = manager.resolve_library(identifier)?;
                 let address = self.field_const_str_hex(address.as_str());
                 Ok(address)
             })
-    }
-
-    ///
-    /// Extracts the dependency manager.
-    ///
-    pub fn take_dependency_manager(&mut self) -> D {
-        self.dependency_manager
-            .take()
-            .expect("The dependency manager is unset")
     }
 
     ///
@@ -791,7 +786,7 @@ where
 
 impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     type Function = Function<'ctx>;
 

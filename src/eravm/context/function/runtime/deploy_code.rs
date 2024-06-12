@@ -22,7 +22,7 @@ use crate::eravm::WriteLLVM;
 pub struct DeployCode<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The deploy code AST representation.
     inner: B,
@@ -33,7 +33,7 @@ where
 impl<B, D> DeployCode<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency + Clone,
+    D: Dependency,
 {
     ///
     /// A shortcut constructor.
@@ -49,7 +49,7 @@ where
 impl<B, D> WriteLLVM<D> for DeployCode<B, D>
 where
     B: WriteLLVM<D>,
-    D: Dependency + Clone,
+    D: Dependency,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let function_type =
