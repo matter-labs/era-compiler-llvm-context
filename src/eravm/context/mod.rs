@@ -86,8 +86,6 @@ where
     /// The manager is used to get information about contracts and their dependencies during
     /// the multi-threaded compilation process.
     dependency_manager: Option<D>,
-    /// Whether to append the metadata hash at the end of bytecode.
-    include_metadata_hash: bool,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
@@ -125,7 +123,6 @@ where
         llvm_options: Vec<String>,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
-        include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -148,7 +145,6 @@ where
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
             dependency_manager,
-            include_metadata_hash,
             debug_info,
             debug_config,
 
@@ -335,29 +331,16 @@ where
     }
 
     ///
-    /// Compiles a contract dependency, if the dependency manager is set.
+    /// Get the contract dependency data.
     ///
-    pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
+    pub fn get_dependency_data(&mut self, path: &str) -> anyhow::Result<String> {
         if let Some(vyper_data) = self.vyper_data.as_mut() {
             vyper_data.set_is_minimal_proxy_used();
         }
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                Dependency::compile(
-                    manager,
-                    name,
-                    self.optimizer.settings().to_owned(),
-                    self.llvm_options.as_slice(),
-                    self.yul_data
-                        .as_ref()
-                        .map(|data| data.are_eravm_extensions_enabled())
-                        .unwrap_or_default(),
-                    self.include_metadata_hash,
-                    self.debug_config.clone(),
-                )
-            })
+            .and_then(|manager| manager.get(path))
     }
 
     ///

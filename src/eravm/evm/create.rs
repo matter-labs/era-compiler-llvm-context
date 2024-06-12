@@ -129,7 +129,7 @@ where
         anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
-    let hash_string = context.compile_dependency(identifier.as_str())?;
+    let hash_string = context.get_dependency_data(identifier.as_str())?;
     let hash_value = context
         .field_const_str_hex(hash_string.as_str())
         .as_basic_value_enum();
