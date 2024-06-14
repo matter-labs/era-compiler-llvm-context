@@ -17,7 +17,7 @@ pub fn size<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().codesize, &[], "codesize")?
@@ -34,7 +34,7 @@ pub fn copy<'ctx, D>(
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let destination = Pointer::new_with_offset(
         context,
@@ -70,7 +70,7 @@ pub fn ext_size<'ctx, D>(
     address: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -92,7 +92,7 @@ pub fn ext_copy<'ctx, D>(
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let destination_offset_pointer = Pointer::new_with_offset(
         context,
@@ -125,7 +125,7 @@ pub fn ext_hash<'ctx, D>(
     address: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(

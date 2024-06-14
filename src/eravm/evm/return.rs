@@ -20,7 +20,7 @@ pub fn r#return<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     match context.code_type() {
         None => {
@@ -90,7 +90,7 @@ pub fn revert<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_exit(context.llvm_runtime().revert, offset, length)?;
     Ok(())
@@ -103,7 +103,7 @@ where
 ///
 pub fn stop<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     r#return(context, context.field_const(0), context.field_const(0))
 }
@@ -115,7 +115,7 @@ where
 ///
 pub fn invalid<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     crate::eravm::evm::memory::store(
         context,

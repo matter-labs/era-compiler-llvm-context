@@ -20,7 +20,7 @@ pub fn add_mod<'ctx, D>(
     modulo: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -45,7 +45,7 @@ pub fn mul_mod<'ctx, D>(
     modulo: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -69,7 +69,7 @@ pub fn exponent<'ctx, D>(
     exponent: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -89,7 +89,7 @@ pub fn sign_extend<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -109,7 +109,7 @@ pub fn keccak256<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let input_offset_pointer = Pointer::new_with_offset(
         context,

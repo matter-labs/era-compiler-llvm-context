@@ -19,9 +19,9 @@ use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::function::r#return::Return as FunctionReturn;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
+use crate::debug_config::DebugConfig;
 use crate::debug_info::DebugInfo;
-use crate::evm::DebugConfig;
-use crate::evm::Dependency;
+use crate::dependency::Dependency;
 use crate::optimizer::Optimizer;
 use crate::target_machine::target::Target;
 use crate::target_machine::TargetMachine;
@@ -40,7 +40,7 @@ use self::function::Function;
 ///
 pub struct Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The inner LLVM context.
     llvm: &'ctx inkwell::context::Context,
@@ -67,8 +67,6 @@ where
     /// The manager is used to get information about contracts and their dependencies during
     /// the multi-threaded compilation process.
     dependency_manager: Option<D>,
-    /// Whether to append the metadata hash at the end of bytecode.
-    include_metadata_hash: bool,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
@@ -80,7 +78,7 @@ where
 
 impl<'ctx, D> Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
@@ -98,7 +96,6 @@ where
         code_type: CodeType,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
-        include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -118,7 +115,6 @@ where
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
             dependency_manager,
-            include_metadata_hash,
             debug_info,
             debug_config,
 
@@ -202,22 +198,13 @@ where
     }
 
     ///
-    /// Compiles a contract dependency, if the dependency manager is set.
+    /// Get the contract dependency data.
     ///
-    pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
+    pub fn get_dependency_data(&self, identifier: &str) -> anyhow::Result<String> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                Dependency::compile(
-                    manager,
-                    name,
-                    self.optimizer.settings().to_owned(),
-                    self.llvm_options.as_slice(),
-                    self.include_metadata_hash,
-                    self.debug_config.clone(),
-                )
-            })
+            .and_then(|manager| Dependency::get(manager, identifier))
     }
 
     ///
@@ -225,7 +212,7 @@ where
     ///
     pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
                 let full_path = manager.resolve_path(identifier)?;
@@ -236,24 +223,18 @@ where
     ///
     /// Gets a deployed library address from the dependency manager.
     ///
-    pub fn resolve_library(&self, path: &str) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
+    pub fn resolve_library(
+        &self,
+        identifier: &str,
+    ) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
-                let address = manager.resolve_library(path)?;
+                let address = manager.resolve_library(identifier)?;
                 let address = self.field_const_str_hex(address.as_str());
                 Ok(address)
             })
-    }
-
-    ///
-    /// Extracts the dependency manager.
-    ///
-    pub fn take_dependency_manager(&mut self) -> D {
-        self.dependency_manager
-            .take()
-            .expect("The dependency manager is unset")
     }
 
     ///
@@ -391,7 +372,7 @@ where
 
 impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     type Function = Function<'ctx>;
 

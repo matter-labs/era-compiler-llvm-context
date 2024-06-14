@@ -20,7 +20,7 @@ pub fn load<'ctx, D>(
     offset: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let pointer = Pointer::new_with_offset(
         context,
@@ -44,7 +44,7 @@ pub fn store<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let pointer = Pointer::new_with_offset(
         context,
@@ -68,7 +68,7 @@ pub fn store_byte<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let pointer = Pointer::new_with_offset(
         context,

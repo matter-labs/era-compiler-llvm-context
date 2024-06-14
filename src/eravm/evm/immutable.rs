@@ -20,7 +20,7 @@ pub fn load<'ctx, D>(
     index: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     match context.code_type() {
         None => {
@@ -83,7 +83,7 @@ pub fn store<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     match context.code_type() {
         None => {

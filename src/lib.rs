@@ -3,11 +3,13 @@
 //!
 
 #![allow(clippy::too_many_arguments)]
+#![allow(clippy::upper_case_acronyms)]
 
 pub(crate) mod r#const;
 pub(crate) mod context;
 pub(crate) mod debug_config;
 pub(crate) mod debug_info;
+pub(crate) mod dependency;
 pub(crate) mod eravm;
 pub(crate) mod evm;
 pub(crate) mod optimizer;
@@ -32,6 +34,8 @@ pub use self::context::IContext;
 pub use self::debug_config::ir_type::IRType as DebugConfigIR;
 pub use self::debug_config::DebugConfig;
 pub use self::debug_info::DebugInfo;
+pub use self::dependency::Dependency;
+pub use self::dependency::DummyDependency;
 pub use self::eravm::build_assembly_text as eravm_build_assembly_text;
 pub use self::eravm::context::address_space::AddressSpace as EraVMAddressSpace;
 pub use self::eravm::context::build::Build as EraVMBuild;
@@ -74,8 +78,6 @@ pub use self::eravm::extensions::math as eravm_math;
 pub use self::eravm::metadata_hash::MetadataHash as EraVMMetadataHash;
 pub use self::eravm::r#const as eravm_const;
 pub use self::eravm::utils as eravm_utils;
-pub use self::eravm::Dependency as EraVMDependency;
-pub use self::eravm::DummyDependency as EraVMDummyDependency;
 pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
 pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
 pub use self::evm::context::address_space::AddressSpace as EVMAddressSpace;
@@ -103,8 +105,6 @@ pub use self::evm::instructions::r#return as evm_return;
 pub use self::evm::instructions::return_data as evm_return_data;
 pub use self::evm::instructions::storage as evm_storage;
 pub use self::evm::r#const as evm_const;
-pub use self::evm::Dependency as EVMDependency;
-pub use self::evm::DummyDependency as EVMDummyDependency;
 pub use self::evm::DummyLLVMWritable as EVMDummyLLVMWritable;
 pub use self::evm::WriteLLVM as EVMWriteLLVM;
 pub use self::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;

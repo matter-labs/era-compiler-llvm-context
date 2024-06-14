@@ -42,7 +42,7 @@ impl Runtime {
         call_function: FunctionDeclaration<'ctx>,
     ) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency + Clone,
+        D: Dependency,
     {
         context
             .get_function(DefaultCall::name(call_function).as_str())
@@ -59,7 +59,7 @@ impl Runtime {
         address_space: AddressSpace,
     ) -> FunctionDeclaration<'ctx>
     where
-        D: Dependency + Clone,
+        D: Dependency,
     {
         context
             .get_function(DeployerCall::name(address_space).as_str())
@@ -71,7 +71,7 @@ impl Runtime {
 
 impl<D> WriteLLVM<D> for Runtime
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         DefaultCall::new(context.llvm_runtime().far_call).declare(context)?;

@@ -18,7 +18,7 @@ pub fn size<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     match context.get_global_value(crate::eravm::GLOBAL_RETURN_DATA_SIZE) {
         Ok(global) => Ok(global),
@@ -36,7 +36,7 @@ pub fn copy<'ctx, D>(
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let error_block = context.append_basic_block("return_data_copy_error_block");
     let join_block = context.append_basic_block("return_data_copy_join_block");

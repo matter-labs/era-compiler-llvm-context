@@ -19,7 +19,7 @@ pub fn r#return<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let offset_pointer = Pointer::new_with_offset(
         context,
@@ -50,7 +50,7 @@ pub fn revert<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let offset_pointer = Pointer::new_with_offset(
         context,
@@ -77,7 +77,7 @@ where
 ///
 pub fn stop<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_call(context.intrinsics().stop, &[], "stop")?;
     context.build_unreachable()?;
@@ -89,7 +89,7 @@ where
 ///
 pub fn invalid<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_call(context.intrinsics().invalid, &[], "invalid")?;
     context.build_unreachable()?;

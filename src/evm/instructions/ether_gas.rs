@@ -15,7 +15,7 @@ pub fn gas<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().gas, &[], "gas")?
@@ -29,7 +29,7 @@ pub fn callvalue<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().callvalue, &[], "callvalue")?
@@ -44,7 +44,7 @@ pub fn balance<'ctx, D>(
     address: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -62,7 +62,7 @@ pub fn self_balance<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().selfbalance, &[], "selfbalance")?
@@ -77,7 +77,7 @@ pub fn self_destruct<'ctx, D>(
     address: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
