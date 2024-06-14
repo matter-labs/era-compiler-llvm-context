@@ -25,21 +25,27 @@ pub fn initialize_target() {
 }
 
 ///
-/// Builds EraVM assembly text.
+/// Encodes EraVM assembly into bytecode.
 ///
-pub fn build_assembly_text(
+pub fn from_assembly(
     contract_path: &str,
-    assembly_text: &str,
+    assembly_text: String,
     metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+    output_assembly: bool,
     debug_config: Option<&DebugConfig>,
 ) -> anyhow::Result<Build> {
     if let Some(debug_config) = debug_config {
-        debug_config.dump_assembly(contract_path, None, assembly_text)?;
+        debug_config.dump_assembly(contract_path, None, assembly_text.as_str())?;
     }
 
-    let mut assembly =
-        zkevm_assembly::Assembly::from_string(assembly_text.to_owned(), metadata_hash)
-            .map_err(|error| anyhow::anyhow!("assembly parsing: {error}"))?;
+    let output_assembly = if output_assembly {
+        Some(assembly_text.clone())
+    } else {
+        None
+    };
+
+    let mut assembly = zkevm_assembly::Assembly::from_string(assembly_text, metadata_hash)
+        .map_err(|error| anyhow::anyhow!("assembly parsing: {error}"))?;
 
     let bytecode_words = match zkevm_assembly::get_encoding_mode() {
         zkevm_assembly::RunningVmEncodingMode::Production => { assembly.compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
@@ -71,10 +77,10 @@ pub fn build_assembly_text(
     let bytecode = bytecode_words.into_iter().flatten().collect();
 
     Ok(Build::new(
-        assembly_text.to_owned(),
-        metadata_hash,
         bytecode,
         bytecode_hash,
+        metadata_hash,
+        output_assembly,
     ))
 }
 

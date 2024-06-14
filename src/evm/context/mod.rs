@@ -174,11 +174,7 @@ where
                 anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type,)
             })?;
 
-        Ok(Build::new(
-            String::new(),
-            metadata_hash,
-            buffer.as_slice().to_vec(),
-        ))
+        Ok(Build::new(buffer.as_slice().to_vec(), metadata_hash))
     }
 
     ///

@@ -162,6 +162,7 @@ where
         mut self,
         contract_path: &str,
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+        output_assembly: bool,
     ) -> anyhow::Result<Build> {
         let module_clone = self.module.clone();
 
@@ -193,10 +194,11 @@ where
 
         let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
 
-        let build = match crate::eravm::build_assembly_text(
+        let build = match crate::eravm::from_assembly(
             contract_path,
-            assembly_text.as_str(),
+            assembly_text,
             metadata_hash,
+            output_assembly,
             self.debug_config(),
         ) {
             Ok(build) => build,
@@ -206,7 +208,7 @@ where
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
                 self.module = module_clone;
-                self.build(contract_path, metadata_hash)
+                self.build(contract_path, metadata_hash, output_assembly)
                     .map_err(|size_error| anyhow::anyhow!("falling back to optimizing for size: {size_error} (with optimizing for cycles: {error})"))?
             }
             Err(error) => Err(error)?,

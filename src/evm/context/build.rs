@@ -10,12 +10,10 @@ use serde::Serialize;
 ///
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Build {
-    /// The text assembly.
-    pub assembly_text: String,
-    /// The metadata hash.
-    pub metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
-    /// The binary bytecode.
+    /// The bytecode.
     pub bytecode: Vec<u8>,
+    /// The project metadata hash.
+    pub metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
 }
 
 impl Build {
@@ -23,14 +21,12 @@ impl Build {
     /// A shortcut constructor.
     ///
     pub fn new(
-        assembly_text: String,
-        metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
         bytecode: Vec<u8>,
+        metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     ) -> Self {
         Self {
-            assembly_text,
-            metadata_hash,
             bytecode,
+            metadata_hash,
         }
     }
 }
