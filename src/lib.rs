@@ -74,7 +74,7 @@ pub use self::eravm::extensions::abi as eravm_abi;
 pub use self::eravm::extensions::call as eravm_call;
 pub use self::eravm::extensions::general as eravm_general;
 pub use self::eravm::extensions::math as eravm_math;
-pub use self::eravm::from_assembly as eravm_build_assembly_text;
+pub use self::eravm::from_assembly as from_eravm_assembly;
 pub use self::eravm::metadata_hash::MetadataHash as EraVMMetadataHash;
 pub use self::eravm::r#const as eravm_const;
 pub use self::eravm::utils as eravm_utils;
