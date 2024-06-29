@@ -30,6 +30,7 @@ pub fn initialize_target() {
 pub fn from_assembly(
     contract_path: &str,
     assembly_text: String,
+    bytecode: Vec<u8>,
     metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     output_assembly: bool,
     debug_config: Option<&DebugConfig>,
@@ -73,8 +74,6 @@ pub fn from_assembly(
     }
     .map(hex::encode)
     .map_err(|_error| anyhow::anyhow!("bytecode hashing"))?;
-
-    let bytecode = bytecode_words.into_iter().flatten().collect();
 
     Ok(Build::new(
         bytecode,
