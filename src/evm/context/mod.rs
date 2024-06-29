@@ -169,7 +169,7 @@ where
         })?;
 
         let buffer = target_machine
-            .write_to_memory_buffer(self.module())
+            .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
             .map_err(|error| {
                 anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type,)
             })?;

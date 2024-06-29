@@ -188,15 +188,23 @@ where
         self.verify()
             .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;
 
-        let buffer = target_machine
-            .write_to_memory_buffer(self.module())
-            .map_err(|error| anyhow::anyhow!("assembly emitting: {error}",))?;
+        let assembly_buffer = target_machine
+            .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
+            .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
+        let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice()).to_string();
 
-        let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
+        let bytecode_buffer = target_machine
+            .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
+            .map_err(|error| anyhow::anyhow!("bytecode emitting: {error}"))?;
+        let bytecode_buffer_linked =
+            inkwell::memory_buffer::MemoryBuffer::link_module_eravm(&bytecode_buffer)
+                .map_err(|_| anyhow::anyhow!("bytecode linking error"))?;
+        let bytecode = bytecode_buffer_linked.as_slice().to_vec();
 
         let build = match crate::eravm::from_assembly(
             contract_path,
             assembly_text,
+            bytecode,
             metadata_hash,
             output_assembly,
             self.debug_config(),

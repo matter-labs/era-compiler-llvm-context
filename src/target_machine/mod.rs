@@ -49,11 +49,7 @@ impl TargetMachine {
         arguments.extend_from_slice(llvm_options);
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
-            inkwell::support::parse_command_line_options(
-                arguments.len() as i32,
-                arguments.as_slice(),
-                "LLVM options",
-            );
+            inkwell::support::parse_command_line_options(arguments.as_slice(), "LLVM options");
         }
 
         let target_machine = inkwell::targets::Target::from_name(target.name())
@@ -94,15 +90,10 @@ impl TargetMachine {
     pub fn write_to_memory_buffer(
         &self,
         module: &inkwell::module::Module,
+        file_type: inkwell::targets::FileType,
     ) -> Result<inkwell::memory_buffer::MemoryBuffer, inkwell::support::LLVMString> {
-        match self.target {
-            Target::EraVM => self
-                .target_machine
-                .write_to_memory_buffer(module, inkwell::targets::FileType::Assembly),
-            Target::EVM => self
-                .target_machine
-                .write_to_memory_buffer(module, inkwell::targets::FileType::Object),
-        }
+        self.target_machine
+            .write_to_memory_buffer(module, file_type)
     }
 
     ///
