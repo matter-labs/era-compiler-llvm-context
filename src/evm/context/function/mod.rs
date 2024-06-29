@@ -308,7 +308,11 @@ impl<'ctx> Function<'ctx> {
 }
 
 impl<'ctx> IEVMLAFunction<'ctx> for Function<'ctx> {
-    fn find_block(&self, key: &BlockKey, stack_hash: &md5::Digest) -> anyhow::Result<Block<'ctx>> {
+    fn find_block(
+        &self,
+        key: &BlockKey,
+        stack_hash: &[u8; era_compiler_common::BYTE_LENGTH_FIELD],
+    ) -> anyhow::Result<Block<'ctx>> {
         let evmla_data = self.evmla();
 
         if evmla_data
