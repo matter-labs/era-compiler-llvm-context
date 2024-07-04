@@ -85,6 +85,16 @@ impl TargetMachine {
     }
 
     ///
+    /// Translates textual assembly to the object code.
+    ///
+    pub fn assemble(
+        &self,
+        memory_buffer: &inkwell::memory_buffer::MemoryBuffer,
+    ) -> Result<inkwell::memory_buffer::MemoryBuffer, inkwell::support::LLVMString> {
+        memory_buffer.assemble_eravm(&self.target_machine)
+    }
+
+    ///
     /// Writes the LLVM module to a memory buffer.
     ///
     pub fn write_to_memory_buffer(

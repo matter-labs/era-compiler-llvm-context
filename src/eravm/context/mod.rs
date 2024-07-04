@@ -188,28 +188,46 @@ where
         self.verify()
             .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;
 
-        let assembly_buffer = target_machine
-            .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
-            .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
-        let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice()).to_string();
+        let assembly_buffer = if output_assembly {
+            let assembly_buffer = target_machine
+                .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
+                .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
+            Some(assembly_buffer)
+        } else {
+            None
+        };
 
-        let bytecode_buffer = target_machine
-            .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
-            .map_err(|error| anyhow::anyhow!("bytecode emitting: {error}"))?;
-        let bytecode_buffer_linked =
-            inkwell::memory_buffer::MemoryBuffer::link_module_eravm(&bytecode_buffer)
-                .map_err(|_| anyhow::anyhow!("bytecode linking error"))?;
-        let bytecode = bytecode_buffer_linked.as_slice().to_vec();
+        let bytecode_buffer = match assembly_buffer {
+            Some(ref assembly_buffer) => target_machine
+                .assemble(assembly_buffer)
+                .map_err(|error| anyhow::anyhow!("assembling: {error}")),
+            None => target_machine
+                .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
+                .map_err(|error| anyhow::anyhow!("bytecode emitting: {error}")),
+        }?;
 
-        let build = match crate::eravm::from_assembly(
-            contract_path,
-            assembly_text,
-            bytecode,
-            metadata_hash,
-            output_assembly,
-            self.debug_config(),
-        ) {
-            Ok(build) => build,
+        let assembly_text = assembly_buffer
+            .as_ref()
+            .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
+
+        let build = match inkwell::memory_buffer::MemoryBuffer::link_module_eravm(&bytecode_buffer)
+            .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))
+        {
+            Ok(bytecode_buffer_linked) => {
+                let bytecode = bytecode_buffer_linked.as_slice().to_vec();
+                let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode
+                    .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
+                    .map(|word| word.try_into().expect("Always valid"))
+                    .collect();
+                let bytecode_hash_array =
+                    zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+                        { era_compiler_common::BYTE_LENGTH_X64 },
+                        zkevm_opcode_defs::decoding::EncodingModeProduction,
+                    >(bytecode_words.as_slice())
+                    .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
+                let bytecode_hash = hex::encode(bytecode_hash_array);
+                Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text)
+            }
             Err(error)
                 if self.optimizer.settings() != &OptimizerSettings::size()
                     && self.optimizer.settings().is_fallback_to_size_enabled() =>
@@ -221,7 +239,6 @@ where
             }
             Err(error) => Err(error)?,
         };
-
         Ok(build)
     }
 
