@@ -206,39 +206,37 @@ where
                 .map_err(|error| anyhow::anyhow!("bytecode emitting: {error}")),
         }?;
 
+        if bytecode_buffer.exceeds_size_limit_eravm()
+            && self.optimizer.settings() != &OptimizerSettings::size()
+            && self.optimizer.settings().is_fallback_to_size_enabled()
+        {
+            self.optimizer = Optimizer::new(OptimizerSettings::size());
+            self.module = module_clone;
+            return self
+                .build(contract_path, metadata_hash, output_assembly)
+                .map_err(|error| anyhow::anyhow!("falling back to optimizing for size: {error}"));
+        }
+
+        let bytecode_buffer_linked =
+            inkwell::memory_buffer::MemoryBuffer::link_module_eravm(&bytecode_buffer)
+                .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
+        let bytecode = bytecode_buffer_linked.as_slice().to_vec();
+        let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode
+            .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
+            .map(|word| word.try_into().expect("Always valid"))
+            .collect();
+        let bytecode_hash_array = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+            { era_compiler_common::BYTE_LENGTH_X64 },
+            zkevm_opcode_defs::decoding::EncodingModeProduction,
+        >(bytecode_words.as_slice())
+        .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
+        let bytecode_hash = hex::encode(bytecode_hash_array);
+
         let assembly_text = assembly_buffer
             .as_ref()
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
-        let build = match inkwell::memory_buffer::MemoryBuffer::link_module_eravm(&bytecode_buffer)
-            .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))
-        {
-            Ok(bytecode_buffer_linked) => {
-                let bytecode = bytecode_buffer_linked.as_slice().to_vec();
-                let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode
-                    .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
-                    .map(|word| word.try_into().expect("Always valid"))
-                    .collect();
-                let bytecode_hash_array =
-                    zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                        { era_compiler_common::BYTE_LENGTH_X64 },
-                        zkevm_opcode_defs::decoding::EncodingModeProduction,
-                    >(bytecode_words.as_slice())
-                    .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
-                let bytecode_hash = hex::encode(bytecode_hash_array);
-                Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text)
-            }
-            Err(error)
-                if self.optimizer.settings() != &OptimizerSettings::size()
-                    && self.optimizer.settings().is_fallback_to_size_enabled() =>
-            {
-                self.optimizer = Optimizer::new(OptimizerSettings::size());
-                self.module = module_clone;
-                self.build(contract_path, metadata_hash, output_assembly)
-                    .map_err(|size_error| anyhow::anyhow!("falling back to optimizing for size: {size_error} (with optimizing for cycles: {error})"))?
-            }
-            Err(error) => Err(error)?,
-        };
+        let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);
         Ok(build)
     }
 
