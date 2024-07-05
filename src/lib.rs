@@ -36,6 +36,8 @@ pub use self::debug_config::DebugConfig;
 pub use self::debug_info::DebugInfo;
 pub use self::dependency::Dependency;
 pub use self::dependency::DummyDependency;
+pub use self::eravm::assemble as eravm_assemble;
+pub use self::eravm::build as eravm_build;
 pub use self::eravm::context::address_space::AddressSpace as EraVMAddressSpace;
 pub use self::eravm::context::build::Build as EraVMBuild;
 pub use self::eravm::context::evmla_data::EVMLAData as EraVMContextEVMLAData;

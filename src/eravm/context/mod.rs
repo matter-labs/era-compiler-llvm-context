@@ -192,6 +192,12 @@ where
             let assembly_buffer = target_machine
                 .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
                 .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
+
+            if let Some(ref debug_config) = self.debug_config {
+                let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
+                debug_config.dump_assembly(contract_path, None, assembly_text.as_ref())?;
+            }
+
             Some(assembly_buffer)
         } else {
             None
@@ -217,27 +223,10 @@ where
                 .map_err(|error| anyhow::anyhow!("falling back to optimizing for size: {error}"));
         }
 
-        let bytecode_buffer_linked =
-            inkwell::memory_buffer::MemoryBuffer::link_module_eravm(&bytecode_buffer)
-                .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
-        let bytecode = bytecode_buffer_linked.as_slice().to_vec();
-        let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode
-            .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
-            .map(|word| word.try_into().expect("Always valid"))
-            .collect();
-        let bytecode_hash_array = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-            { era_compiler_common::BYTE_LENGTH_X64 },
-            zkevm_opcode_defs::decoding::EncodingModeProduction,
-        >(bytecode_words.as_slice())
-        .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
-        let bytecode_hash = hex::encode(bytecode_hash_array);
-
         let assembly_text = assembly_buffer
-            .as_ref()
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
-        let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);
-        Ok(build)
+        crate::eravm::build(bytecode_buffer, metadata_hash, assembly_text)
     }
 
     ///
