@@ -61,12 +61,7 @@ pub fn build(
     let bytecode_buffer_linked = bytecode_buffer
         .link_module_eravm(metadata)
         .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
-    let mut bytecode = bytecode_buffer_linked.as_slice().to_vec();
-    if let Some(metadata_hash) = metadata_hash {
-        bytecode.extend_from_slice(metadata_hash.as_slice());
-    } else {
-        bytecode.extend([0u8; era_compiler_common::BYTE_LENGTH_FIELD]);
-    }
+    let bytecode = bytecode_buffer_linked.as_slice().to_vec();
 
     let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode
         .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
