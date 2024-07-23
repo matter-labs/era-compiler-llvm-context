@@ -57,9 +57,10 @@ pub fn build(
     metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     assembly_text: Option<String>,
 ) -> anyhow::Result<Build> {
-    let bytecode_buffer_linked =
-        inkwell::memory_buffer::MemoryBuffer::link_module_eravm(&bytecode_buffer)
-            .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
+    let metadata = metadata_hash.as_ref().map(|array| array.as_slice());
+    let bytecode_buffer_linked = bytecode_buffer
+        .link_module_eravm(metadata)
+        .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
     let mut bytecode = bytecode_buffer_linked.as_slice().to_vec();
     if let Some(metadata_hash) = metadata_hash {
         bytecode.extend_from_slice(metadata_hash.as_slice());

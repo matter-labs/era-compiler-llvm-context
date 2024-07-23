@@ -212,7 +212,12 @@ where
                 .map_err(|error| anyhow::anyhow!("bytecode emitting: {error}")),
         }?;
 
-        if bytecode_buffer.exceeds_size_limit_eravm()
+        let metadata_size = metadata_hash
+            .as_ref()
+            .map(|array| array.len())
+            .unwrap_or_default();
+
+        if bytecode_buffer.exceeds_size_limit_eravm(metadata_size)
             && self.optimizer.settings() != &OptimizerSettings::size()
             && self.optimizer.settings().is_fallback_to_size_enabled()
         {
