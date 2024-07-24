@@ -38,6 +38,9 @@ pub fn assemble(
         debug_config.dump_assembly(contract_path, None, assembly_text)?;
     }
 
+    let assembly_text = assembly_text
+        .strip_suffix(char::from(0))
+        .expect("Assembly text must be null-terminated");
     let assembly_buffer = inkwell::memory_buffer::MemoryBuffer::create_from_memory_range(
         assembly_text.as_bytes(),
         "assembly_buffer",
