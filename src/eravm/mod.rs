@@ -68,12 +68,11 @@ pub fn build(
         .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
         .map(|word| word.try_into().expect("Always valid"))
         .collect();
-    let bytecode_hash_array = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+    let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
         { era_compiler_common::BYTE_LENGTH_X64 },
         zkevm_opcode_defs::decoding::EncodingModeProduction,
     >(bytecode_words.as_slice())
     .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
-    let bytecode_hash = hex::encode(bytecode_hash_array);
 
     let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);
     Ok(build)
