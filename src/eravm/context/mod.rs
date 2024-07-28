@@ -217,15 +217,23 @@ where
             .map(|array| array.len())
             .unwrap_or_default();
 
-        if bytecode_buffer.exceeds_size_limit_eravm(metadata_size)
-            && self.optimizer.settings() != &OptimizerSettings::size()
-            && self.optimizer.settings().is_fallback_to_size_enabled()
-        {
-            self.optimizer = Optimizer::new(OptimizerSettings::size());
-            self.module = module_clone;
-            return self
-                .build(contract_path, metadata_hash, output_assembly)
-                .map_err(|error| anyhow::anyhow!("falling back to optimizing for size: {error}"));
+        if bytecode_buffer.exceeds_size_limit_eravm(metadata_size) {
+            if self.optimizer.settings() != &OptimizerSettings::size()
+                && self.optimizer.settings().is_fallback_to_size_enabled()
+            {
+                self.optimizer = Optimizer::new(OptimizerSettings::size());
+                self.module = module_clone;
+                return self
+                    .build(contract_path, metadata_hash, output_assembly)
+                    .map_err(|error| {
+                        anyhow::anyhow!("falling back to optimizing for size: {error}")
+                    });
+            } else {
+                anyhow::bail!(
+                    "bytecode size exceeds the limit of {} instructions",
+                    1 << 16
+                );
+            }
         }
 
         let assembly_text = assembly_buffer

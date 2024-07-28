@@ -203,13 +203,9 @@ impl<'ctx> Function<'ctx> {
         optimizer: &Optimizer,
     ) {
         if optimizer.settings().level_middle_end == inkwell::OptimizationLevel::None {
-            Self::set_attributes(
-                llvm,
-                declaration,
-                vec![(Attribute::OptimizeNone, None), (Attribute::NoInline, None)],
-                false,
-            );
-        } else if optimizer.settings().level_middle_end_size == SizeLevel::Z {
+            Self::set_attributes(llvm, declaration, vec![(Attribute::NoInline, None)], false);
+        }
+        if optimizer.settings().level_middle_end_size == SizeLevel::Z {
             Self::set_attributes(
                 llvm,
                 declaration,
