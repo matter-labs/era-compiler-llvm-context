@@ -142,6 +142,7 @@ where
                 contract_path,
                 Some(self.code_type),
                 self.module(),
+                false,
             )?;
         }
         self.verify().map_err(|error| {
@@ -159,6 +160,7 @@ where
                 contract_path,
                 Some(self.code_type),
                 self.module(),
+                false,
             )?;
         }
         self.verify().map_err(|error| {

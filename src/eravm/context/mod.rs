@@ -163,6 +163,7 @@ where
         contract_path: &str,
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
         output_assembly: bool,
+        is_fallback_to_size: bool,
     ) -> anyhow::Result<Build> {
         let module_clone = self.module.clone();
 
@@ -174,7 +175,12 @@ where
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_unoptimized(contract_path, self.code_type, self.module())?;
+            debug_config.dump_llvm_ir_unoptimized(
+                contract_path,
+                self.code_type,
+                self.module(),
+                is_fallback_to_size,
+            )?;
         }
         self.verify()
             .map_err(|error| anyhow::anyhow!("unoptimized LLVM IR verification: {error}",))?;
@@ -183,12 +189,17 @@ where
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("optimizing: {error}",))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(contract_path, self.code_type, self.module())?;
+            debug_config.dump_llvm_ir_optimized(
+                contract_path,
+                self.code_type,
+                self.module(),
+                is_fallback_to_size,
+            )?;
         }
         self.verify()
             .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;
 
-        let assembly_buffer = if output_assembly {
+        let assembly_buffer = if output_assembly || self.debug_config.is_some() {
             let assembly_buffer = target_machine
                 .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
                 .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
@@ -223,15 +234,18 @@ where
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
                 self.module = module_clone;
+                for function in self.functions.values() {
+                    Function::set_size_attributes(self.llvm, function.borrow().declaration());
+                }
                 return self
-                    .build(contract_path, metadata_hash, output_assembly)
+                    .build(contract_path, metadata_hash, output_assembly, true)
                     .map_err(|error| {
                         anyhow::anyhow!("falling back to optimizing for size: {error}")
                     });
             } else {
                 anyhow::bail!(
                     "bytecode size exceeds the limit of {} instructions",
-                    1 << 16
+                    1 << (era_compiler_common::BIT_LENGTH_BYTE * 2)
                 );
             }
         }
