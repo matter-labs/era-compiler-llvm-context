@@ -90,7 +90,7 @@ where
         )?;
         Function::set_frontend_runtime_attributes(
             context.llvm,
-            function.borrow().declaration(),
+            function.borrow().declaration().value,
             &context.optimizer,
         );
 

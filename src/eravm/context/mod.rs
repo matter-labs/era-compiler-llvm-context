@@ -234,8 +234,8 @@ where
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
                 self.module = module_clone;
-                for function in self.functions.values() {
-                    Function::set_size_attributes(self.llvm, function.borrow().declaration());
+                for function in self.module.get_functions() {
+                    Function::set_size_attributes(self.llvm, function);
                 }
                 return self
                     .build(contract_path, metadata_hash, output_assembly, true)
@@ -952,9 +952,9 @@ where
             entry_block,
             return_block,
         );
-        Function::set_default_attributes(self.llvm, function.declaration(), &self.optimizer);
+        Function::set_default_attributes(self.llvm, function.declaration().value, &self.optimizer);
         if Function::is_near_call_abi(function.name()) && self.are_eravm_extensions_enabled() {
-            Function::set_exception_handler_attributes(self.llvm, function.declaration());
+            Function::set_exception_handler_attributes(self.llvm, function.declaration().value);
         }
 
         let function = Rc::new(RefCell::new(function));

@@ -140,53 +140,52 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
+        function: inkwell::values::FunctionValue<'ctx>,
         attributes: Vec<(Attribute, Option<u64>)>,
         force: bool,
     ) {
         for (attribute_kind, value) in attributes.into_iter() {
             match attribute_kind {
                 attribute_kind @ Attribute::AlwaysInline if force => {
-                    let is_optimize_none_set = declaration
-                        .value
+                    let is_optimize_none_set = function
                         .get_enum_attribute(
                             inkwell::attributes::AttributeLoc::Function,
                             Attribute::OptimizeNone as u32,
                         )
                         .is_some();
                     if !is_optimize_none_set {
-                        declaration.value.remove_enum_attribute(
+                        function.remove_enum_attribute(
                             inkwell::attributes::AttributeLoc::Function,
                             Attribute::NoInline as u32,
                         );
-                        declaration.value.add_attribute(
+                        function.add_attribute(
                             inkwell::attributes::AttributeLoc::Function,
                             llvm.create_enum_attribute(attribute_kind as u32, 0),
                         );
                     }
                 }
                 attribute_kind @ Attribute::NoInline if force => {
-                    declaration.value.remove_enum_attribute(
+                    function.remove_enum_attribute(
                         inkwell::attributes::AttributeLoc::Function,
                         Attribute::AlwaysInline as u32,
                     );
-                    declaration.value.add_attribute(
+                    function.add_attribute(
                         inkwell::attributes::AttributeLoc::Function,
                         llvm.create_enum_attribute(attribute_kind as u32, 0),
                     );
                 }
                 attribute_kind @ Attribute::OptimizeForSize => {
-                    declaration.value.remove_enum_attribute(
+                    function.remove_enum_attribute(
                         inkwell::attributes::AttributeLoc::Function,
                         Attribute::OptimizeNone as u32,
                     );
-                    declaration.value.add_attribute(
+                    function.add_attribute(
                         inkwell::attributes::AttributeLoc::Function,
                         llvm.create_enum_attribute(attribute_kind as u32, 0),
                     );
                 }
                 attribute_kind @ Attribute::Memory => {
-                    declaration.value.add_attribute(
+                    function.add_attribute(
                         inkwell::attributes::AttributeLoc::Function,
                         llvm.create_enum_attribute(
                             attribute_kind as u32,
@@ -194,7 +193,7 @@ impl<'ctx> Function<'ctx> {
                         ),
                     );
                 }
-                attribute_kind => declaration.value.add_attribute(
+                attribute_kind => function.add_attribute(
                     inkwell::attributes::AttributeLoc::Function,
                     llvm.create_enum_attribute(attribute_kind as u32, 0),
                 ),
@@ -209,7 +208,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_default_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
+        function: inkwell::values::FunctionValue<'ctx>,
         optimizer: &Optimizer,
     ) {
         match (
@@ -217,16 +216,16 @@ impl<'ctx> Function<'ctx> {
             optimizer.settings().level_middle_end_size,
         ) {
             (inkwell::OptimizationLevel::None, _) => {
-                Self::set_noopt_attributes(llvm, declaration);
+                Self::set_noopt_attributes(llvm, function);
             }
             (_, SizeLevel::Z) => {
-                Self::set_size_attributes(llvm, declaration);
+                Self::set_size_attributes(llvm, function);
             }
             _ => {}
         }
         Self::set_attributes(
             llvm,
-            declaration,
+            function,
             vec![
                 (Attribute::NoFree, None),
                 (Attribute::NullPointerIsValid, None),
@@ -240,11 +239,11 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_frontend_runtime_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
+        function: inkwell::values::FunctionValue<'ctx>,
         optimizer: &Optimizer,
     ) {
         if optimizer.settings().level_middle_end_size == SizeLevel::Z {
-            Self::set_attributes(llvm, declaration, vec![(Attribute::NoInline, None)], false);
+            Self::set_attributes(llvm, function, vec![(Attribute::NoInline, None)], false);
         }
     }
 
@@ -253,9 +252,9 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_exception_handler_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
+        function: inkwell::values::FunctionValue<'ctx>,
     ) {
-        Self::set_attributes(llvm, declaration, vec![(Attribute::NoInline, None)], false);
+        Self::set_attributes(llvm, function, vec![(Attribute::NoInline, None)], false);
     }
 
     ///
@@ -263,11 +262,11 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_noopt_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
+        function: inkwell::values::FunctionValue<'ctx>,
     ) {
         Self::set_attributes(
             llvm,
-            declaration,
+            function,
             vec![(Attribute::OptimizeNone, None), (Attribute::NoInline, None)],
             false,
         );
@@ -278,11 +277,11 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn set_size_attributes(
         llvm: &'ctx inkwell::context::Context,
-        declaration: FunctionDeclaration<'ctx>,
+        function: inkwell::values::FunctionValue<'ctx>,
     ) {
         Self::set_attributes(
             llvm,
-            declaration,
+            function,
             vec![
                 (Attribute::OptimizeForSize, None),
                 (Attribute::MinSize, None),
