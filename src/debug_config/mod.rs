@@ -118,12 +118,22 @@ impl DebugConfig {
         contract_path: &str,
         code_type: Option<CodeType>,
         module: &inkwell::module::Module,
+        is_fallback_to_size: bool,
     ) -> anyhow::Result<()> {
         let llvm_code = module.print_to_string().to_string();
 
+        let mut suffix = "unoptimized".to_owned();
+        if is_fallback_to_size {
+            suffix.push_str("_fallback_to_size");
+        }
+
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name =
-            Self::full_file_name(contract_path, code_type, Some("unoptimized"), IRType::LLVM);
+        let full_file_name = Self::full_file_name(
+            contract_path,
+            code_type,
+            Some(suffix.as_str()),
+            IRType::LLVM,
+        );
         file_path.push(full_file_name);
         std::fs::write(file_path, llvm_code)?;
 
@@ -138,12 +148,22 @@ impl DebugConfig {
         contract_path: &str,
         code_type: Option<CodeType>,
         module: &inkwell::module::Module,
+        is_fallback_to_size: bool,
     ) -> anyhow::Result<()> {
         let llvm_code = module.print_to_string().to_string();
 
+        let mut suffix = "optimized".to_owned();
+        if is_fallback_to_size {
+            suffix.push_str("_fallback_to_size");
+        }
+
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name =
-            Self::full_file_name(contract_path, code_type, Some("optimized"), IRType::LLVM);
+        let full_file_name = Self::full_file_name(
+            contract_path,
+            code_type,
+            Some(suffix.as_str()),
+            IRType::LLVM,
+        );
         file_path.push(full_file_name);
         std::fs::write(file_path, llvm_code)?;
 

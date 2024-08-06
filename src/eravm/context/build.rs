@@ -15,7 +15,7 @@ pub struct Build {
     /// The bytecode.
     pub bytecode: Vec<u8>,
     /// The bytecode hash.
-    pub bytecode_hash: String,
+    pub bytecode_hash: [u8; era_compiler_common::BYTE_LENGTH_FIELD],
     /// The project metadata hash.
     pub metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     /// The hash-to-full-path mapping of the contract factory dependencies.
@@ -30,7 +30,7 @@ impl Build {
     ///
     pub fn new(
         bytecode: Vec<u8>,
-        bytecode_hash: String,
+        bytecode_hash: [u8; era_compiler_common::BYTE_LENGTH_FIELD],
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
         assembly: Option<String>,
     ) -> Self {
