@@ -448,9 +448,9 @@ where
 
             self.set_basic_block(catch_block);
             let landing_pad_type = self.structure_type(&[
-                self.ptr_type(AddressSpace::Stack.into())
+                self.ptr_type(AddressSpace::Generic.into())
                     .as_basic_type_enum(),
-                self.integer_type(era_compiler_common::BIT_LENGTH_X32)
+                self.integer_type(era_compiler_common::BIT_LENGTH_BOOLEAN)
                     .as_basic_type_enum(),
             ]);
             self.builder.build_landing_pad(
@@ -1029,9 +1029,9 @@ where
 
         self.set_basic_block(catch_block);
         let landing_pad_type = self.structure_type(&[
-            self.ptr_type(AddressSpace::Stack.into())
+            self.ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum(),
-            self.integer_type(era_compiler_common::BIT_LENGTH_X32)
+            self.integer_type(era_compiler_common::BIT_LENGTH_BOOLEAN)
                 .as_basic_type_enum(),
         ]);
         self.builder.build_landing_pad(
