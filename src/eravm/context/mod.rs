@@ -163,6 +163,7 @@ where
         contract_path: &str,
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
         output_assembly: bool,
+        is_fallback_to_size: bool,
     ) -> anyhow::Result<Build> {
         let module_clone = self.module.clone();
 
@@ -174,7 +175,12 @@ where
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_unoptimized(contract_path, self.code_type, self.module())?;
+            debug_config.dump_llvm_ir_unoptimized(
+                contract_path,
+                self.code_type,
+                self.module(),
+                is_fallback_to_size,
+            )?;
         }
         self.verify()
             .map_err(|error| anyhow::anyhow!("unoptimized LLVM IR verification: {error}",))?;
@@ -183,38 +189,71 @@ where
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("optimizing: {error}",))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(contract_path, self.code_type, self.module())?;
+            debug_config.dump_llvm_ir_optimized(
+                contract_path,
+                self.code_type,
+                self.module(),
+                is_fallback_to_size,
+            )?;
         }
         self.verify()
             .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;
 
-        let buffer = target_machine
-            .write_to_memory_buffer(self.module())
-            .map_err(|error| anyhow::anyhow!("assembly emitting: {error}",))?;
+        let assembly_buffer = if output_assembly || self.debug_config.is_some() {
+            let assembly_buffer = target_machine
+                .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
+                .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
 
-        let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
+            if let Some(ref debug_config) = self.debug_config {
+                let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
+                debug_config.dump_assembly(contract_path, None, assembly_text.as_ref())?;
+            }
 
-        let build = match crate::eravm::from_assembly(
-            contract_path,
-            assembly_text,
-            metadata_hash,
-            output_assembly,
-            self.debug_config(),
-        ) {
-            Ok(build) => build,
-            Err(error)
-                if self.optimizer.settings() != &OptimizerSettings::size()
-                    && self.optimizer.settings().is_fallback_to_size_enabled() =>
+            Some(assembly_buffer)
+        } else {
+            None
+        };
+
+        let bytecode_buffer = match assembly_buffer {
+            Some(ref assembly_buffer) => target_machine
+                .assemble(assembly_buffer)
+                .map_err(|error| anyhow::anyhow!("assembling: {error}")),
+            None => target_machine
+                .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
+                .map_err(|error| anyhow::anyhow!("bytecode emitting: {error}")),
+        }?;
+
+        let metadata_size = metadata_hash
+            .as_ref()
+            .map(|array| array.len())
+            .unwrap_or_default();
+
+        if bytecode_buffer.exceeds_size_limit_eravm(metadata_size) {
+            if self.optimizer.settings() != &OptimizerSettings::size()
+                && self.optimizer.settings().is_fallback_to_size_enabled()
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
                 self.module = module_clone;
-                self.build(contract_path, metadata_hash, output_assembly)
-                    .map_err(|size_error| anyhow::anyhow!("falling back to optimizing for size: {size_error} (with optimizing for cycles: {error})"))?
+                for function in self.module.get_functions() {
+                    Function::set_size_attributes(self.llvm, function);
+                }
+                return self
+                    .build(contract_path, metadata_hash, output_assembly, true)
+                    .map_err(|error| {
+                        anyhow::anyhow!("falling back to optimizing for size: {error}")
+                    });
+            } else {
+                anyhow::bail!(
+                    "bytecode size exceeds the limit of {} instructions",
+                    1 << (era_compiler_common::BIT_LENGTH_BYTE * 2)
+                );
             }
-            Err(error) => Err(error)?,
-        };
+        }
 
-        Ok(build)
+        let assembly_text = assembly_buffer
+            .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
+
+        crate::eravm::build(bytecode_buffer, metadata_hash, assembly_text)
     }
 
     ///
@@ -409,9 +448,9 @@ where
 
             self.set_basic_block(catch_block);
             let landing_pad_type = self.structure_type(&[
-                self.ptr_type(AddressSpace::Stack.into())
+                self.ptr_type(AddressSpace::Generic.into())
                     .as_basic_type_enum(),
-                self.integer_type(era_compiler_common::BIT_LENGTH_X32)
+                self.integer_type(era_compiler_common::BIT_LENGTH_BOOLEAN)
                     .as_basic_type_enum(),
             ]);
             self.builder.build_landing_pad(
@@ -913,9 +952,9 @@ where
             entry_block,
             return_block,
         );
-        Function::set_default_attributes(self.llvm, function.declaration(), &self.optimizer);
+        Function::set_default_attributes(self.llvm, function.declaration().value, &self.optimizer);
         if Function::is_near_call_abi(function.name()) && self.are_eravm_extensions_enabled() {
-            Function::set_exception_handler_attributes(self.llvm, function.declaration());
+            Function::set_exception_handler_attributes(self.llvm, function.declaration().value);
         }
 
         let function = Rc::new(RefCell::new(function));
@@ -990,9 +1029,9 @@ where
 
         self.set_basic_block(catch_block);
         let landing_pad_type = self.structure_type(&[
-            self.ptr_type(AddressSpace::Stack.into())
+            self.ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum(),
-            self.integer_type(era_compiler_common::BIT_LENGTH_X32)
+            self.integer_type(era_compiler_common::BIT_LENGTH_BOOLEAN)
                 .as_basic_type_enum(),
         ]);
         self.builder.build_landing_pad(

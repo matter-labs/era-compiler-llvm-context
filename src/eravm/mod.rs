@@ -13,8 +13,9 @@ pub use self::r#const::*;
 
 use crate::debug_config::DebugConfig;
 use crate::dependency::Dependency;
+use crate::eravm::context::build::Build;
+use crate::target_machine::TargetMachine;
 
-use self::context::build::Build;
 use self::context::Context;
 
 ///
@@ -25,63 +26,56 @@ pub fn initialize_target() {
 }
 
 ///
-/// Encodes EraVM assembly into bytecode.
+/// Translates textual assembly to the object code.
 ///
-pub fn from_assembly(
+pub fn assemble(
+    target_machine: &TargetMachine,
     contract_path: &str,
-    assembly_text: String,
-    metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
-    output_assembly: bool,
+    assembly_text: &str,
     debug_config: Option<&DebugConfig>,
-) -> anyhow::Result<Build> {
+) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
     if let Some(debug_config) = debug_config {
-        debug_config.dump_assembly(contract_path, None, assembly_text.as_str())?;
+        debug_config.dump_assembly(contract_path, None, assembly_text)?;
     }
 
-    let output_assembly = if output_assembly {
-        Some(assembly_text.clone())
-    } else {
-        None
-    };
+    let assembly_buffer = inkwell::memory_buffer::MemoryBuffer::create_from_memory_range(
+        assembly_text.as_bytes(),
+        "assembly_buffer",
+        false,
+    );
 
-    let mut assembly = zkevm_assembly::Assembly::from_string(assembly_text, metadata_hash)
-        .map_err(|error| anyhow::anyhow!("assembly parsing: {error}"))?;
+    let bytecode_buffer = target_machine
+        .assemble(&assembly_buffer)
+        .map_err(|error| anyhow::anyhow!("assembling: {error}"))?;
+    Ok(bytecode_buffer)
+}
 
-    let bytecode_words = match zkevm_assembly::get_encoding_mode() {
-        zkevm_assembly::RunningVmEncodingMode::Production => { assembly.compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
-        zkevm_assembly::RunningVmEncodingMode::Testing => { assembly.compile_to_bytecode_for_mode::<16, zkevm_opcode_defs::decoding::EncodingModeTesting>() },
-    }
-        .map_err(|error| {
-            anyhow::anyhow!(
-                "assembly-to-bytecode conversion: {error}",
-            )
-        })?;
+///
+/// Converts the bytecode buffer and auxiliary data into a build.
+///
+pub fn build(
+    bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
+    metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+    assembly_text: Option<String>,
+) -> anyhow::Result<Build> {
+    let metadata = metadata_hash.as_ref().map(|array| array.as_slice());
+    let bytecode_buffer_linked = bytecode_buffer
+        .link_module_eravm(metadata)
+        .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
+    let bytecode = bytecode_buffer_linked.as_slice().to_vec();
 
-    let bytecode_hash = match zkevm_assembly::get_encoding_mode() {
-        zkevm_assembly::RunningVmEncodingMode::Production => {
-            zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                8,
-                zkevm_opcode_defs::decoding::EncodingModeProduction,
-            >(bytecode_words.as_slice())
-        }
-        zkevm_assembly::RunningVmEncodingMode::Testing => {
-            zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                16,
-                zkevm_opcode_defs::decoding::EncodingModeTesting,
-            >(bytecode_words.as_slice())
-        }
-    }
-    .map(hex::encode)
-    .map_err(|_error| anyhow::anyhow!("bytecode hashing"))?;
+    let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode
+        .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
+        .map(|word| word.try_into().expect("Always valid"))
+        .collect();
+    let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+        { era_compiler_common::BYTE_LENGTH_X64 },
+        zkevm_opcode_defs::decoding::EncodingModeProduction,
+    >(bytecode_words.as_slice())
+    .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
 
-    let bytecode = bytecode_words.into_iter().flatten().collect();
-
-    Ok(Build::new(
-        bytecode,
-        bytecode_hash,
-        metadata_hash,
-        output_assembly,
-    ))
+    let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);
+    Ok(build)
 }
 
 ///
