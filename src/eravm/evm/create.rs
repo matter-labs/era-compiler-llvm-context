@@ -28,9 +28,9 @@ pub fn create<'ctx, D>(
 where
     D: Dependency,
 {
-    let signature_hash_string =
-        crate::eravm::utils::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
-    let signature_hash = context.field_const_str_hex(signature_hash_string.as_str());
+    let signature_hash =
+        era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
+    let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let salt = context.field_const(0);
 
@@ -42,7 +42,7 @@ where
                 value.as_basic_value_enum(),
                 input_offset.as_basic_value_enum(),
                 input_length.as_basic_value_enum(),
-                signature_hash.as_basic_value_enum(),
+                signature_hash_value.as_basic_value_enum(),
                 salt.as_basic_value_enum(),
             ],
             "create_deployer_call",
@@ -68,9 +68,9 @@ pub fn create2<'ctx, D>(
 where
     D: Dependency,
 {
-    let signature_hash_string =
-        crate::eravm::utils::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE2.as_bytes());
-    let signature_hash = context.field_const_str_hex(signature_hash_string.as_str());
+    let signature_hash =
+        era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
+    let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let salt = salt.unwrap_or_else(|| context.field_const(0));
 
@@ -82,7 +82,7 @@ where
                 value.as_basic_value_enum(),
                 input_offset.as_basic_value_enum(),
                 input_length.as_basic_value_enum(),
-                signature_hash.as_basic_value_enum(),
+                signature_hash_value.as_basic_value_enum(),
                 salt.as_basic_value_enum(),
             ],
             "create2_deployer_call",

@@ -650,8 +650,8 @@ pub fn request<'ctx, D>(
 where
     D: Dependency,
 {
-    let signature_hash = crate::eravm::utils::keccak256(signature.as_bytes());
-    let signature_value = context.field_const_str_hex(signature_hash.as_str());
+    let signature_hash = era_compiler_common::Hash::keccak256(signature.as_bytes());
+    let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let calldata_size = context.field_const(
         (era_compiler_common::BYTE_LENGTH_X32
@@ -676,7 +676,7 @@ where
             context.llvm_runtime().system_request,
             &[
                 address.as_basic_value_enum(),
-                signature_value.as_basic_value_enum(),
+                signature_hash_value.as_basic_value_enum(),
                 calldata_size.as_basic_value_enum(),
                 calldata_array_pointer.value.as_basic_value_enum(),
             ],

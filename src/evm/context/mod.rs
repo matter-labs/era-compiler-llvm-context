@@ -23,7 +23,6 @@ use crate::debug_config::DebugConfig;
 use crate::debug_info::DebugInfo;
 use crate::dependency::Dependency;
 use crate::optimizer::Optimizer;
-use crate::target_machine::target::Target;
 use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
@@ -131,7 +130,7 @@ where
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     ) -> anyhow::Result<Build> {
         let target_machine = TargetMachine::new(
-            Target::EVM,
+            era_compiler_common::Target::EVM,
             self.optimizer.settings(),
             self.llvm_options.as_slice(),
         )?;
