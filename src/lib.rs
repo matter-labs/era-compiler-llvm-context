@@ -76,7 +76,6 @@ pub use self::eravm::extensions::abi as eravm_abi;
 pub use self::eravm::extensions::call as eravm_call;
 pub use self::eravm::extensions::general as eravm_general;
 pub use self::eravm::extensions::math as eravm_math;
-pub use self::eravm::metadata_hash::MetadataHash as EraVMMetadataHash;
 pub use self::eravm::r#const as eravm_const;
 pub use self::eravm::utils as eravm_utils;
 pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
@@ -112,15 +111,14 @@ pub use self::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSiz
 pub use self::optimizer::settings::Settings as OptimizerSettings;
 pub use self::optimizer::Optimizer;
 pub use self::r#const::*;
-pub use self::target_machine::target::Target;
 pub use self::target_machine::TargetMachine;
 
 ///
 /// Initializes the target machine.
 ///
-pub fn initialize_target(target: Target) {
+pub fn initialize_target(target: era_compiler_common::Target) {
     match target {
-        Target::EraVM => self::eravm::initialize_target(),
-        Target::EVM => self::evm::initialize_target(),
+        era_compiler_common::Target::EraVM => self::eravm::initialize_target(),
+        era_compiler_common::Target::EVM => self::evm::initialize_target(),
     }
 }

@@ -2,12 +2,8 @@
 //! The LLVM target machine.
 //!
 
-pub mod target;
-
 use crate::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
 use crate::optimizer::settings::Settings as OptimizerSettings;
-
-use self::target::Target;
 
 ///
 /// The LLVM target machine.
@@ -15,7 +11,7 @@ use self::target::Target;
 #[derive(Debug)]
 pub struct TargetMachine {
     /// The LLVM target.
-    target: Target,
+    target: era_compiler_common::Target,
     /// The LLVM target machine reference.
     target_machine: inkwell::targets::TargetMachine,
     /// The optimizer settings.
@@ -40,7 +36,7 @@ impl TargetMachine {
     /// `-eravm-jump-table-density-threshold <value>`
     ///
     pub fn new(
-        target: Target,
+        target: era_compiler_common::Target,
         optimizer_settings: &OptimizerSettings,
         llvm_options: &[String],
     ) -> anyhow::Result<Self> {
@@ -118,7 +114,7 @@ impl TargetMachine {
         pass_builder_options.set_verify_each(self.optimizer_settings.is_verify_each_enabled);
         pass_builder_options.set_debug_logging(self.optimizer_settings.is_debug_logging_enabled);
 
-        if let Target::EraVM = self.target {
+        if let era_compiler_common::Target::EraVM = self.target {
             pass_builder_options.set_loop_unrolling(
                 self.optimizer_settings.level_middle_end_size == OptimizerSettingsSizeLevel::Zero,
             );

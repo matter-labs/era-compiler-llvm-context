@@ -33,7 +33,6 @@ use crate::eravm::DebugConfig;
 use crate::eravm::Dependency;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
-use crate::target_machine::target::Target;
 use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
@@ -168,7 +167,7 @@ where
         let module_clone = self.module.clone();
 
         let target_machine = TargetMachine::new(
-            Target::EraVM,
+            era_compiler_common::Target::EraVM,
             self.optimizer.settings(),
             self.llvm_options.as_slice(),
         )?;
