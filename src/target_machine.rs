@@ -25,9 +25,6 @@ impl TargetMachine {
     /// The LLVM target triple.
     pub const VM_TARGET_TRIPLE: &'static str = "eravm-unknown-unknown";
 
-    /// The actual production VM name.
-    pub const VM_PRODUCTION_NAME: &'static str = "EraVM";
-
     ///
     /// A shortcut constructor.
     ///
@@ -41,15 +38,15 @@ impl TargetMachine {
         llvm_options: &[String],
     ) -> anyhow::Result<Self> {
         let mut arguments = Vec::with_capacity(1 + llvm_options.len());
-        arguments.push(target.name().to_owned());
+        arguments.push(target.to_string());
         arguments.extend_from_slice(llvm_options);
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
             inkwell::support::parse_command_line_options(arguments.as_slice(), "LLVM options");
         }
 
-        let target_machine = inkwell::targets::Target::from_name(target.name())
-            .ok_or_else(|| anyhow::anyhow!("LLVM target machine `{}` not found", target.name()))?
+        let target_machine = inkwell::targets::Target::from_name(target.to_string().as_str())
+            .ok_or_else(|| anyhow::anyhow!("LLVM target machine `{target}` not found"))?
             .create_target_machine(
                 &inkwell::targets::TargetTriple::create(target.triple()),
                 "",
@@ -59,10 +56,7 @@ impl TargetMachine {
                 inkwell::targets::CodeModel::Default,
             )
             .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "LLVM target machine `{}` initialization error",
-                    target.name(),
-                )
+                anyhow::anyhow!("LLVM target machine `{target}` initialization error")
             })?;
 
         Ok(Self {
