@@ -69,7 +69,7 @@ where
     D: Dependency,
 {
     let signature_hash =
-        era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
+        era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE2.as_bytes());
     let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let salt = salt.unwrap_or_else(|| context.field_const(0));
