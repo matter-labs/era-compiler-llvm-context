@@ -997,6 +997,13 @@ where
             arguments_wrapped.as_slice(),
             name,
         )?;
+        if self.optimizer.settings().level_middle_end == inkwell::OptimizationLevel::None {
+            call_site_value.add_attribute(
+                inkwell::attributes::AttributeLoc::Function,
+                self.llvm
+                    .create_enum_attribute(Attribute::NoInline as u32, 0),
+            );
+        }
         self.modify_call_site_value(arguments, call_site_value, function);
         Ok(call_site_value.try_as_basic_value().left())
     }
