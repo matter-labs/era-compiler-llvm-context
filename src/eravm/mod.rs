@@ -25,7 +25,7 @@ pub fn initialize_target() {
 }
 
 ///
-/// Translates textual assembly to the object code.
+/// Translates `assembly_text` to an object code.
 ///
 pub fn assemble(
     target_machine: &TargetMachine,
@@ -50,7 +50,25 @@ pub fn assemble(
 }
 
 ///
-/// Converts the bytecode buffer and auxiliary data into a build.
+/// Disassembles `bytecode`, returning textual representation.
+///
+pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::Result<String> {
+    let bytecode_buffer = inkwell::memory_buffer::MemoryBuffer::create_from_memory_range(
+        bytecode,
+        "bytecode_buffer",
+        false,
+    );
+
+    let disassembly_buffer = target_machine
+        .disassemble(&bytecode_buffer, 0, DISASSEMBLER_DEFAULT_MODE)
+        .map_err(|error| anyhow::anyhow!("disassembling: {error}"))?;
+
+    let disassembly_text = String::from_utf8_lossy(disassembly_buffer.as_slice());
+    Ok(disassembly_text.to_string())
+}
+
+///
+/// Converts `bytecode_buffer` and auxiliary data into a build.
 ///
 pub fn build(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,

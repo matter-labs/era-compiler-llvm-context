@@ -55,6 +55,7 @@ pub use self::eravm::context::solidity_data::SolidityData as EraVMContextSolidit
 pub use self::eravm::context::vyper_data::VyperData as EraVMContextVyperData;
 pub use self::eravm::context::yul_data::YulData as EraVMContextYulData;
 pub use self::eravm::context::Context as EraVMContext;
+pub use self::eravm::disassemble as eravm_disassemble;
 pub use self::eravm::evm::arithmetic as eravm_evm_arithmetic;
 pub use self::eravm::evm::bitwise as eravm_evm_bitwise;
 pub use self::eravm::evm::call as eravm_evm_call;
