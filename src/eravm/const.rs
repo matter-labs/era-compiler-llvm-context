@@ -63,6 +63,9 @@ pub const NO_SYSTEM_CALL_BIT: bool = false;
 /// The system call bit.
 pub const SYSTEM_CALL_BIT: bool = true;
 
+/// The default disassembler mode.
+pub const DISASSEMBLER_DEFAULT_MODE: u32 = 1;
+
 ///
 /// The deployer call header size that consists of:
 /// - selector (4 bytes)

@@ -85,6 +85,18 @@ impl TargetMachine {
     }
 
     ///
+    /// Disassembles bytecode into textual representation.
+    ///
+    pub fn disassemble(
+        &self,
+        memory_buffer: &inkwell::memory_buffer::MemoryBuffer,
+        pc: u32,
+        options: u32,
+    ) -> Result<inkwell::memory_buffer::MemoryBuffer, inkwell::support::LLVMString> {
+        memory_buffer.disassemble_eravm(&self.target_machine, pc, options)
+    }
+
+    ///
     /// Writes the LLVM module to a memory buffer.
     ///
     pub fn write_to_memory_buffer(
