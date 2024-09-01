@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use inkwell::types::BasicType;
+use inkwell::values::BasicMetadataValueEnum;
 use inkwell::values::BasicValue;
 
 use crate::context::attribute::Attribute;
@@ -160,6 +161,10 @@ where
     pub fn build(
         mut self,
         contract_path: &str,
+        linker_symbols: &[(
+            [u8; era_compiler_common::BYTE_LENGTH_FIELD],
+            [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS],
+        )],
         metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
         output_assembly: bool,
         is_fallback_to_size: bool,
@@ -237,7 +242,13 @@ where
                     Function::set_size_attributes(self.llvm, function);
                 }
                 return self
-                    .build(contract_path, metadata_hash, output_assembly, true)
+                    .build(
+                        contract_path,
+                        linker_symbols,
+                        metadata_hash,
+                        output_assembly,
+                        true,
+                    )
                     .map_err(|error| {
                         anyhow::anyhow!("falling back to optimizing for size: {error}")
                     });
@@ -252,7 +263,12 @@ where
         let assembly_text = assembly_buffer
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
-        crate::eravm::build(bytecode_buffer, metadata_hash, assembly_text)
+        crate::eravm::build(
+            bytecode_buffer,
+            linker_symbols,
+            metadata_hash,
+            assembly_text,
+        )
     }
 
     ///
@@ -403,14 +419,21 @@ where
     pub fn resolve_library(
         &self,
         identifier: &str,
-    ) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
+    ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
         self.dependency_manager
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                let address = manager.resolve_library(identifier)?;
-                let address = self.field_const_str_hex(address.as_str());
-                Ok(address)
+            .and_then(|manager| match manager.resolve_library(identifier) {
+                Some(address) => Ok(self
+                    .field_const_str_hex(address.as_str())
+                    .as_basic_value_enum()),
+                None => Ok(self
+                    .build_call_metadata(
+                        self.intrinsics.linker_symbol,
+                        &[self.llvm.metadata_string(identifier).into()],
+                        format!("linker_symbol_{identifier}").as_str(),
+                    )?
+                    .expect("Always exists")),
             })
     }
 
@@ -479,7 +502,12 @@ where
                 name,
             )?;
             self.modify_call_site_value(
-                arguments.as_slice(),
+                arguments
+                    .iter()
+                    .cloned()
+                    .map(BasicMetadataValueEnum::from)
+                    .collect::<Vec<_>>()
+                    .as_slice(),
                 call_site_value,
                 self.intrinsics.near_call,
             );
@@ -689,7 +717,7 @@ where
     ///
     pub fn modify_call_site_value(
         &self,
-        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
         call_site_value: inkwell::values::CallSiteValue<'ctx>,
         function: FunctionDeclaration<'ctx>,
     ) {
@@ -725,7 +753,12 @@ where
                         self.llvm.create_string_attribute("memory", "read"),
                     );
                 }
-                if Some(argument.get_type()) == function.r#type.get_return_type() {
+                if (*argument)
+                    .try_into()
+                    .map(|argument: inkwell::values::BasicValueEnum<'ctx>| argument.get_type())
+                    .ok()
+                    == function.r#type.get_return_type()
+                {
                     if function
                         .r#type
                         .get_return_type()
@@ -986,15 +1019,24 @@ where
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
     ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
-        let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
+        let arguments: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
             .iter()
             .copied()
             .map(inkwell::values::BasicMetadataValueEnum::from)
             .collect();
+        self.build_call_metadata(function, arguments.as_slice(), name)
+    }
+
+    fn build_call_metadata(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
+        name: &str,
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         let call_site_value = self.builder.build_indirect_call(
             function.r#type,
             function.value.as_global_value().as_pointer_value(),
-            arguments_wrapped.as_slice(),
+            arguments,
             name,
         )?;
         if self.optimizer.settings().level_middle_end == inkwell::OptimizationLevel::None {
@@ -1061,7 +1103,16 @@ where
             catch_block,
             name,
         )?;
-        self.modify_call_site_value(arguments, call_site_value, function);
+        self.modify_call_site_value(
+            arguments
+                .iter()
+                .cloned()
+                .map(BasicMetadataValueEnum::from)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            call_site_value,
+            function,
+        );
 
         self.set_basic_block(success_block);
         if let (Some(return_pointer), Some(mut return_value)) =

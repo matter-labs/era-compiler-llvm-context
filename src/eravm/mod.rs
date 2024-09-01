@@ -72,12 +72,16 @@ pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::R
 ///
 pub fn build(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
+    linker_symbols: &[(
+        [u8; era_compiler_common::BYTE_LENGTH_FIELD],
+        [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS],
+    )],
     metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     assembly_text: Option<String>,
 ) -> anyhow::Result<Build> {
     let metadata = metadata_hash.as_ref().map(|array| array.as_slice());
     let bytecode_buffer_linked = bytecode_buffer
-        .link_module_eravm(metadata)
+        .link_module_eravm(linker_symbols, metadata)
         .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
     let bytecode = bytecode_buffer_linked.as_slice().to_vec();
 

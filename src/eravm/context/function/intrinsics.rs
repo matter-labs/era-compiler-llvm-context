@@ -21,6 +21,8 @@ pub struct Intrinsics<'ctx> {
     pub memory_move: FunctionDeclaration<'ctx>,
     /// The memory copy from a generic page.
     pub memory_copy_from_generic: FunctionDeclaration<'ctx>,
+    /// The linker symbol.
+    pub linker_symbol: FunctionDeclaration<'ctx>,
 
     /// The event emitting.
     pub event: FunctionDeclaration<'ctx>,
@@ -65,6 +67,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_MEMORY_COPY_FROM_GENERIC: &'static str = "llvm.memcpy.p3.p1.i256";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_LINKER_SYMBOL: &'static str = "llvm.eravm.linkersymbol";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_EVENT: &'static str = "llvm.eravm.event";
@@ -161,6 +166,12 @@ impl<'ctx> Intrinsics<'ctx> {
                 ],
                 false,
             ),
+        );
+        let linker_symbol = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_LINKER_SYMBOL,
+            field_type.fn_type(&[llvm.metadata_type().into()], false),
         );
 
         let event = Self::declare(
@@ -308,6 +319,7 @@ impl<'ctx> Intrinsics<'ctx> {
             trap,
             memory_move,
             memory_copy_from_generic,
+            linker_symbol,
 
             event,
             to_l1,
