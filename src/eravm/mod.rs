@@ -75,9 +75,12 @@ pub fn build(
     metadata_hash: Option<era_compiler_common::Hash>,
     assembly_text: Option<String>,
 ) -> anyhow::Result<Build> {
-    let metadata_hash = metadata_hash.as_ref().map(|array| array.as_bytes());
+    let metadata_hash = metadata_hash.as_ref().map(|hash| match hash {
+        era_compiler_common::Hash::Keccak256 { bytes, .. } => bytes.to_vec(),
+        hash @ era_compiler_common::Hash::Ipfs { .. } => hash.as_cbor_bytes(),
+    });
     let bytecode_buffer_linked = bytecode_buffer
-        .link_module_eravm(metadata_hash)
+        .link_module_eravm(metadata_hash.as_deref())
         .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
     let bytecode = bytecode_buffer_linked.as_slice().to_vec();
 
@@ -91,12 +94,7 @@ pub fn build(
     >(bytecode_words.as_slice())
     .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
 
-    let build = Build::new(
-        bytecode,
-        bytecode_hash,
-        metadata_hash.map(|metadata_hash| metadata_hash.to_vec()),
-        assembly_text,
-    );
+    let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);
     Ok(build)
 }
 
