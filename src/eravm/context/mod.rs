@@ -160,7 +160,7 @@ where
     pub fn build(
         mut self,
         contract_path: &str,
-        metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+        metadata_hash: Option<era_compiler_common::Hash>,
         output_assembly: bool,
         is_fallback_to_size: bool,
     ) -> anyhow::Result<Build> {
@@ -224,7 +224,7 @@ where
 
         let metadata_size = metadata_hash
             .as_ref()
-            .map(|array| array.len())
+            .map(|array| array.as_bytes().len())
             .unwrap_or_default();
 
         if bytecode_buffer.exceeds_size_limit_eravm(metadata_size) {
