@@ -127,7 +127,7 @@ where
     pub fn build(
         self,
         contract_path: &str,
-        metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+        metadata_hash: Option<era_compiler_common::Hash>,
     ) -> anyhow::Result<Build> {
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EVM,
@@ -175,7 +175,10 @@ where
                 anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type,)
             })?;
 
-        Ok(Build::new(buffer.as_slice().to_vec(), metadata_hash))
+        Ok(Build::new(
+            buffer.as_slice().to_vec(),
+            metadata_hash.map(|metadata_hash| metadata_hash.as_bytes().to_vec()),
+        ))
     }
 
     ///
