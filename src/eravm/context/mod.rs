@@ -430,7 +430,10 @@ where
                 None => Ok(self
                     .build_call_metadata(
                         self.intrinsics.linker_symbol,
-                        &[self.llvm.metadata_string(identifier).into()],
+                        &[self
+                            .llvm
+                            .metadata_node(&[self.llvm.metadata_string(identifier).into()])
+                            .into()],
                         format!("linker_symbol_{identifier}").as_str(),
                     )?
                     .expect("Always exists")),
