@@ -15,6 +15,7 @@ pub mod yul_data;
 mod tests;
 
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -161,10 +162,7 @@ where
     pub fn build(
         mut self,
         contract_path: &str,
-        linker_symbols: &[(
-            [u8; era_compiler_common::BYTE_LENGTH_FIELD],
-            [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS],
-        )],
+        linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
         metadata_hash: Option<era_compiler_common::Hash>,
         output_assembly: bool,
         is_fallback_to_size: bool,

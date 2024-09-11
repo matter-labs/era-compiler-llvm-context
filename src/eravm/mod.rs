@@ -10,6 +10,8 @@ pub mod utils;
 
 pub use self::r#const::*;
 
+use std::collections::BTreeMap;
+
 use crate::debug_config::DebugConfig;
 use crate::dependency::Dependency;
 use crate::eravm::context::build::Build;
@@ -72,10 +74,7 @@ pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::R
 ///
 pub fn link(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
-    linker_symbols: &[(
-        [u8; era_compiler_common::BYTE_LENGTH_FIELD],
-        [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS],
-    )],
+    linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
 ) -> anyhow::Result<(
     inkwell::memory_buffer::MemoryBuffer,
     Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
@@ -107,10 +106,7 @@ pub fn link(
 ///
 pub fn build(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
-    linker_symbols: &[(
-        [u8; era_compiler_common::BYTE_LENGTH_FIELD],
-        [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS],
-    )],
+    linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
     metadata_hash: Option<era_compiler_common::Hash>,
     assembly_text: Option<String>,
 ) -> anyhow::Result<Build> {
