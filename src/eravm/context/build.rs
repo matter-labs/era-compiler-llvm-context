@@ -14,8 +14,8 @@ use serde::Serialize;
 pub struct Build {
     /// The bytecode.
     pub bytecode: Vec<u8>,
-    /// The bytecode hash.
-    pub bytecode_hash: [u8; era_compiler_common::BYTE_LENGTH_FIELD],
+    /// The bytecode hash. Only available after linking.
+    pub bytecode_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     /// The project metadata hash.
     pub metadata_hash: Option<Vec<u8>>,
     /// The hash-to-full-path mapping of the contract factory dependencies.
@@ -30,7 +30,7 @@ impl Build {
     ///
     pub fn new(
         bytecode: Vec<u8>,
-        bytecode_hash: [u8; era_compiler_common::BYTE_LENGTH_FIELD],
+        bytecode_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
         metadata_hash: Option<Vec<u8>>,
         assembly: Option<String>,
     ) -> Self {

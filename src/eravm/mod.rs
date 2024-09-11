@@ -76,11 +76,30 @@ pub fn link(
         [u8; era_compiler_common::BYTE_LENGTH_FIELD],
         [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS],
     )],
-) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
+) -> anyhow::Result<(
+    inkwell::memory_buffer::MemoryBuffer,
+    Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+)> {
     let bytecode_buffer_linked = bytecode_buffer
         .link_module_eravm(linker_symbols)
         .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
-    Ok(bytecode_buffer_linked)
+    let bytecode_hash = if !bytecode_buffer_linked.is_elf() {
+        let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> =
+            bytecode_buffer_linked
+                .as_slice()
+                .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
+                .map(|word| word.try_into().expect("Always valid"))
+                .collect();
+        let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+            { era_compiler_common::BYTE_LENGTH_X64 },
+            zkevm_opcode_defs::decoding::EncodingModeProduction,
+        >(bytecode_words.as_slice())
+        .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
+        Some(bytecode_hash)
+    } else {
+        None
+    };
+    Ok((bytecode_buffer_linked, bytecode_hash))
 }
 
 ///
@@ -105,18 +124,9 @@ pub fn build(
             .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))?,
         None => bytecode_buffer,
     };
-    let bytecode_buffer_linked = self::link(bytecode_buffer_with_metadata, linker_symbols)?;
+    let (bytecode_buffer_linked, bytecode_hash) =
+        self::link(bytecode_buffer_with_metadata, linker_symbols)?;
     let bytecode = bytecode_buffer_linked.as_slice().to_vec();
-
-    let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode
-        .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
-        .map(|word| word.try_into().expect("Always valid"))
-        .collect();
-    let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-        { era_compiler_common::BYTE_LENGTH_X64 },
-        zkevm_opcode_defs::decoding::EncodingModeProduction,
-    >(bytecode_words.as_slice())
-    .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
 
     let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);
     Ok(build)
