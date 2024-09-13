@@ -72,6 +72,10 @@ pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::R
 ///
 /// Links `bytecode_buffer`.
 ///
+/// `linker_symbols` is always empty at compile time, as all references are resolved
+/// at the time of LLVM IR emission.
+/// Thus, it is only used at linkage (post-compile-time or pre-deploy) time.
+///
 pub fn link(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
     linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
@@ -112,7 +116,6 @@ pub fn link(
 ///
 pub fn build(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
-    linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
     metadata_hash: Option<era_compiler_common::Hash>,
     assembly_text: Option<String>,
 ) -> anyhow::Result<Build> {
@@ -127,7 +130,7 @@ pub fn build(
         None => bytecode_buffer,
     };
     let (bytecode_buffer_linked, bytecode_hash) =
-        self::link(bytecode_buffer_with_metadata, linker_symbols)?;
+        self::link(bytecode_buffer_with_metadata, &BTreeMap::new())?;
     let bytecode = bytecode_buffer_linked.as_slice().to_vec();
 
     let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);

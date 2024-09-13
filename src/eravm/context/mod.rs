@@ -15,7 +15,6 @@ pub mod yul_data;
 mod tests;
 
 use std::cell::RefCell;
-use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -162,7 +161,6 @@ where
     pub fn build(
         mut self,
         contract_path: &str,
-        linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
         metadata_hash: Option<era_compiler_common::Hash>,
         output_assembly: bool,
         is_fallback_to_size: bool,
@@ -240,13 +238,7 @@ where
                     Function::set_size_attributes(self.llvm, function);
                 }
                 return self
-                    .build(
-                        contract_path,
-                        linker_symbols,
-                        metadata_hash,
-                        output_assembly,
-                        true,
-                    )
+                    .build(contract_path, metadata_hash, output_assembly, true)
                     .map_err(|error| {
                         anyhow::anyhow!("falling back to optimizing for size: {error}")
                     });
@@ -261,12 +253,7 @@ where
         let assembly_text = assembly_buffer
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
-        crate::eravm::build(
-            bytecode_buffer,
-            linker_symbols,
-            metadata_hash,
-            assembly_text,
-        )
+        crate::eravm::build(bytecode_buffer, metadata_hash, assembly_text)
     }
 
     ///
