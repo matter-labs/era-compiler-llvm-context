@@ -83,7 +83,7 @@ pub fn link(
     inkwell::memory_buffer::MemoryBuffer,
     Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
 )> {
-    let bytecode_buffer_linked = if bytecode_buffer.is_elf() {
+    let bytecode_buffer_linked = if bytecode_buffer.is_elf_eravm() {
         bytecode_buffer
             .link_module_eravm(linker_symbols)
             .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?
@@ -91,7 +91,7 @@ pub fn link(
         bytecode_buffer
     };
 
-    let bytecode_hash = if !bytecode_buffer_linked.is_elf() {
+    let bytecode_hash = if !bytecode_buffer_linked.is_elf_eravm() {
         let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> =
             bytecode_buffer_linked
                 .as_slice()
