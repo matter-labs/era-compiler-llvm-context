@@ -309,6 +309,16 @@ pub trait IContext<'ctx> {
     ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>;
 
     ///
+    /// Builds a call with metadata arguments.
+    ///
+    fn build_call_metadata(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
+        name: &str,
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>>;
+
+    ///
     /// Builds an invoke.
     ///
     /// Is defaulted to a call if there is no global exception handler.

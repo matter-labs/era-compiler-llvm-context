@@ -231,7 +231,9 @@ where
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
-                let address = manager.resolve_library(identifier)?;
+                let address = manager
+                    .resolve_library(identifier)
+                    .ok_or_else(|| anyhow::anyhow!("Could not resolve library `{identifier}"))?;
                 let address = self.field_const_str_hex(address.as_str());
                 Ok(address)
             })
@@ -273,7 +275,7 @@ where
     ///
     pub fn modify_call_site_value(
         &self,
-        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
         call_site_value: inkwell::values::CallSiteValue<'ctx>,
         function: FunctionDeclaration<'ctx>,
     ) {
@@ -297,7 +299,12 @@ where
                     inkwell::attributes::AttributeLoc::Param(index as u32),
                     self.llvm.create_enum_attribute(Attribute::NoFree as u32, 0),
                 );
-                if Some(argument.get_type()) == function.r#type.get_return_type() {
+                if (*argument)
+                    .try_into()
+                    .map(|argument: inkwell::values::BasicValueEnum<'ctx>| argument.get_type())
+                    .ok()
+                    == function.r#type.get_return_type()
+                {
                     if function
                         .r#type
                         .get_return_type()
@@ -517,15 +524,24 @@ where
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
     ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
-        let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
+        let arguments: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
             .iter()
             .copied()
             .map(inkwell::values::BasicMetadataValueEnum::from)
             .collect();
+        self.build_call_metadata(function, arguments.as_slice(), name)
+    }
+
+    fn build_call_metadata(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
+        name: &str,
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         let call_site_value = self.builder.build_indirect_call(
             function.r#type,
             function.value.as_global_value().as_pointer_value(),
-            arguments_wrapped.as_slice(),
+            arguments,
             name,
         )?;
         self.modify_call_site_value(arguments, call_site_value, function);

@@ -10,6 +10,8 @@ pub mod utils;
 
 pub use self::r#const::*;
 
+use std::collections::BTreeMap;
+
 use crate::debug_config::DebugConfig;
 use crate::dependency::Dependency;
 use crate::eravm::context::build::Build;
@@ -68,6 +70,48 @@ pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::R
 }
 
 ///
+/// Links `bytecode_buffer`.
+///
+/// `linker_symbols` is always empty at compile time, as all references are resolved
+/// at the time of LLVM IR emission.
+/// Thus, it is only used at linkage (post-compile-time or pre-deploy) time.
+///
+pub fn link(
+    bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
+    linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
+) -> anyhow::Result<(
+    inkwell::memory_buffer::MemoryBuffer,
+    Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+)> {
+    let bytecode_buffer_linked = if bytecode_buffer.is_elf_eravm() {
+        bytecode_buffer
+            .link_module_eravm(linker_symbols)
+            .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?
+    } else {
+        bytecode_buffer
+    };
+
+    let bytecode_hash = if !bytecode_buffer_linked.is_elf_eravm() {
+        let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> =
+            bytecode_buffer_linked
+                .as_slice()
+                .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
+                .map(|word| word.try_into().expect("Always valid"))
+                .collect();
+        let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+            { era_compiler_common::BYTE_LENGTH_X64 },
+            zkevm_opcode_defs::decoding::EncodingModeProduction,
+        >(bytecode_words.as_slice())
+        .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
+        Some(bytecode_hash)
+    } else {
+        None
+    };
+
+    Ok((bytecode_buffer_linked, bytecode_hash))
+}
+
+///
 /// Converts `bytecode_buffer` and auxiliary data into a build.
 ///
 pub fn build(
@@ -79,20 +123,15 @@ pub fn build(
         era_compiler_common::Hash::Keccak256 { bytes, .. } => bytes.to_vec(),
         hash @ era_compiler_common::Hash::Ipfs { .. } => hash.as_cbor_bytes(),
     });
-    let bytecode_buffer_linked = bytecode_buffer
-        .link_module_eravm(metadata_hash.as_deref())
-        .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?;
+    let bytecode_buffer_with_metadata = match metadata_hash {
+        Some(ref metadata) => bytecode_buffer
+            .append_metadata_eravm(metadata.as_slice())
+            .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))?,
+        None => bytecode_buffer,
+    };
+    let (bytecode_buffer_linked, bytecode_hash) =
+        self::link(bytecode_buffer_with_metadata, &BTreeMap::new())?;
     let bytecode = bytecode_buffer_linked.as_slice().to_vec();
-
-    let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode
-        .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
-        .map(|word| word.try_into().expect("Always valid"))
-        .collect();
-    let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-        { era_compiler_common::BYTE_LENGTH_X64 },
-        zkevm_opcode_defs::decoding::EncodingModeProduction,
-    >(bytecode_words.as_slice())
-    .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
 
     let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);
     Ok(build)

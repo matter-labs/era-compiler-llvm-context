@@ -77,6 +77,7 @@ pub use self::eravm::extensions::abi as eravm_abi;
 pub use self::eravm::extensions::call as eravm_call;
 pub use self::eravm::extensions::general as eravm_general;
 pub use self::eravm::extensions::math as eravm_math;
+pub use self::eravm::link as eravm_link;
 pub use self::eravm::r#const as eravm_const;
 pub use self::eravm::utils as eravm_utils;
 pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;

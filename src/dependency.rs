@@ -19,7 +19,7 @@ pub trait Dependency {
     ///
     /// Resolves a library address.
     ///
-    fn resolve_library(&self, path: &str) -> anyhow::Result<String>;
+    fn resolve_library(&self, path: &str) -> Option<String>;
 }
 
 ///
@@ -43,7 +43,7 @@ impl Dependency for DummyDependency {
     ///
     /// Resolves a library address.
     ///
-    fn resolve_library(&self, _path: &str) -> anyhow::Result<String> {
-        Ok(String::new())
+    fn resolve_library(&self, _path: &str) -> Option<String> {
+        None
     }
 }
