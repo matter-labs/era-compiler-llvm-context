@@ -6,8 +6,7 @@ pub mod r#const;
 pub mod context;
 pub mod instructions;
 
-use crate::debug_config::DebugConfig;
-use crate::optimizer::settings::Settings as OptimizerSettings;
+use crate::dependency::Dependency;
 
 use self::context::Context;
 
@@ -21,10 +20,9 @@ pub fn initialize_target() {
 ///
 /// Implemented by items which are translated into LLVM IR.
 ///
-#[allow(clippy::upper_case_acronyms)]
 pub trait WriteLLVM<D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     ///
     /// Declares the entity in the LLVM IR.
@@ -48,67 +46,9 @@ pub struct DummyLLVMWritable {}
 
 impl<D> WriteLLVM<D> for DummyLLVMWritable
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     fn into_llvm(self, _context: &mut Context<D>) -> anyhow::Result<()> {
         Ok(())
-    }
-}
-
-///
-/// Implemented by items managing project dependencies.
-///
-pub trait Dependency {
-    ///
-    /// Compiles a project dependency.
-    ///
-    fn compile(
-        dependency: Self,
-        path: &str,
-        optimizer_settings: OptimizerSettings,
-        include_metadata_hash: bool,
-        debug_config: Option<DebugConfig>,
-    ) -> anyhow::Result<String>;
-
-    ///
-    /// Resolves a full contract path.
-    ///
-    fn resolve_path(&self, identifier: &str) -> anyhow::Result<String>;
-
-    ///
-    /// Resolves a library address.
-    ///
-    fn resolve_library(&self, path: &str) -> anyhow::Result<String>;
-}
-
-///
-/// The dummy dependency entity.
-///
-#[derive(Debug, Default, Clone)]
-pub struct DummyDependency {}
-
-impl Dependency for DummyDependency {
-    fn compile(
-        _dependency: Self,
-        _path: &str,
-        _optimizer_settings: OptimizerSettings,
-        _include_metadata_hash: bool,
-        _debug_config: Option<DebugConfig>,
-    ) -> anyhow::Result<String> {
-        Ok(String::new())
-    }
-
-    ///
-    /// Resolves a full contract path.
-    ///
-    fn resolve_path(&self, _identifier: &str) -> anyhow::Result<String> {
-        Ok(String::new())
-    }
-
-    ///
-    /// Resolves a library address.
-    ///
-    fn resolve_library(&self, _path: &str) -> anyhow::Result<String> {
-        Ok(String::new())
     }
 }

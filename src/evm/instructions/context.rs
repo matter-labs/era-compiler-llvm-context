@@ -15,7 +15,7 @@ pub fn gas_limit<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().gaslimit, &[], "gaslimit")?
@@ -29,7 +29,7 @@ pub fn gas_price<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().gasprice, &[], "gasprice")?
@@ -43,7 +43,7 @@ pub fn origin<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().origin, &[], "origin")?
@@ -57,7 +57,7 @@ pub fn chain_id<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().chainid, &[], "chainid")?
@@ -71,7 +71,7 @@ pub fn block_number<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().number, &[], "number")?
@@ -85,7 +85,7 @@ pub fn block_timestamp<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().timestamp, &[], "timestamp")?
@@ -100,7 +100,7 @@ pub fn block_hash<'ctx, D>(
     index: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(
@@ -118,7 +118,7 @@ pub fn difficulty<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().difficulty, &[], "difficulty")?
@@ -132,7 +132,7 @@ pub fn coinbase<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().coinbase, &[], "coinbase")?
@@ -146,7 +146,7 @@ pub fn basefee<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().basefee, &[], "basefee")?
@@ -160,7 +160,7 @@ pub fn msize<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     Ok(context
         .build_call(context.intrinsics().msize, &[], "msize")?

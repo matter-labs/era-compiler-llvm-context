@@ -97,7 +97,7 @@ impl<'ctx> DebugInfo<'ctx> {
                 inkwell::debug_info::DIFlags::zero(),
             )
             .map(|basic_type| basic_type.as_type())
-            .map_err(|error| anyhow::anyhow!("Debug info error: {}", error))
+            .map_err(|error| anyhow::anyhow!("debug info: {error}"))
     }
 
     ///

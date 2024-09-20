@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use inkwell::types::BasicType;
+use inkwell::values::BasicMetadataValueEnum;
 use inkwell::values::BasicValue;
 
 use crate::context::attribute::Attribute;
@@ -33,7 +34,6 @@ use crate::eravm::DebugConfig;
 use crate::eravm::Dependency;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
-use crate::target_machine::target::Target;
 use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
@@ -55,7 +55,7 @@ use self::yul_data::YulData;
 ///
 pub struct Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The inner LLVM context.
     llvm: &'ctx inkwell::context::Context,
@@ -65,6 +65,8 @@ where
     optimizer: Optimizer,
     /// The current module.
     module: inkwell::module::Module<'ctx>,
+    /// The extra LLVM options.
+    llvm_options: Vec<String>,
     /// The current contract code type, which can be deploy or runtime.
     code_type: Option<CodeType>,
     /// The global variables.
@@ -84,8 +86,6 @@ where
     /// The manager is used to get information about contracts and their dependencies during
     /// the multi-threaded compilation process.
     dependency_manager: Option<D>,
-    /// Whether to append the metadata hash at the end of bytecode.
-    include_metadata_hash: bool,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
@@ -103,7 +103,7 @@ where
 
 impl<'ctx, D> Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
@@ -120,9 +120,9 @@ where
     pub fn new(
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
+        llvm_options: Vec<String>,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
-        include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -133,6 +133,7 @@ where
         Self {
             llvm,
             builder,
+            llvm_options,
             optimizer,
             module,
             code_type: None,
@@ -144,7 +145,6 @@ where
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
             dependency_manager,
-            include_metadata_hash,
             debug_info,
             debug_config,
 
@@ -161,75 +161,99 @@ where
     pub fn build(
         mut self,
         contract_path: &str,
-        metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+        metadata_hash: Option<era_compiler_common::Hash>,
+        output_assembly: bool,
+        is_fallback_to_size: bool,
     ) -> anyhow::Result<Build> {
         let module_clone = self.module.clone();
 
-        let target_machine = TargetMachine::new(Target::EraVM, self.optimizer.settings())?;
+        let target_machine = TargetMachine::new(
+            era_compiler_common::Target::EraVM,
+            self.optimizer.settings(),
+            self.llvm_options.as_slice(),
+        )?;
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_unoptimized(contract_path, self.code_type, self.module())?;
-        }
-        self.verify().map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` unoptimized LLVM IR verification error: {}",
+            debug_config.dump_llvm_ir_unoptimized(
                 contract_path,
-                error
-            )
-        })?;
+                self.code_type,
+                self.module(),
+                is_fallback_to_size,
+            )?;
+        }
+        self.verify()
+            .map_err(|error| anyhow::anyhow!("unoptimized LLVM IR verification: {error}",))?;
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` optimizing error: {}",
-                    contract_path,
-                    error
-                )
-            })?;
+            .map_err(|error| anyhow::anyhow!("optimizing: {error}",))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(contract_path, self.code_type, self.module())?;
-        }
-        self.verify().map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` optimized LLVM IR verification error: {}",
+            debug_config.dump_llvm_ir_optimized(
                 contract_path,
-                error
-            )
-        })?;
+                self.code_type,
+                self.module(),
+                is_fallback_to_size,
+            )?;
+        }
+        self.verify()
+            .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;
 
-        let buffer = target_machine
-            .write_to_memory_buffer(self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` assembly generating error: {}",
-                    contract_path,
-                    error
-                )
-            })?;
+        let assembly_buffer = if output_assembly || self.debug_config.is_some() {
+            let assembly_buffer = target_machine
+                .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
+                .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
 
-        let assembly_text = String::from_utf8_lossy(buffer.as_slice()).to_string();
+            if let Some(ref debug_config) = self.debug_config {
+                let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
+                debug_config.dump_assembly(contract_path, None, assembly_text.as_ref())?;
+            }
 
-        let build = match crate::eravm::build_assembly_text(
-            contract_path,
-            assembly_text.as_str(),
-            metadata_hash,
-            self.debug_config(),
-        ) {
-            Ok(build) => build,
-            Err(_error)
-                if self.optimizer.settings() != &OptimizerSettings::size()
-                    && self.optimizer.settings().is_fallback_to_size_enabled() =>
+            Some(assembly_buffer)
+        } else {
+            None
+        };
+
+        let bytecode_buffer = match assembly_buffer {
+            Some(ref assembly_buffer) => target_machine
+                .assemble(assembly_buffer)
+                .map_err(|error| anyhow::anyhow!("assembling: {error}")),
+            None => target_machine
+                .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
+                .map_err(|error| anyhow::anyhow!("bytecode emitting: {error}")),
+        }?;
+
+        let metadata_size = metadata_hash
+            .as_ref()
+            .map(|array| array.as_bytes().len())
+            .unwrap_or_default();
+
+        if bytecode_buffer.exceeds_size_limit_eravm(metadata_size) {
+            if self.optimizer.settings() != &OptimizerSettings::size()
+                && self.optimizer.settings().is_fallback_to_size_enabled()
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
                 self.module = module_clone;
-                self.build(contract_path, metadata_hash)?
+                for function in self.module.get_functions() {
+                    Function::set_size_attributes(self.llvm, function);
+                }
+                return self
+                    .build(contract_path, metadata_hash, output_assembly, true)
+                    .map_err(|error| {
+                        anyhow::anyhow!("falling back to optimizing for size: {error}")
+                    });
+            } else {
+                anyhow::bail!(
+                    "bytecode size exceeds the limit of {} instructions",
+                    1 << (era_compiler_common::BIT_LENGTH_BYTE * 2)
+                );
             }
-            Err(error) => Err(error)?,
-        };
+        }
 
-        Ok(build)
+        let assembly_text = assembly_buffer
+            .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
+
+        crate::eravm::build(bytecode_buffer, metadata_hash, assembly_text)
     }
 
     ///
@@ -247,7 +271,7 @@ where
     pub fn get_global(&self, name: &str) -> anyhow::Result<Global<'ctx>> {
         match self.globals.get(name) {
             Some(global) => Ok(*global),
-            None => anyhow::bail!("Global variable {} is not declared", name),
+            None => anyhow::bail!("global variable `{name}` is not declared"),
         }
     }
 
@@ -349,28 +373,16 @@ where
     }
 
     ///
-    /// Compiles a contract dependency, if the dependency manager is set.
+    /// Get the contract dependency data.
     ///
-    pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
+    pub fn get_dependency_data(&mut self, identifier: &str) -> anyhow::Result<String> {
         if let Some(vyper_data) = self.vyper_data.as_mut() {
             vyper_data.set_is_minimal_proxy_used();
         }
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                Dependency::compile(
-                    manager,
-                    name,
-                    self.optimizer.settings().to_owned(),
-                    self.yul_data
-                        .as_ref()
-                        .map(|data| data.is_system_mode())
-                        .unwrap_or_default(),
-                    self.include_metadata_hash,
-                    self.debug_config.clone(),
-                )
-            })
+            .and_then(|manager| manager.get(identifier))
     }
 
     ///
@@ -378,7 +390,7 @@ where
     ///
     pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
                 let full_path = manager.resolve_path(identifier)?;
@@ -389,24 +401,28 @@ where
     ///
     /// Gets a deployed library address from the dependency manager.
     ///
-    pub fn resolve_library(&self, path: &str) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
+    pub fn resolve_library(
+        &self,
+        identifier: &str,
+    ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                let address = manager.resolve_library(path)?;
-                let address = self.field_const_str_hex(address.as_str());
-                Ok(address)
+            .and_then(|manager| match manager.resolve_library(identifier) {
+                Some(address) => Ok(self
+                    .field_const_str_hex(address.as_str())
+                    .as_basic_value_enum()),
+                None => Ok(self
+                    .build_call_metadata(
+                        self.intrinsics.linker_symbol,
+                        &[self
+                            .llvm
+                            .metadata_node(&[self.llvm.metadata_string(identifier).into()])
+                            .into()],
+                        format!("linker_symbol_{identifier}").as_str(),
+                    )?
+                    .expect("Always exists")),
             })
-    }
-
-    ///
-    /// Extracts the dependency manager.
-    ///
-    pub fn take_dependency_manager(&mut self) -> D {
-        self.dependency_manager
-            .take()
-            .expect("The dependency manager is unset")
     }
 
     ///
@@ -442,9 +458,9 @@ where
 
             self.set_basic_block(catch_block);
             let landing_pad_type = self.structure_type(&[
-                self.ptr_type(AddressSpace::Stack.into())
+                self.ptr_type(AddressSpace::Generic.into())
                     .as_basic_type_enum(),
-                self.integer_type(era_compiler_common::BIT_LENGTH_X32)
+                self.integer_type(era_compiler_common::BIT_LENGTH_BOOLEAN)
                     .as_basic_type_enum(),
             ]);
             self.builder.build_landing_pad(
@@ -474,7 +490,12 @@ where
                 name,
             )?;
             self.modify_call_site_value(
-                arguments.as_slice(),
+                arguments
+                    .iter()
+                    .cloned()
+                    .map(BasicMetadataValueEnum::from)
+                    .collect::<Vec<_>>()
+                    .as_slice(),
                 call_site_value,
                 self.intrinsics.near_call,
             );
@@ -666,7 +687,7 @@ where
                 .void_type()
                 .fn_type(argument_types.as_slice(), false),
             1 => self.field_type().fn_type(argument_types.as_slice(), false),
-            _size if is_near_call_abi && self.is_system_mode() => {
+            _size if is_near_call_abi && self.are_eravm_extensions_enabled() => {
                 let return_type = self.ptr_type(AddressSpace::Stack.into());
                 argument_types.insert(0, return_type.as_basic_type_enum().into());
                 return_type.fn_type(argument_types.as_slice(), false)
@@ -684,7 +705,7 @@ where
     ///
     pub fn modify_call_site_value(
         &self,
-        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
         call_site_value: inkwell::values::CallSiteValue<'ctx>,
         function: FunctionDeclaration<'ctx>,
     ) {
@@ -720,7 +741,12 @@ where
                         self.llvm.create_string_attribute("memory", "read"),
                     );
                 }
-                if Some(argument.get_type()) == function.r#type.get_return_type() {
+                if (*argument)
+                    .try_into()
+                    .map(|argument: inkwell::values::BasicValueEnum<'ctx>| argument.get_type())
+                    .ok()
+                    == function.r#type.get_return_type()
+                {
                     if function
                         .r#type
                         .get_return_type()
@@ -795,33 +821,33 @@ where
     ///
     /// Returns the current number of immutables values in the contract.
     ///
-    /// If the size is set manually, then it is returned. Otherwise, the number of elements in
-    /// the identifier-to-offset mapping tree is returned.
+    /// # Panics
+    /// If the value is not set is any of the data sources.
     ///
-    pub fn immutables_size(&self) -> anyhow::Result<usize> {
+    pub fn immutables_size(&self) -> usize {
         if let Some(solidity) = self.solidity_data.as_ref() {
-            Ok(solidity.immutables_size())
+            solidity.immutables_size()
         } else if let Some(vyper) = self.vyper_data.as_ref() {
-            Ok(vyper.immutables_size())
+            vyper.immutables_size()
         } else {
-            anyhow::bail!("The immutable size data is not available");
+            panic!("The immutable size data is not available");
         }
     }
 
     ///
-    /// Whether the system mode is enabled.
+    /// Whether the EraVM extensions are enabled.
     ///
-    pub fn is_system_mode(&self) -> bool {
+    pub fn are_eravm_extensions_enabled(&self) -> bool {
         self.yul_data
             .as_ref()
-            .map(|data| data.is_system_mode())
+            .map(|data| data.are_eravm_extensions_enabled())
             .unwrap_or_default()
     }
 }
 
 impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     type Function = Function<'ctx>;
 
@@ -903,7 +929,7 @@ where
         return_values_length: usize,
         mut linkage: Option<inkwell::module::Linkage>,
     ) -> anyhow::Result<Rc<RefCell<Function<'ctx>>>> {
-        if Function::is_near_call_abi(name) && self.is_system_mode() {
+        if Function::is_near_call_abi(name) && self.are_eravm_extensions_enabled() {
             linkage = Some(inkwell::module::Linkage::External);
         }
 
@@ -946,9 +972,9 @@ where
             entry_block,
             return_block,
         );
-        Function::set_default_attributes(self.llvm, function.declaration(), &self.optimizer);
-        if Function::is_near_call_abi(function.name()) && self.is_system_mode() {
-            Function::set_exception_handler_attributes(self.llvm, function.declaration());
+        Function::set_default_attributes(self.llvm, function.declaration().value, &self.optimizer);
+        if Function::is_near_call_abi(function.name()) && self.are_eravm_extensions_enabled() {
+            Function::set_exception_handler_attributes(self.llvm, function.declaration().value);
         }
 
         let function = Rc::new(RefCell::new(function));
@@ -981,17 +1007,33 @@ where
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
     ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
-        let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
+        let arguments: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
             .iter()
             .copied()
             .map(inkwell::values::BasicMetadataValueEnum::from)
             .collect();
+        self.build_call_metadata(function, arguments.as_slice(), name)
+    }
+
+    fn build_call_metadata(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
+        name: &str,
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         let call_site_value = self.builder.build_indirect_call(
             function.r#type,
             function.value.as_global_value().as_pointer_value(),
-            arguments_wrapped.as_slice(),
+            arguments,
             name,
         )?;
+        if self.optimizer.settings().level_middle_end == inkwell::OptimizationLevel::None {
+            call_site_value.add_attribute(
+                inkwell::attributes::AttributeLoc::Function,
+                self.llvm
+                    .create_enum_attribute(Attribute::NoInline as u32, 0),
+            );
+        }
         self.modify_call_site_value(arguments, call_site_value, function);
         Ok(call_site_value.try_as_basic_value().left())
     }
@@ -1023,9 +1065,9 @@ where
 
         self.set_basic_block(catch_block);
         let landing_pad_type = self.structure_type(&[
-            self.ptr_type(AddressSpace::Stack.into())
+            self.ptr_type(AddressSpace::Generic.into())
                 .as_basic_type_enum(),
-            self.integer_type(era_compiler_common::BIT_LENGTH_X32)
+            self.integer_type(era_compiler_common::BIT_LENGTH_BOOLEAN)
                 .as_basic_type_enum(),
         ]);
         self.builder.build_landing_pad(
@@ -1049,7 +1091,16 @@ where
             catch_block,
             name,
         )?;
-        self.modify_call_site_value(arguments, call_site_value, function);
+        self.modify_call_site_value(
+            arguments
+                .iter()
+                .cloned()
+                .map(BasicMetadataValueEnum::from)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            call_site_value,
+            function,
+        );
 
         self.set_basic_block(success_block);
         if let (Some(return_pointer), Some(mut return_value)) =

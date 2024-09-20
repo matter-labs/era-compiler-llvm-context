@@ -17,7 +17,7 @@ pub fn multiplication_512<'ctx, D>(
     operand_2: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let operand_1_extended = context.builder().build_int_z_extend_or_bit_cast(
         operand_1,

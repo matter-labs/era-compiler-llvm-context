@@ -6,9 +6,9 @@ use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
 use crate::context::IContext;
+use crate::dependency::Dependency;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::EraVMDependency;
 
 ///
 /// The LLVM global value.
@@ -33,7 +33,7 @@ impl<'ctx> Global<'ctx> {
         name: &str,
     ) -> anyhow::Result<Self>
     where
-        D: EraVMDependency + Clone,
+        D: Dependency,
         T: BasicType<'ctx>,
         V: BasicValue<'ctx>,
     {

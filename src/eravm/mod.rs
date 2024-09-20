@@ -6,15 +6,17 @@ pub mod r#const;
 pub mod context;
 pub mod evm;
 pub mod extensions;
-pub mod metadata_hash;
 pub mod utils;
 
 pub use self::r#const::*;
 
-use crate::debug_config::DebugConfig;
-use crate::optimizer::settings::Settings as OptimizerSettings;
+use std::collections::BTreeMap;
 
-use self::context::build::Build;
+use crate::debug_config::DebugConfig;
+use crate::dependency::Dependency;
+use crate::eravm::context::build::Build;
+use crate::target_machine::TargetMachine;
+
 use self::context::Context;
 
 ///
@@ -25,77 +27,122 @@ pub fn initialize_target() {
 }
 
 ///
-/// Builds EraVM assembly text.
+/// Translates `assembly_text` to an object code.
 ///
-pub fn build_assembly_text(
+pub fn assemble(
+    target_machine: &TargetMachine,
     contract_path: &str,
     assembly_text: &str,
-    metadata_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     debug_config: Option<&DebugConfig>,
-) -> anyhow::Result<Build> {
+) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
     if let Some(debug_config) = debug_config {
         debug_config.dump_assembly(contract_path, None, assembly_text)?;
     }
 
-    let mut assembly =
-        zkevm_assembly::Assembly::from_string(assembly_text.to_owned(), metadata_hash).map_err(
-            |error| {
-                anyhow::anyhow!(
-                    "The contract `{}` assembly parsing error: {}",
-                    contract_path,
-                    error,
-                )
-            },
-        )?;
+    let assembly_buffer = inkwell::memory_buffer::MemoryBuffer::create_from_memory_range(
+        assembly_text.as_bytes(),
+        "assembly_buffer",
+        false,
+    );
 
-    let bytecode_words = match zkevm_assembly::get_encoding_mode() {
-        zkevm_assembly::RunningVmEncodingMode::Production => { assembly.compile_to_bytecode_for_mode::<8, zkevm_opcode_defs::decoding::EncodingModeProduction>() },
-        zkevm_assembly::RunningVmEncodingMode::Testing => { assembly.compile_to_bytecode_for_mode::<16, zkevm_opcode_defs::decoding::EncodingModeTesting>() },
-    }
-        .map_err(|error| {
-            anyhow::anyhow!(
-                "The contract `{}` assembly-to-bytecode conversion error: {}",
-                contract_path,
-                error,
-            )
-        })?;
+    let bytecode_buffer = target_machine
+        .assemble(&assembly_buffer)
+        .map_err(|error| anyhow::anyhow!("assembling: {error}"))?;
+    Ok(bytecode_buffer)
+}
 
-    let bytecode_hash = match zkevm_assembly::get_encoding_mode() {
-        zkevm_assembly::RunningVmEncodingMode::Production => {
-            zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                8,
-                zkevm_opcode_defs::decoding::EncodingModeProduction,
-            >(bytecode_words.as_slice())
-        }
-        zkevm_assembly::RunningVmEncodingMode::Testing => {
-            zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-                16,
-                zkevm_opcode_defs::decoding::EncodingModeTesting,
-            >(bytecode_words.as_slice())
-        }
-    }
-    .map(hex::encode)
-    .map_err(|_error| {
-        anyhow::anyhow!("The contract `{}` bytecode hashing error", contract_path,)
-    })?;
-
-    let bytecode = bytecode_words.into_iter().flatten().collect();
-
-    Ok(Build::new(
-        assembly_text.to_owned(),
-        metadata_hash,
+///
+/// Disassembles `bytecode`, returning textual representation.
+///
+pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::Result<String> {
+    let bytecode_buffer = inkwell::memory_buffer::MemoryBuffer::create_from_memory_range(
         bytecode,
-        bytecode_hash,
-    ))
+        "bytecode_buffer",
+        false,
+    );
+
+    let disassembly_buffer = target_machine
+        .disassemble(&bytecode_buffer, 0, DISASSEMBLER_DEFAULT_MODE)
+        .map_err(|error| anyhow::anyhow!("disassembling: {error}"))?;
+
+    let disassembly_text = String::from_utf8_lossy(disassembly_buffer.as_slice());
+    Ok(disassembly_text.to_string())
+}
+
+///
+/// Links `bytecode_buffer`.
+///
+/// `linker_symbols` is always empty at compile time, as all references are resolved
+/// at the time of LLVM IR emission.
+/// Thus, it is only used at linkage (post-compile-time or pre-deploy) time.
+///
+pub fn link(
+    bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
+    linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
+) -> anyhow::Result<(
+    inkwell::memory_buffer::MemoryBuffer,
+    Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+)> {
+    let bytecode_buffer_linked = if bytecode_buffer.is_elf_eravm() {
+        bytecode_buffer
+            .link_module_eravm(linker_symbols)
+            .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?
+    } else {
+        bytecode_buffer
+    };
+
+    let bytecode_hash = if !bytecode_buffer_linked.is_elf_eravm() {
+        let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> =
+            bytecode_buffer_linked
+                .as_slice()
+                .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
+                .map(|word| word.try_into().expect("Always valid"))
+                .collect();
+        let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+            { era_compiler_common::BYTE_LENGTH_X64 },
+            zkevm_opcode_defs::decoding::EncodingModeProduction,
+        >(bytecode_words.as_slice())
+        .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
+        Some(bytecode_hash)
+    } else {
+        None
+    };
+
+    Ok((bytecode_buffer_linked, bytecode_hash))
+}
+
+///
+/// Converts `bytecode_buffer` and auxiliary data into a build.
+///
+pub fn build(
+    bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
+    metadata_hash: Option<era_compiler_common::Hash>,
+    assembly_text: Option<String>,
+) -> anyhow::Result<Build> {
+    let metadata_hash = metadata_hash.as_ref().map(|hash| match hash {
+        era_compiler_common::Hash::Keccak256 { bytes, .. } => bytes.to_vec(),
+        hash @ era_compiler_common::Hash::Ipfs { .. } => hash.as_cbor_bytes(),
+    });
+    let bytecode_buffer_with_metadata = match metadata_hash {
+        Some(ref metadata) => bytecode_buffer
+            .append_metadata_eravm(metadata.as_slice())
+            .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))?,
+        None => bytecode_buffer,
+    };
+    let (bytecode_buffer_linked, bytecode_hash) =
+        self::link(bytecode_buffer_with_metadata, &BTreeMap::new())?;
+    let bytecode = bytecode_buffer_linked.as_slice().to_vec();
+
+    let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);
+    Ok(build)
 }
 
 ///
 /// Implemented by items which are translated into LLVM IR.
 ///
-#[allow(clippy::upper_case_acronyms)]
 pub trait WriteLLVM<D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     ///
     /// Declares the entity in the LLVM IR.
@@ -119,69 +166,9 @@ pub struct DummyLLVMWritable {}
 
 impl<D> WriteLLVM<D> for DummyLLVMWritable
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     fn into_llvm(self, _context: &mut Context<D>) -> anyhow::Result<()> {
         Ok(())
-    }
-}
-
-///
-/// Implemented by items managing project dependencies.
-///
-pub trait Dependency {
-    ///
-    /// Compiles a project dependency.
-    ///
-    fn compile(
-        dependency: Self,
-        path: &str,
-        optimizer_settings: OptimizerSettings,
-        is_system_mode: bool,
-        include_metadata_hash: bool,
-        debug_config: Option<DebugConfig>,
-    ) -> anyhow::Result<String>;
-
-    ///
-    /// Resolves a full contract path.
-    ///
-    fn resolve_path(&self, identifier: &str) -> anyhow::Result<String>;
-
-    ///
-    /// Resolves a library address.
-    ///
-    fn resolve_library(&self, path: &str) -> anyhow::Result<String>;
-}
-
-///
-/// The dummy dependency entity.
-///
-#[derive(Debug, Default, Clone)]
-pub struct DummyDependency {}
-
-impl Dependency for DummyDependency {
-    fn compile(
-        _dependency: Self,
-        _path: &str,
-        _optimizer_settings: OptimizerSettings,
-        _is_system_mode: bool,
-        _include_metadata_hash: bool,
-        _debug_config: Option<DebugConfig>,
-    ) -> anyhow::Result<String> {
-        Ok(String::new())
-    }
-
-    ///
-    /// Resolves a full contract path.
-    ///
-    fn resolve_path(&self, _identifier: &str) -> anyhow::Result<String> {
-        Ok(String::new())
-    }
-
-    ///
-    /// Resolves a library address.
-    ///
-    fn resolve_library(&self, _path: &str) -> anyhow::Result<String> {
-        Ok(String::new())
     }
 }

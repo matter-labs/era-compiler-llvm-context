@@ -21,7 +21,7 @@ pub fn clamp<'ctx, D>(
     name: &str,
 ) -> anyhow::Result<inkwell::values::IntValue<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let in_bounds_block = context.append_basic_block(format!("{name}_is_bounds_block").as_str());
     let join_block = context.append_basic_block(format!("{name}_join_block").as_str());
@@ -51,7 +51,7 @@ where
 ///
 pub fn throw<D>(context: &Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_call(
         context.llvm_runtime().cxa_throw,
@@ -78,7 +78,7 @@ pub fn external_call_arguments<'ctx, D>(
     mimic: Option<inkwell::values::IntValue<'ctx>>,
 ) -> Vec<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let mut result = Vec::with_capacity(
         crate::eravm::context::function::runtime::entry::Entry::MANDATORY_ARGUMENTS_COUNT
@@ -112,7 +112,7 @@ pub fn abi_data<'ctx, D>(
     is_system_call: bool,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let input_offset = crate::eravm::utils::clamp(
         context,
@@ -201,7 +201,7 @@ pub fn pad_extra_abi_data<'ctx, D>(
     initial_data: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> [inkwell::values::IntValue<'ctx>; crate::eravm::EXTRA_ABI_DATA_SIZE]
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let mut padded_data = initial_data;
     padded_data.extend(vec![
@@ -209,29 +209,4 @@ where
         crate::eravm::EXTRA_ABI_DATA_SIZE - padded_data.len()
     ]);
     padded_data.try_into().expect("Always valid")
-}
-
-///
-/// Computes the `keccak256` hash for `preimage`.
-///
-pub fn keccak256(preimage: &[u8]) -> String {
-    use sha3::Digest;
-
-    let hash_bytes = sha3::Keccak256::digest(preimage);
-    hash_bytes
-        .into_iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect::<Vec<String>>()
-        .join("")
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn keccak256() {
-        assert_eq!(
-            super::keccak256("zksync".as_bytes()),
-            "0238fb1ab06c28c32885f9a4842207ac480c2467df26b6c58e201679628c5a5b"
-        );
-    }
 }

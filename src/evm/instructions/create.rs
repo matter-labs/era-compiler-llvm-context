@@ -20,7 +20,7 @@ pub fn create<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
@@ -54,7 +54,7 @@ pub fn create2<'ctx, D>(
     salt: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let input_offset_pointer = Pointer::new_with_offset(
         context,

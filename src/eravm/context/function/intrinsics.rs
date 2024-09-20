@@ -21,6 +21,8 @@ pub struct Intrinsics<'ctx> {
     pub memory_move: FunctionDeclaration<'ctx>,
     /// The memory copy from a generic page.
     pub memory_copy_from_generic: FunctionDeclaration<'ctx>,
+    /// The linker symbol.
+    pub linker_symbol: FunctionDeclaration<'ctx>,
 
     /// The event emitting.
     pub event: FunctionDeclaration<'ctx>,
@@ -28,6 +30,8 @@ pub struct Intrinsics<'ctx> {
     pub to_l1: FunctionDeclaration<'ctx>,
     /// The precompile call.
     pub precompile: FunctionDeclaration<'ctx>,
+    /// The decommit call.
+    pub decommit: FunctionDeclaration<'ctx>,
     /// The near call with ABI data.
     pub near_call: FunctionDeclaration<'ctx>,
     /// The current contract's address.
@@ -65,6 +69,9 @@ impl<'ctx> Intrinsics<'ctx> {
     pub const FUNCTION_MEMORY_COPY_FROM_GENERIC: &'static str = "llvm.memcpy.p3.p1.i256";
 
     /// The corresponding intrinsic function name.
+    pub const FUNCTION_LINKER_SYMBOL: &'static str = "llvm.eravm.linkersymbol";
+
+    /// The corresponding intrinsic function name.
     pub const FUNCTION_EVENT: &'static str = "llvm.eravm.event";
 
     /// The corresponding intrinsic function name.
@@ -72,6 +79,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_PRECOMPILE: &'static str = "llvm.eravm.precompile";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_DECOMMIT: &'static str = "llvm.eravm.decommit";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_NEAR_CALL: &'static str = "llvm.eravm.nearcall";
@@ -157,6 +167,12 @@ impl<'ctx> Intrinsics<'ctx> {
                 false,
             ),
         );
+        let linker_symbol = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_LINKER_SYMBOL,
+            field_type.fn_type(&[llvm.metadata_type().into()], false),
+        );
 
         let event = Self::declare(
             llvm,
@@ -189,6 +205,18 @@ impl<'ctx> Intrinsics<'ctx> {
             module,
             Self::FUNCTION_PRECOMPILE,
             field_type.fn_type(
+                &[
+                    field_type.as_basic_type_enum().into(),
+                    field_type.as_basic_type_enum().into(),
+                ],
+                false,
+            ),
+        );
+        let decommit = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_DECOMMIT,
+            generic_byte_pointer_type.fn_type(
                 &[
                     field_type.as_basic_type_enum().into(),
                     field_type.as_basic_type_enum().into(),
@@ -291,10 +319,12 @@ impl<'ctx> Intrinsics<'ctx> {
             trap,
             memory_move,
             memory_copy_from_generic,
+            linker_symbol,
 
             event,
             to_l1,
             precompile,
+            decommit,
             near_call,
             address,
             caller,

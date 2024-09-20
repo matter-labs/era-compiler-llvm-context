@@ -12,7 +12,7 @@ use crate::eravm::Dependency;
 ///
 /// Translates the `return` instruction.
 ///
-/// Unlike in EVM, zkSync constructors return the array of contract immutables.
+/// Unlike in EVM, ZKsync constructors return the array of contract immutables.
 ///
 pub fn r#return<'ctx, D>(
     context: &mut Context<'ctx, D>,
@@ -20,11 +20,11 @@ pub fn r#return<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     match context.code_type() {
         None => {
-            anyhow::bail!("Return is not available if the contract part is undefined");
+            anyhow::bail!("code part is undefined");
         }
         Some(CodeType::Deploy) => {
             let immutables_offset_pointer = Pointer::new_with_offset(
@@ -49,7 +49,7 @@ where
                 ),
                 "immutables_number_pointer",
             )?;
-            let immutable_values_size = context.immutables_size()?;
+            let immutable_values_size = context.immutables_size();
             context.build_store(
                 immutables_number_pointer,
                 context.field_const(
@@ -90,7 +90,7 @@ pub fn revert<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_exit(context.llvm_runtime().revert, offset, length)?;
     Ok(())
@@ -103,7 +103,7 @@ where
 ///
 pub fn stop<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     r#return(context, context.field_const(0), context.field_const(0))
 }
@@ -115,7 +115,7 @@ where
 ///
 pub fn invalid<D>(context: &mut Context<D>) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     crate::eravm::evm::memory::store(
         context,

@@ -20,11 +20,11 @@ pub fn load<'ctx, D>(
     index: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     match context.code_type() {
         None => {
-            anyhow::bail!("Immutables are not available if the contract part is undefined");
+            panic!("code part is undefined");
         }
         Some(CodeType::Deploy) => {
             let index_double = context.builder().build_int_mul(
@@ -83,11 +83,11 @@ pub fn store<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     match context.code_type() {
         None => {
-            anyhow::bail!("Immutables are not available if the contract part is undefined");
+            anyhow::bail!("code part is undefined");
         }
         Some(CodeType::Deploy) => {
             let index_double = context.builder().build_int_mul(
@@ -129,7 +129,7 @@ where
             Ok(())
         }
         Some(CodeType::Runtime) => {
-            anyhow::bail!("Immutable writes are not available in the runtime code");
+            anyhow::bail!("immutable writes are not available in runtime code");
         }
     }
 }

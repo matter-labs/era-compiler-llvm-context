@@ -18,11 +18,10 @@ use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::function::r#return::Return as FunctionReturn;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
+use crate::debug_config::DebugConfig;
 use crate::debug_info::DebugInfo;
-use crate::evm::DebugConfig;
-use crate::evm::Dependency;
+use crate::dependency::Dependency;
 use crate::optimizer::Optimizer;
-use crate::target_machine::target::Target;
 use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
@@ -38,7 +37,7 @@ use self::function::Function;
 ///
 pub struct Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The inner LLVM context.
     llvm: &'ctx inkwell::context::Context,
@@ -48,6 +47,8 @@ where
     optimizer: Optimizer,
     /// The current module.
     module: inkwell::module::Module<'ctx>,
+    /// The extra LLVM options.
+    llvm_options: Vec<String>,
     /// The current contract code type, which can be deploy or runtime.
     code_type: CodeType,
     /// The LLVM intrinsic functions, defined on the LLVM side.
@@ -63,8 +64,6 @@ where
     /// The manager is used to get information about contracts and their dependencies during
     /// the multi-threaded compilation process.
     dependency_manager: Option<D>,
-    /// Whether to append the metadata hash at the end of bytecode.
-    include_metadata_hash: bool,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
@@ -76,7 +75,7 @@ where
 
 impl<'ctx, D> Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
@@ -90,10 +89,10 @@ where
     pub fn new(
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
+        llvm_options: Vec<String>,
         code_type: CodeType,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
-        include_metadata_hash: bool,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -103,6 +102,7 @@ where
         Self {
             llvm,
             builder,
+            llvm_options,
             optimizer,
             module,
             code_type,
@@ -112,7 +112,6 @@ where
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
             dependency_manager,
-            include_metadata_hash,
             debug_info,
             debug_config,
 
@@ -127,11 +126,16 @@ where
         self,
         contract_path: &str,
         runtime_code: Option<&inkwell::memory_buffer::MemoryBuffer>,
+        metadata_hash: Option<era_compiler_common::Hash>,
     ) -> anyhow::Result<(
         inkwell::memory_buffer::MemoryBuffer,
         inkwell::memory_buffer::MemoryBuffer,
     )> {
-        let target_machine = TargetMachine::new(Target::EVM, self.optimizer.settings())?;
+        let target_machine = TargetMachine::new(
+            era_compiler_common::Target::EVM,
+            self.optimizer.settings(),
+            self.llvm_options.as_slice(),
+        )?;
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
@@ -139,52 +143,38 @@ where
                 contract_path,
                 Some(self.code_type),
                 self.module(),
+                false,
             )?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` {} code unoptimized LLVM IR verification error: {}",
-                contract_path,
+                "{} code unoptimized LLVM IR verification: {error}",
                 self.code_type,
-                error
             )
         })?;
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` {} code optimizing error: {}",
-                    contract_path,
-                    self.code_type,
-                    error
-                )
-            })?;
+            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_type,))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
                 contract_path,
                 Some(self.code_type),
                 self.module(),
+                false,
             )?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
-                "The contract `{}` {} code optimized LLVM IR verification error: {}",
-                contract_path,
+                "{} code optimized LLVM IR verification: {error}",
                 self.code_type,
-                error
             )
         })?;
 
         let buffer = target_machine
-            .write_to_memory_buffer(self.module())
+            .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
             .map_err(|error| {
-                anyhow::anyhow!(
-                    "The contract `{}` {} code assembly generating error: {}",
-                    contract_path,
-                    self.code_type,
-                    error
-                )
+                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type,)
             })?;
 
         let linked = match self.code_type {
@@ -243,21 +233,13 @@ where
     }
 
     ///
-    /// Compiles a contract dependency, if the dependency manager is set.
+    /// Get the contract dependency data.
     ///
-    pub fn compile_dependency(&mut self, name: &str) -> anyhow::Result<String> {
+    pub fn get_dependency_data(&self, identifier: &str) -> anyhow::Result<String> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                Dependency::compile(
-                    manager,
-                    name,
-                    self.optimizer.settings().to_owned(),
-                    self.include_metadata_hash,
-                    self.debug_config.clone(),
-                )
-            })
+            .and_then(|manager| Dependency::get(manager, identifier))
     }
 
     ///
@@ -265,7 +247,7 @@ where
     ///
     pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
                 let full_path = manager.resolve_path(identifier)?;
@@ -276,24 +258,20 @@ where
     ///
     /// Gets a deployed library address from the dependency manager.
     ///
-    pub fn resolve_library(&self, path: &str) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
+    pub fn resolve_library(
+        &self,
+        identifier: &str,
+    ) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
         self.dependency_manager
-            .to_owned()
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
             .and_then(|manager| {
-                let address = manager.resolve_library(path)?;
+                let address = manager
+                    .resolve_library(identifier)
+                    .ok_or_else(|| anyhow::anyhow!("Could not resolve library `{identifier}"))?;
                 let address = self.field_const_str_hex(address.as_str());
                 Ok(address)
             })
-    }
-
-    ///
-    /// Extracts the dependency manager.
-    ///
-    pub fn take_dependency_manager(&mut self) -> D {
-        self.dependency_manager
-            .take()
-            .expect("The dependency manager is unset")
     }
 
     ///
@@ -332,7 +310,7 @@ where
     ///
     pub fn modify_call_site_value(
         &self,
-        arguments: &[inkwell::values::BasicValueEnum<'ctx>],
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
         call_site_value: inkwell::values::CallSiteValue<'ctx>,
         function: FunctionDeclaration<'ctx>,
     ) {
@@ -356,7 +334,12 @@ where
                     inkwell::attributes::AttributeLoc::Param(index as u32),
                     self.llvm.create_enum_attribute(Attribute::NoFree as u32, 0),
                 );
-                if Some(argument.get_type()) == function.r#type.get_return_type() {
+                if (*argument)
+                    .try_into()
+                    .map(|argument: inkwell::values::BasicValueEnum<'ctx>| argument.get_type())
+                    .ok()
+                    == function.r#type.get_return_type()
+                {
                     if function
                         .r#type
                         .get_return_type()
@@ -431,7 +414,7 @@ where
 
 impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     type Function = Function<'ctx>;
 
@@ -576,15 +559,24 @@ where
         arguments: &[inkwell::values::BasicValueEnum<'ctx>],
         name: &str,
     ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
-        let arguments_wrapped: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
+        let arguments: Vec<inkwell::values::BasicMetadataValueEnum> = arguments
             .iter()
             .copied()
             .map(inkwell::values::BasicMetadataValueEnum::from)
             .collect();
+        self.build_call_metadata(function, arguments.as_slice(), name)
+    }
+
+    fn build_call_metadata(
+        &self,
+        function: FunctionDeclaration<'ctx>,
+        arguments: &[inkwell::values::BasicMetadataValueEnum<'ctx>],
+        name: &str,
+    ) -> anyhow::Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         let call_site_value = self.builder.build_indirect_call(
             function.r#type,
             function.value.as_global_value().as_pointer_value(),
-            arguments_wrapped.as_slice(),
+            arguments,
             name,
         )?;
         self.modify_call_site_value(arguments, call_site_value, function);

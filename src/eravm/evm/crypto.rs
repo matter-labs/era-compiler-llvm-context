@@ -19,7 +19,7 @@ pub fn sha3<'ctx, D>(
     length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let offset_pointer = context.builder().build_int_to_ptr(
         offset,

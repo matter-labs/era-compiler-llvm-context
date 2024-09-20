@@ -26,11 +26,11 @@ pub fn create<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
-    let signature_hash_string =
-        crate::eravm::utils::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
-    let signature_hash = context.field_const_str_hex(signature_hash_string.as_str());
+    let signature_hash =
+        era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
+    let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let salt = context.field_const(0);
 
@@ -42,7 +42,7 @@ where
                 value.as_basic_value_enum(),
                 input_offset.as_basic_value_enum(),
                 input_length.as_basic_value_enum(),
-                signature_hash.as_basic_value_enum(),
+                signature_hash_value.as_basic_value_enum(),
                 salt.as_basic_value_enum(),
             ],
             "create_deployer_call",
@@ -66,11 +66,11 @@ pub fn create2<'ctx, D>(
     salt: Option<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
-    let signature_hash_string =
-        crate::eravm::utils::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE2.as_bytes());
-    let signature_hash = context.field_const_str_hex(signature_hash_string.as_str());
+    let signature_hash =
+        era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE2.as_bytes());
+    let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let salt = salt.unwrap_or_else(|| context.field_const(0));
 
@@ -82,7 +82,7 @@ where
                 value.as_basic_value_enum(),
                 input_offset.as_basic_value_enum(),
                 input_length.as_basic_value_enum(),
-                signature_hash.as_basic_value_enum(),
+                signature_hash_value.as_basic_value_enum(),
                 salt.as_basic_value_enum(),
             ],
             "create2_deployer_call",
@@ -103,11 +103,11 @@ pub fn contract_hash<'ctx, D>(
     identifier: String,
 ) -> anyhow::Result<Value<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let code_type = context
         .code_type()
-        .ok_or_else(|| anyhow::anyhow!("The contract code part type is undefined"))?;
+        .expect("Contract code part type is undefined");
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
@@ -126,10 +126,10 @@ where
             num::BigUint::zero(),
         ));
     } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
-        anyhow::bail!("type({}).runtimeCode is not supported", identifier);
+        anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
-    let hash_string = context.compile_dependency(identifier.as_str())?;
+    let hash_string = context.get_dependency_data(identifier.as_str())?;
     let hash_value = context
         .field_const_str_hex(hash_string.as_str())
         .as_basic_value_enum();
@@ -155,11 +155,11 @@ pub fn header_size<'ctx, D>(
     identifier: String,
 ) -> anyhow::Result<Value<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let code_type = context
         .code_type()
-        .ok_or_else(|| anyhow::anyhow!("The contract code part type is undefined"))?;
+        .expect("Contract code part type is undefined");
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
@@ -178,7 +178,7 @@ where
             num::BigUint::zero(),
         ));
     } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
-        anyhow::bail!("type({}).runtimeCode is not supported", identifier);
+        anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
     let size_bigint = num::BigUint::from(crate::eravm::DEPLOYER_CALL_HEADER_SIZE);

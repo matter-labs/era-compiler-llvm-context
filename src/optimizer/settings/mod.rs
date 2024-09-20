@@ -22,13 +22,8 @@ pub struct Settings {
     pub level_middle_end_size: SizeLevel,
     /// The back-end optimization level.
     pub level_back_end: inkwell::OptimizationLevel,
-
     /// Fallback to optimizing for size if the bytecode is too large.
     pub is_fallback_to_size_enabled: bool,
-    /// Whether the system request memoization is disabled.
-    pub is_system_request_memoization_disabled: bool,
-    /// The jump table density threshold.
-    pub jump_table_density_threshold: Option<u32>,
 
     /// Whether the LLVM `verify each` option is enabled.
     pub is_verify_each_enabled: bool,
@@ -37,6 +32,9 @@ pub struct Settings {
 }
 
 impl Settings {
+    /// The jump table density threshold used with the EVM interpreter.
+    pub const JUMP_TABLE_DENSITY_THRESHOLD: u32 = 10;
+
     ///
     /// A shortcut constructor.
     ///
@@ -49,10 +47,7 @@ impl Settings {
             level_middle_end,
             level_middle_end_size,
             level_back_end,
-
             is_fallback_to_size_enabled: false,
-            is_system_request_memoization_disabled: false,
-            jump_table_density_threshold: None,
 
             is_verify_each_enabled: false,
             is_debug_logging_enabled: false,
@@ -74,10 +69,7 @@ impl Settings {
             level_middle_end,
             level_middle_end_size,
             level_back_end,
-
             is_fallback_to_size_enabled: false,
-            is_system_request_memoization_disabled: false,
-            jump_table_density_threshold: None,
 
             is_verify_each_enabled,
             is_debug_logging_enabled,
@@ -126,7 +118,7 @@ impl Settings {
                 SizeLevel::Z,
                 inkwell::OptimizationLevel::Aggressive,
             ),
-            char => anyhow::bail!("Unexpected optimization option '{}'", char),
+            char => anyhow::bail!("unexpected optimization option '{char}'"),
         })
     }
 
@@ -236,38 +228,10 @@ impl Settings {
     }
 
     ///
-    /// Disables the system request memoization.
-    ///
-    pub fn disable_system_request_memoization(&mut self) {
-        self.is_system_request_memoization_disabled = true;
-    }
-
-    ///
-    /// Sets the jump table density threshold.
-    ///
-    pub fn set_jump_table_density_threshold(&mut self, threshold: u32) {
-        self.jump_table_density_threshold = Some(threshold);
-    }
-
-    ///
     /// Whether the fallback to optimizing for size is enabled.
     ///
     pub fn is_fallback_to_size_enabled(&self) -> bool {
         self.is_fallback_to_size_enabled
-    }
-
-    ///
-    /// Whether the system request memoization is disabled.
-    ///
-    pub fn is_system_request_memoization_disabled(&self) -> bool {
-        self.is_system_request_memoization_disabled
-    }
-
-    ///
-    /// Returns the jump table density threshold.
-    ///
-    pub fn jump_table_density_threshold(&self) -> Option<u32> {
-        self.jump_table_density_threshold
     }
 }
 

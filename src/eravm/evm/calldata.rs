@@ -18,7 +18,7 @@ pub fn load<'ctx, D>(
     offset: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let calldata_pointer_global = context.get_global(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
     let calldata_pointer_pointer = calldata_pointer_global.into();
@@ -44,7 +44,7 @@ pub fn size<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let value = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
 
@@ -61,7 +61,7 @@ pub fn copy<'ctx, D>(
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let destination = Pointer::new_with_offset(
         context,

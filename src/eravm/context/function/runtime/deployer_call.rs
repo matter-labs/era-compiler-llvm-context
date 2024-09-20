@@ -68,7 +68,7 @@ impl DeployerCall {
 
 impl<D> WriteLLVM<D> for DeployerCall
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
         let function_type = context.function_type(
@@ -90,7 +90,7 @@ where
         )?;
         Function::set_frontend_runtime_attributes(
             context.llvm,
-            function.borrow().declaration(),
+            function.borrow().declaration().value,
             &context.optimizer,
         );
 

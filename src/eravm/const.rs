@@ -20,6 +20,9 @@ pub static GLOBAL_RETURN_DATA_POINTER: &str = "ptr_return_data";
 /// The return data size pointer global variable name.
 pub static GLOBAL_RETURN_DATA_SIZE: &str = "returndatasize";
 
+/// The decommit pointer global variable name.
+pub static GLOBAL_DECOMMIT_POINTER: &str = "ptr_decommit";
+
 /// The call flags global variable name.
 pub static GLOBAL_CALL_FLAGS: &str = "call_flags";
 
@@ -59,6 +62,9 @@ pub const NO_SYSTEM_CALL_BIT: bool = false;
 
 /// The system call bit.
 pub const SYSTEM_CALL_BIT: bool = true;
+
+/// The default disassembler mode.
+pub const DISASSEMBLER_DEFAULT_MODE: u32 = 1;
 
 ///
 /// The deployer call header size that consists of:

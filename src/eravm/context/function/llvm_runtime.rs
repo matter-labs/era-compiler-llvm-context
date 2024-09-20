@@ -223,7 +223,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, div, optimizer);
+        Function::set_default_attributes(llvm, div.value, optimizer);
 
         let r#mod = Self::declare(
             module,
@@ -241,7 +241,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, r#mod, optimizer);
+        Function::set_default_attributes(llvm, r#mod.value, optimizer);
 
         let sdiv = Self::declare(
             module,
@@ -259,7 +259,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, sdiv, optimizer);
+        Function::set_default_attributes(llvm, sdiv.value, optimizer);
 
         let smod = Self::declare(
             module,
@@ -277,7 +277,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, smod, optimizer);
+        Function::set_default_attributes(llvm, smod.value, optimizer);
 
         let shl = Self::declare(
             module,
@@ -295,7 +295,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, shl, optimizer);
+        Function::set_default_attributes(llvm, shl.value, optimizer);
 
         let shr = Self::declare(
             module,
@@ -313,7 +313,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, shr, optimizer);
+        Function::set_default_attributes(llvm, shr.value, optimizer);
 
         let sar = Self::declare(
             module,
@@ -331,7 +331,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, sar, optimizer);
+        Function::set_default_attributes(llvm, sar.value, optimizer);
 
         let byte = Self::declare(
             module,
@@ -349,7 +349,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, byte, optimizer);
+        Function::set_default_attributes(llvm, byte.value, optimizer);
 
         let add_mod = Self::declare(
             module,
@@ -367,7 +367,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, add_mod, optimizer);
+        Function::set_default_attributes(llvm, add_mod.value, optimizer);
 
         let mul_mod = Self::declare(
             module,
@@ -385,7 +385,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, mul_mod, optimizer);
+        Function::set_default_attributes(llvm, mul_mod.value, optimizer);
 
         let exp = Self::declare(
             module,
@@ -403,7 +403,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, exp, optimizer);
+        Function::set_default_attributes(llvm, exp.value, optimizer);
 
         let sign_extend = Self::declare(
             module,
@@ -421,7 +421,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, sign_extend, optimizer);
+        Function::set_default_attributes(llvm, sign_extend.value, optimizer);
 
         let mstore8 = Self::declare(
             module,
@@ -440,7 +440,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, mstore8, optimizer);
+        Function::set_default_attributes(llvm, mstore8.value, optimizer);
 
         let sha3 = Self::declare(
             module,
@@ -463,7 +463,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, sha3, optimizer);
+        Function::set_default_attributes(llvm, sha3.value, optimizer);
 
         let system_request = Self::declare(
             module,
@@ -489,7 +489,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, system_request, optimizer);
+        Function::set_default_attributes(llvm, system_request.value, optimizer);
 
         let external_call_arguments: Vec<inkwell::types::BasicMetadataTypeEnum> = vec![
                 llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32)
@@ -545,28 +545,28 @@ impl<'ctx> LLVMRuntime<'ctx> {
             external_call_result_type.fn_type(external_call_arguments.as_slice(), false),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, far_call, optimizer);
+        Function::set_default_attributes(llvm, far_call.value, optimizer);
         let static_call = Self::declare(
             module,
             Self::FUNCTION_STATICCALL,
             external_call_result_type.fn_type(external_call_arguments.as_slice(), false),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, static_call, optimizer);
+        Function::set_default_attributes(llvm, static_call.value, optimizer);
         let delegate_call = Self::declare(
             module,
             Self::FUNCTION_DELEGATECALL,
             external_call_result_type.fn_type(external_call_arguments.as_slice(), false),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, delegate_call, optimizer);
+        Function::set_default_attributes(llvm, delegate_call.value, optimizer);
         let mimic_call = Self::declare(
             module,
             Self::FUNCTION_MIMICCALL,
             external_call_result_type.fn_type(mimic_call_arguments.as_slice(), false),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, mimic_call, optimizer);
+        Function::set_default_attributes(llvm, mimic_call.value, optimizer);
 
         let far_call_byref = Self::declare(
             module,
@@ -574,28 +574,28 @@ impl<'ctx> LLVMRuntime<'ctx> {
             external_call_result_type.fn_type(external_call_arguments_by_ref.as_slice(), false),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, far_call_byref, optimizer);
+        Function::set_default_attributes(llvm, far_call_byref.value, optimizer);
         let static_call_byref = Self::declare(
             module,
             Self::FUNCTION_STATICCALL_BYREF,
             external_call_result_type.fn_type(external_call_arguments_by_ref.as_slice(), false),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, static_call_byref, optimizer);
+        Function::set_default_attributes(llvm, static_call_byref.value, optimizer);
         let delegate_call_byref = Self::declare(
             module,
             Self::FUNCTION_DELEGATECALL_BYREF,
             external_call_result_type.fn_type(external_call_arguments_by_ref.as_slice(), false),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, delegate_call_byref, optimizer);
+        Function::set_default_attributes(llvm, delegate_call_byref.value, optimizer);
         let mimic_call_byref = Self::declare(
             module,
             Self::FUNCTION_MIMICCALL_BYREF,
             external_call_result_type.fn_type(mimic_call_arguments_by_ref.as_slice(), false),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, mimic_call_byref, optimizer);
+        Function::set_default_attributes(llvm, mimic_call_byref.value, optimizer);
 
         let r#return = Self::declare(
             module,
@@ -612,7 +612,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, r#return, optimizer);
+        Function::set_default_attributes(llvm, r#return.value, optimizer);
         let revert = Self::declare(
             module,
             Self::FUNCTION_REVERT,
@@ -628,7 +628,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, revert, optimizer);
+        Function::set_default_attributes(llvm, revert.value, optimizer);
 
         let return_forward = Self::declare(
             module,
@@ -643,7 +643,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, return_forward, optimizer);
+        Function::set_default_attributes(llvm, return_forward.value, optimizer);
         let revert_forward = Self::declare(
             module,
             Self::FUNCTION_REVERT_FORWARD,
@@ -657,7 +657,7 @@ impl<'ctx> LLVMRuntime<'ctx> {
             ),
             Some(inkwell::module::Linkage::External),
         );
-        Function::set_default_attributes(llvm, revert_forward, optimizer);
+        Function::set_default_attributes(llvm, revert_forward.value, optimizer);
 
         Self {
             personality,
@@ -722,8 +722,8 @@ impl<'ctx> LLVMRuntime<'ctx> {
         &self,
         function: FunctionDeclaration<'ctx>,
         is_byref: bool,
-    ) -> anyhow::Result<FunctionDeclaration<'ctx>> {
-        let modified = if function == self.far_call {
+    ) -> FunctionDeclaration<'ctx> {
+        if function == self.far_call {
             match is_byref {
                 false => self.far_call,
                 true => self.far_call_byref,
@@ -744,12 +744,10 @@ impl<'ctx> LLVMRuntime<'ctx> {
                 true => self.mimic_call_byref,
             }
         } else {
-            anyhow::bail!(
+            panic!(
                 "Cannot modify an external call function `{}`",
                 function.value.get_name().to_string_lossy()
             );
-        };
-
-        Ok(modified)
+        }
     }
 }

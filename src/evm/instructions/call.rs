@@ -26,7 +26,7 @@ pub fn call<'ctx, D>(
     output_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
@@ -74,7 +74,7 @@ pub fn static_call<'ctx, D>(
     output_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
@@ -121,7 +121,7 @@ pub fn delegate_call<'ctx, D>(
     output_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
@@ -162,7 +162,7 @@ pub fn linker_symbol<'ctx, D>(
     mut arguments: [Value<'ctx>; 1],
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let path = arguments[0]
         .original

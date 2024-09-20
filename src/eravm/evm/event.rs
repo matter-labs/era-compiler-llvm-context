@@ -25,7 +25,7 @@ pub fn log<'ctx, D>(
     topics: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<()>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let failure_block = context.append_basic_block("event_failure_block");
     let join_block = context.append_basic_block("event_join_block");

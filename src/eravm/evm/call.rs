@@ -34,9 +34,9 @@ pub fn default<'ctx, D>(
     mut constants: Vec<Option<num::BigUint>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
-    if context.is_system_mode() {
+    if context.are_eravm_extensions_enabled() {
         let simulation_address = constants
             .get_mut(1)
             .and_then(|option| option.take())
@@ -76,6 +76,18 @@ where
                 let gas_left = input_offset;
 
                 return crate::eravm::extensions::general::precompile(context, in_0, gas_left);
+            }
+            Some(era_compiler_common::ERAVM_ADDRESS_DECOMMIT) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "decommit",
+                )?;
+
+                let in_0 = gas;
+                let gas_left = input_offset;
+
+                return crate::eravm::extensions::general::decommit(context, in_0, gas_left);
             }
             Some(era_compiler_common::ERAVM_ADDRESS_META) => {
                 crate::eravm::extensions::call::validate_call_type(
@@ -152,7 +164,7 @@ where
 
                 return crate::eravm::extensions::call::raw_far(
                     context,
-                    context.llvm_runtime().modify(function, false)?,
+                    context.llvm_runtime().modify(function, false),
                     address,
                     abi_data.as_basic_value_enum(),
                     output_offset,
@@ -165,7 +177,7 @@ where
 
                 return crate::eravm::extensions::call::raw_far(
                     context,
-                    context.llvm_runtime().modify(function, true)?,
+                    context.llvm_runtime().modify(function, true),
                     address,
                     abi_data.as_basic_value_enum(),
                     output_offset,
@@ -182,7 +194,7 @@ where
 
                 return crate::eravm::extensions::call::system(
                     context,
-                    context.llvm_runtime().modify(function, false)?,
+                    context.llvm_runtime().modify(function, false),
                     address,
                     abi_data.as_basic_value_enum(),
                     context.field_const(0),
@@ -200,7 +212,7 @@ where
 
                 return crate::eravm::extensions::call::system(
                     context,
-                    context.llvm_runtime().modify(function, true)?,
+                    context.llvm_runtime().modify(function, true),
                     address,
                     abi_data.as_basic_value_enum(),
                     context.field_const(0),
@@ -323,6 +335,15 @@ where
                 )?;
 
                 return crate::eravm::extensions::abi::return_data_ptr_to_active(context);
+            }
+            Some(era_compiler_common::ERAVM_ADDRESS_ACTIVE_PTR_LOAD_DECOMMIT) => {
+                crate::eravm::extensions::call::validate_call_type(
+                    context.llvm_runtime().static_call,
+                    function,
+                    "active_ptr_load_decommit",
+                )?;
+
+                return crate::eravm::extensions::abi::decommit_ptr_to_active(context);
             }
             Some(era_compiler_common::ERAVM_ADDRESS_ACTIVE_PTR_ADD) => {
                 crate::eravm::extensions::call::validate_call_type(
@@ -605,7 +626,7 @@ pub fn linker_symbol<'ctx, D>(
     mut arguments: [Value<'ctx>; 1],
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let path = arguments[0]
         .original
@@ -627,10 +648,10 @@ pub fn request<'ctx, D>(
     arguments: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
-    let signature_hash = crate::eravm::utils::keccak256(signature.as_bytes());
-    let signature_value = context.field_const_str_hex(signature_hash.as_str());
+    let signature_hash = era_compiler_common::Hash::keccak256(signature.as_bytes());
+    let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let calldata_size = context.field_const(
         (era_compiler_common::BYTE_LENGTH_X32
@@ -655,7 +676,7 @@ where
             context.llvm_runtime().system_request,
             &[
                 address.as_basic_value_enum(),
-                signature_value.as_basic_value_enum(),
+                signature_hash_value.as_basic_value_enum(),
                 calldata_size.as_basic_value_enum(),
                 calldata_array_pointer.value.as_basic_value_enum(),
             ],
@@ -681,7 +702,7 @@ fn default_wrapped<'ctx, D>(
     output_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let value_zero_block = context.append_basic_block("contract_call_value_zero_block");
     let value_non_zero_block = context.append_basic_block("contract_call_value_non_zero_block");
@@ -709,7 +730,7 @@ where
     )?;
     let result = crate::eravm::extensions::call::system(
         context,
-        context.llvm_runtime().modify(function, false)?,
+        context.llvm_runtime().modify(function, false),
         context.field_const(zkevm_opcode_defs::ADDRESS_MSG_VALUE.into()),
         abi_data,
         output_offset,
@@ -757,7 +778,7 @@ fn identity<'ctx, D>(
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let destination = Pointer::<AddressSpace>::new_with_offset(
         context,

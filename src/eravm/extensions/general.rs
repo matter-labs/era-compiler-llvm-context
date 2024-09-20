@@ -5,6 +5,7 @@
 use inkwell::values::BasicValue;
 
 use crate::context::IContext;
+use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
 use crate::eravm::Dependency;
 
@@ -18,7 +19,7 @@ pub fn to_l1<'ctx, D>(
     in_1: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let join_block = context.append_basic_block("contract_call_toL1_join_block");
 
@@ -80,7 +81,7 @@ pub fn code_source<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let result = context
         .build_call(
@@ -101,7 +102,7 @@ pub fn precompile<'ctx, D>(
     gas_left: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let result = context
         .build_call(
@@ -114,13 +115,40 @@ where
 }
 
 ///
+/// Generates a decommit call.
+///
+pub fn decommit<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    in_0: inkwell::values::IntValue<'ctx>,
+    gas_left: inkwell::values::IntValue<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency,
+{
+    let result = context
+        .build_call(
+            context.intrinsics().decommit,
+            &[in_0.as_basic_value_enum(), gas_left.as_basic_value_enum()],
+            "contract_call_simulation_decommit",
+        )?
+        .expect("Always exists");
+    context.set_global(
+        crate::eravm::GLOBAL_DECOMMIT_POINTER,
+        context.ptr_type(AddressSpace::Generic.into()),
+        AddressSpace::Stack,
+        result,
+    )?;
+    Ok(result)
+}
+
+///
 /// Generates a `meta` call.
 ///
 pub fn meta<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let result = context
         .build_call(
@@ -140,7 +168,7 @@ pub fn set_context_value<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_call(
         context.intrinsics().set_u128,
@@ -158,7 +186,7 @@ pub fn set_pubdata_price<'ctx, D>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_call(
         context.intrinsics().set_pubdata_price,
@@ -175,7 +203,7 @@ pub fn increment_tx_counter<'ctx, D>(
     context: &mut Context<'ctx, D>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_call(
         context.intrinsics().increment_tx_counter,
@@ -195,7 +223,7 @@ pub fn event<'ctx, D>(
     is_initializer: bool,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     context.build_call(
         context.intrinsics().event,
