@@ -90,8 +90,8 @@ impl TargetMachine {
     pub fn disassemble(
         &self,
         memory_buffer: &inkwell::memory_buffer::MemoryBuffer,
-        pc: u32,
-        options: u32,
+        pc: u64,
+        options: u64,
     ) -> Result<inkwell::memory_buffer::MemoryBuffer, inkwell::support::LLVMString> {
         memory_buffer.disassemble_eravm(&self.target_machine, pc, options)
     }
