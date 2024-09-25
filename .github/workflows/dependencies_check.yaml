@@ -1,0 +1,83 @@
+name: Dependency check
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  define-dependencies:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.ZKSYNC_DISPATCH_TOKEN }}
+    outputs:
+      dependencies_list: ${{ steps.define-dependencies.outputs.dependencies_list }}
+      zksolc_branch: ${{ steps.target-branches.outputs.zksolc_branch }}
+      zkvyper_branch: ${{ steps.target-branches.outputs.zkvyper_branch }}
+    steps:
+      - name: Define dependencies
+        id: define-dependencies
+        env:
+          POSSIBLE_DEPS: "matter-labs/era-compiler-common matter-labs/era-compiler-llvm-context matter-labs-forks/inkwell matter-labs-forks/llvm-sys.rs"
+        shell: bash -x {0}
+        run: |
+          DEPENDENCIES_LIST=""
+          for DEP in ${POSSIBLE_DEPS}; do
+            # Check if the branch of this repository dependency exists in the other repositories
+            # and if so, add it to the list of the dependencies that should be updated on the target repository
+            if [ $(gh api "/repos/${DEP}/branches/${{ github.head_ref }}" > /dev/null 2>&1; echo $?) -eq 0 ]; then
+              DEPENDENCIES_LIST="${DEPENDENCIES_LIST} ${DEP}"
+            fi
+          done
+          echo "dependencies_list=$(echo ${DEPENDENCIES_LIST} | sed 's/^[[:space:]]*//g')" | tee -a "${GITHUB_OUTPUT}"
+
+      - name: Define target branch
+        id: target-branches
+        env:
+          ERA_SOLIDITY_REPO: matter-labs/era-compiler-solidity
+          ERA_VYPER_REPO: matter-labs/era-compiler-vyper
+        shell: bash -x {0}
+        run: |
+          if [ $(gh api "/repos/${ERA_SOLIDITY_REPO}/branches/${{ github.head_ref }}" > /dev/null 2>&1; echo $?) -eq 0 ]; then
+            echo "zksolc_branch=${{ github.head_ref }}" | tee -a "${GITHUB_OUTPUT}"
+          fi
+          if [ $(gh api "/repos/${ERA_VYPER_REPO}/branches/${{ github.head_ref }}" > /dev/null 2>&1; echo $?) -eq 0 ]; then
+            echo "zkvyper_branch=${{ github.head_ref }}" | tee -a "${GITHUB_OUTPUT}"
+          fi
+
+  check-zksolc:
+    needs: define-dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: convictional/trigger-workflow-and-wait@v1.6.1
+        with:
+          owner: matter-labs
+          repo: era-compiler-solidity
+          workflow_file_name: dependencies.yaml
+          github_token: ${{ secrets.ZKSYNC_DISPATCH_TOKEN }}
+          ref: ${{ needs.define-dependencies.outputs.zksolc_branch || 'main' }}
+          wait_interval: 30
+          client_payload: '{ "dependencies_list": "${{ needs.define-dependencies.outputs.dependencies_list }}", "dependencies_branch": "${{ github.head_ref }}" }'
+          propagate_failure: true
+          trigger_workflow: true
+          wait_workflow: true
+
+  check-zkvyper:
+    needs: define-dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: convictional/trigger-workflow-and-wait@v1.6.1
+        with:
+          owner: matter-labs
+          repo: era-compiler-vyper
+          github_token: ${{ secrets.ZKSYNC_DISPATCH_TOKEN }}
+          workflow_file_name: dependencies.yaml
+          ref: ${{ needs.define-dependencies.outputs.zkvyper_branch || 'main' }}
+          wait_interval: 30
+          client_payload: '{ "dependencies_list": "${{ needs.define-dependencies.outputs.dependencies_list }}", "dependencies_branch": "${{ github.head_ref }}" }'
+          propagate_failure: true
+          trigger_workflow: true
+          wait_workflow: true
