@@ -1,0 +1,63 @@
+name: Dependencies test
+
+on:
+  workflow_dispatch:
+    inputs:
+      dependencies_list:
+        description: 'Space-separated list of dependencies to update. Example: "era-compiler-common era-compiler-llvm-context"'
+        required: true
+        default: ''
+        type: string
+      dependencies_branch:
+        description: 'Branch of testing dependencies'
+        required: true
+        default: ''
+        type: string
+
+jobs:
+  dependencies-check:
+    runs-on: matterlabs-ci-runner-high-performance
+    container:
+      image: ghcr.io/matter-labs/zksync-llvm-runner:latest
+    env:
+      TARGET: x86_64-unknown-linux-gnu
+      LLVM_SYS_170_PREFIX: "${{ github.workspace }}/target-llvm/target-final"
+    steps:
+      # Ref to checkout will be defined automatically from the event that triggered the workflow
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Patch dependencies
+        shell: bash -ex {0}
+        env:
+          CARGO_TOML: Cargo.toml
+          GH_ML_URL: https://github.com
+          # `www.github.com` is a workaround for Cargo issue with `patch` section from `git` source
+          # https://github.com/rust-lang/cargo/issues/5478
+          GH_ML_PATCHED_URL: https://www.github.com
+        run: |
+          for DEP in ${{ inputs.dependencies_list }}; do
+            CRATE=$(echo "${DEP}" | cut -d'/' -f2)
+            echo "[patch.\"${GH_ML_URL}/${DEP}\"]" >> "${CARGO_TOML}"
+            echo "${CRATE} = { git = '${GH_ML_PATCHED_URL}/${DEP}', branch = '${{ inputs.dependencies_branch }}' }" >> "${CARGO_TOML}"
+          done
+          cat "${CARGO_TOML}"
+
+      - name: Checkout LLVM
+        uses: actions/checkout@v4
+        with:
+          repository: matter-labs/era-compiler-llvm
+          ref: main
+          path: llvm
+
+      - name: Build LLVM
+        uses: matter-labs/era-compiler-ci/.github/actions/build-llvm@v1
+        with:
+          build-type: 'RelWithDebInfo'
+          enable-assertions: true
+          clone-llvm: false
+
+      - name: Run tests
+        uses: matter-labs/era-compiler-ci/.github/actions/rust-unit-tests@v1
+        with:
+          target: ${{ env.TARGET }}
