@@ -125,12 +125,7 @@ where
     pub fn build(
         self,
         contract_path: &str,
-        runtime_code: Option<&inkwell::memory_buffer::MemoryBuffer>,
-        metadata_hash: Option<era_compiler_common::Hash>,
-    ) -> anyhow::Result<(
-        inkwell::memory_buffer::MemoryBuffer,
-        inkwell::memory_buffer::MemoryBuffer,
-    )> {
+    ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EVM,
             self.optimizer.settings(),
@@ -155,7 +150,7 @@ where
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_type,))?;
+            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_type))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
                 contract_path,
@@ -174,46 +169,9 @@ where
         let buffer = target_machine
             .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
             .map_err(|error| {
-                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type,)
+                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type)
             })?;
-
-        let linked = match self.code_type {
-            CodeType::Deploy => {
-                let runtime_code_memory_buffer = runtime_code.ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "The contract `{}` {} code linking error: the {} code is missing",
-                        contract_path,
-                        self.code_type,
-                        CodeType::Runtime,
-                    )
-                })?;
-
-                inkwell::memory_buffer::MemoryBuffer::link_memory_buffers(
-                    &[&buffer, runtime_code_memory_buffer],
-                    &[
-                        "ld.lld",
-                        "--evm-link-deploy",
-                        "--evm-deploy-binary",
-                        "0",
-                        "--evm-runtime-binary",
-                        "1",
-                    ],
-                )
-            }
-            CodeType::Runtime => inkwell::memory_buffer::MemoryBuffer::link_memory_buffers(
-                &[&buffer],
-                &["ld.lld", "--evm-link-runtime", "--evm-runtime-binary", "0"],
-            ),
-        }
-        .map_err(|_| {
-            anyhow::anyhow!(
-                "The contract `{}` {} code linking error: the linking process failed",
-                contract_path,
-                self.code_type,
-            )
-        })?;
-
-        Ok((buffer, linked))
+        Ok(buffer)
     }
 
     ///
