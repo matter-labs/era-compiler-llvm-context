@@ -46,7 +46,7 @@ pub struct Intrinsics<'ctx> {
     /// The corresponding intrinsic function name.
     pub datasize: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
-    pub datasize_runtime: FunctionDeclaration<'ctx>,
+    pub dataoffset: FunctionDeclaration<'ctx>,
 
     /// The corresponding intrinsic function name.
     pub log0: FunctionDeclaration<'ctx>,
@@ -175,7 +175,7 @@ impl<'ctx> Intrinsics<'ctx> {
     pub const FUNCTION_DATASIZE: &'static str = "llvm.evm.datasize";
 
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_DATASIZE_RUNTIME: &'static str = "llvm.evm.datasizeruntime";
+    pub const FUNCTION_DATAOFFSET: &'static str = "llvm.evm.dataoffset";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LOG0: &'static str = "llvm.evm.log0";
@@ -442,13 +442,13 @@ impl<'ctx> Intrinsics<'ctx> {
             llvm,
             module,
             Self::FUNCTION_DATASIZE,
-            field_type.fn_type(&[], false),
+            field_type.fn_type(&[llvm.metadata_type().into()], false),
         );
-        let datasize_runtime = Self::declare(
+        let dataoffset = Self::declare(
             llvm,
             module,
-            Self::FUNCTION_DATASIZE_RUNTIME,
-            field_type.fn_type(&[], false),
+            Self::FUNCTION_DATAOFFSET,
+            field_type.fn_type(&[llvm.metadata_type().into()], false),
         );
 
         let log0 = Self::declare(
@@ -828,7 +828,7 @@ impl<'ctx> Intrinsics<'ctx> {
             extcodecopy,
             extcodehash,
             datasize,
-            datasize_runtime,
+            dataoffset,
 
             log0,
             log1,

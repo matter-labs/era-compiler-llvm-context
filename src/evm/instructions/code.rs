@@ -72,26 +72,17 @@ pub fn data_offset<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    if !object_name.ends_with("_deployed") {
-        return Ok(context.field_const(0).as_basic_value_enum());
-    }
+    let object_name = context
+        .llvm()
+        .metadata_node(&[context.llvm().metadata_string(object_name).into()]);
 
-    let deploy_code_size = context
-        .build_call(context.intrinsics().datasize, &[], "deploy_code_size")?
-        .expect("Always exists");
-    let runtime_code_size = context
-        .build_call(
-            context.intrinsics().datasize_runtime,
-            &[],
-            "runtime_code_size",
+    Ok(context
+        .build_call_metadata(
+            context.intrinsics().dataoffset,
+            &[object_name.into()],
+            "dataoffset",
         )?
-        .expect("Always exists");
-    let data_offset = context.builder().build_int_sub(
-        deploy_code_size.into_int_value(),
-        runtime_code_size.into_int_value(),
-        "data_offset",
-    )?;
-    Ok(data_offset.as_basic_value_enum())
+        .expect("Always exists"))
 }
 
 ///
@@ -104,14 +95,16 @@ pub fn data_size<'ctx, D>(
 where
     D: Dependency + Clone,
 {
-    let intrinsic = if object_name.ends_with("_deployed") {
-        context.intrinsics().datasize
-    } else {
-        context.intrinsics().datasize_runtime
-    };
+    let object_name = context
+        .llvm()
+        .metadata_node(&[context.llvm().metadata_string(object_name).into()]);
 
     Ok(context
-        .build_call(intrinsic, &[], "codesize")?
+        .build_call_metadata(
+            context.intrinsics().datasize,
+            &[object_name.into()],
+            "datasize",
+        )?
         .expect("Always exists"))
 }
 
