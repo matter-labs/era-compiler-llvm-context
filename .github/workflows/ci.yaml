@@ -1,0 +1,56 @@
+name: Build and test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # Check for secrets leak in the repository
+  secrets-scanner:
+    uses: matter-labs/era-compiler-ci/.github/workflows/secrets-scanner.yaml@main
+    secrets: inherit
+
+  # Build and run regression tests
+  build-and-test:
+    runs-on: matterlabs-ci-runner-high-performance
+    container:
+      image: ghcr.io/matter-labs/zksync-llvm-runner:latest
+    env:
+      TARGET: x86_64-unknown-linux-gnu
+      LLVM_SYS_170_PREFIX: "${{ github.workspace }}/target-llvm/target-final"
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Checkout LLVM
+        uses: actions/checkout@v4
+        with:
+          repository: matter-labs/era-compiler-llvm
+          ref: main
+          path: llvm
+
+      - name: Build LLVM
+        uses: matter-labs/era-compiler-ci/.github/actions/build-llvm@v1
+        with:
+          build-type: 'RelWithDebInfo'
+          enable-assertions: true
+          clone-llvm: false
+
+      - name: Run tests
+        uses: matter-labs/era-compiler-ci/.github/actions/rust-unit-tests@v1
+        with:
+          target: ${{ env.TARGET }}
+          enable-coverage: ${{ github.event_name == 'push' }}
+          coverage-token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Cargo checks
+        uses: matter-labs/era-compiler-ci/.github/actions/cargo-check@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
