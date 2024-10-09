@@ -63,6 +63,52 @@ where
 }
 
 ///
+/// Translates the `dataoffset` instruction.
+///
+pub fn data_offset<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    object_name: &str,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let object_name = context
+        .llvm()
+        .metadata_node(&[context.llvm().metadata_string(object_name).into()]);
+
+    Ok(context
+        .build_call_metadata(
+            context.intrinsics().dataoffset,
+            &[object_name.into()],
+            "dataoffset",
+        )?
+        .expect("Always exists"))
+}
+
+///
+/// Translates the `datasize` instruction.
+///
+pub fn data_size<'ctx, D>(
+    context: &mut Context<'ctx, D>,
+    object_name: &str,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
+where
+    D: Dependency + Clone,
+{
+    let object_name = context
+        .llvm()
+        .metadata_node(&[context.llvm().metadata_string(object_name).into()]);
+
+    Ok(context
+        .build_call_metadata(
+            context.intrinsics().datasize,
+            &[object_name.into()],
+            "datasize",
+        )?
+        .expect("Always exists"))
+}
+
+///
 /// Translates the `extcodesize` instruction.
 ///
 pub fn ext_size<'ctx, D>(

@@ -3,7 +3,6 @@
 //!
 
 pub mod address_space;
-pub mod build;
 pub mod evmla_data;
 pub mod function;
 
@@ -26,7 +25,6 @@ use crate::optimizer::Optimizer;
 use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
-use self::build::Build;
 use self::evmla_data::EVMLAData;
 use self::function::intrinsics::Intrinsics;
 use self::function::Function;
@@ -127,8 +125,7 @@ where
     pub fn build(
         self,
         contract_path: &str,
-        metadata_hash: Option<era_compiler_common::Hash>,
-    ) -> anyhow::Result<Build> {
+    ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EVM,
             self.optimizer.settings(),
@@ -153,7 +150,7 @@ where
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_type,))?;
+            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_type))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
                 contract_path,
@@ -172,13 +169,9 @@ where
         let buffer = target_machine
             .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
             .map_err(|error| {
-                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type,)
+                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type)
             })?;
-
-        Ok(Build::new(
-            buffer.as_slice().to_vec(),
-            metadata_hash.map(|metadata_hash| metadata_hash.as_bytes().to_vec()),
-        ))
+        Ok(buffer)
     }
 
     ///
