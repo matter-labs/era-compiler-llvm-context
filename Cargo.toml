@@ -12,13 +12,13 @@ description = "Shared front-end code of the ZKsync compilers"
 doctest = false
 
 [dependencies]
-anyhow = "1.0"
-semver = "1.0"
-serde = { version = "1.0", "features" = [ "derive" ] }
-num = "0.4"
-itertools = "0.13"
+anyhow = "=1.0.89"
+semver = "=1.0.23"
+serde = { version = "=1.0.210", "features" = [ "derive" ] }
+num = "=0.4.3"
+itertools = "=0.13.0"
 
-zkevm_opcode_defs = { git = "https://github.com/matter-labs/era-zkevm_opcode_defs", branch = "v1.5.0" }
+zkevm_opcode_defs = { git = "https://github.com/matter-labs/zksync-protocol", version = "=0.150.5" }
 
 era-compiler-common = { git = "https://github.com/matter-labs/era-compiler-common", branch = "main" }
 
