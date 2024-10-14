@@ -66,7 +66,7 @@ impl<'ctx> Intrinsics<'ctx> {
     pub const FUNCTION_MEMORY_MOVE: &'static str = "llvm.memmove.p1.p1.i256";
 
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_MEMORY_COPY_FROM_GENERIC: &'static str = "llvm.memcpy.p3.p1.i256";
+    pub const FUNCTION_MEMORY_COPY_FROM_GENERIC: &'static str = "llvm.memcpy.p1.p3.i256";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LINKER_SYMBOL: &'static str = "llvm.eravm.linkersymbol";
