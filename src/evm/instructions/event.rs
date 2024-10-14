@@ -15,9 +15,9 @@ use crate::evm::Dependency;
 ///
 pub fn log<'ctx, D>(
     context: &mut Context<'ctx, D>,
-    topics: Vec<inkwell::values::IntValue<'ctx>>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
+    topics: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<()>
 where
     D: Dependency,
@@ -42,42 +42,42 @@ where
         1 => context.build_call(
             context.intrinsics().log1,
             &[
-                topics[0].as_basic_value_enum(),
                 input_offset_pointer.as_basic_value_enum(),
                 input_length.as_basic_value_enum(),
+                topics[0].as_basic_value_enum(),
             ],
             "log1",
         ),
         2 => context.build_call(
             context.intrinsics().log2,
             &[
-                topics[0].as_basic_value_enum(),
-                topics[1].as_basic_value_enum(),
                 input_offset_pointer.as_basic_value_enum(),
                 input_length.as_basic_value_enum(),
+                topics[0].as_basic_value_enum(),
+                topics[1].as_basic_value_enum(),
             ],
             "log2",
         ),
         3 => context.build_call(
             context.intrinsics().log3,
             &[
+                input_offset_pointer.as_basic_value_enum(),
+                input_length.as_basic_value_enum(),
                 topics[0].as_basic_value_enum(),
                 topics[1].as_basic_value_enum(),
                 topics[2].as_basic_value_enum(),
-                input_offset_pointer.as_basic_value_enum(),
-                input_length.as_basic_value_enum(),
             ],
             "log3",
         ),
         4 => context.build_call(
             context.intrinsics().log4,
             &[
+                input_offset_pointer.as_basic_value_enum(),
+                input_length.as_basic_value_enum(),
                 topics[0].as_basic_value_enum(),
                 topics[1].as_basic_value_enum(),
                 topics[2].as_basic_value_enum(),
                 topics[3].as_basic_value_enum(),
-                input_offset_pointer.as_basic_value_enum(),
-                input_length.as_basic_value_enum(),
             ],
             "log4",
         ),

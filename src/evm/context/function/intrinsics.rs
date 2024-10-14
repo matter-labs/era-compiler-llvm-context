@@ -277,13 +277,13 @@ impl<'ctx> Intrinsics<'ctx> {
     pub const FUNCTION_MEMORY_COPY_FROM_HEAP: &'static str = "llvm.memcpy.p1.p1.i256";
 
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_MEMORY_COPY_FROM_CALLDATA: &'static str = "llvm.memcpy.p2.p1.i256";
+    pub const FUNCTION_MEMORY_COPY_FROM_CALLDATA: &'static str = "llvm.memcpy.p1.p2.i256";
 
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_MEMORY_COPY_FROM_RETURN_DATA: &'static str = "llvm.memcpy.p3.p1.i256";
+    pub const FUNCTION_MEMORY_COPY_FROM_RETURN_DATA: &'static str = "llvm.memcpy.p1.p3.i256";
 
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_MEMORY_COPY_FROM_CODE: &'static str = "llvm.memcpy.p4.p1.i256";
+    pub const FUNCTION_MEMORY_COPY_FROM_CODE: &'static str = "llvm.memcpy.p1.p4.i256";
 
     ///
     /// A shortcut constructor.
