@@ -18,7 +18,7 @@ serde = { version = "=1.0.210", "features" = [ "derive" ] }
 num = "=0.4.3"
 itertools = "=0.13.0"
 
-zkevm_opcode_defs = { git = "https://github.com/matter-labs/zksync-protocol", version = "=0.150.5" }
+zkevm_opcode_defs = "=0.150.6"
 
 era-compiler-common = { git = "https://github.com/matter-labs/era-compiler-common", branch = "main" }
 
