@@ -119,7 +119,7 @@ pub struct Intrinsics<'ctx> {
     pub selfdestruct: FunctionDeclaration<'ctx>,
 
     /// The corresponding intrinsic function name.
-    pub memory_copy_from_heap: FunctionDeclaration<'ctx>,
+    pub memory_move_heap: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub memory_copy_from_calldata: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
@@ -274,7 +274,7 @@ impl<'ctx> Intrinsics<'ctx> {
     pub const FUNCTION_SELFDESTRUCT: &'static str = "llvm.evm.selfdestruct";
 
     /// The corresponding intrinsic function name.
-    pub const FUNCTION_MEMORY_COPY_FROM_HEAP: &'static str = "llvm.memcpy.p1.p1.i256";
+    pub const FUNCTION_MEMORY_MOVE_HEAP: &'static str = "llvm.memmove.p1.p1.i256";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_MEMORY_COPY_FROM_CALLDATA: &'static str = "llvm.memcpy.p1.p2.i256";
@@ -754,10 +754,10 @@ impl<'ctx> Intrinsics<'ctx> {
             void_type.fn_type(&[field_type.as_basic_type_enum().into()], false),
         );
 
-        let memory_copy_from_heap = Self::declare(
+        let memory_move_heap = Self::declare(
             llvm,
             module,
-            Self::FUNCTION_MEMORY_COPY_FROM_HEAP,
+            Self::FUNCTION_MEMORY_MOVE_HEAP,
             void_type.fn_type(
                 &[
                     heap_byte_pointer_type.as_basic_type_enum().into(),
@@ -868,7 +868,7 @@ impl<'ctx> Intrinsics<'ctx> {
 
             selfdestruct,
 
-            memory_copy_from_heap,
+            memory_move_heap,
             memory_copy_from_calldata,
             memory_copy_from_return_data,
             memory_copy_from_code,
@@ -903,7 +903,7 @@ impl<'ctx> Intrinsics<'ctx> {
         let field_type = llvm.custom_width_int_type(era_compiler_common::BIT_LENGTH_FIELD as u32);
 
         match name {
-            name if name == Self::FUNCTION_MEMORY_COPY_FROM_HEAP => vec![
+            name if name == Self::FUNCTION_MEMORY_MOVE_HEAP => vec![
                 llvm.ptr_type(AddressSpace::Heap.into())
                     .as_basic_type_enum(),
                 llvm.ptr_type(AddressSpace::Heap.into())
