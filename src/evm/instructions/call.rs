@@ -158,18 +158,11 @@ where
 /// Translates the Yul `linkersymbol` instruction.
 ///
 pub fn linker_symbol<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-    mut arguments: [Value<'ctx>; 1],
+    _context: &mut Context<'ctx, D>,
+    mut _arguments: [Value<'ctx>; 1],
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency,
 {
-    let path = arguments[0]
-        .original
-        .take()
-        .ok_or_else(|| anyhow::anyhow!("Linker symbol literal is missing"))?;
-
-    Ok(context
-        .resolve_library(path.as_str())?
-        .as_basic_value_enum())
+    unimplemented!()
 }

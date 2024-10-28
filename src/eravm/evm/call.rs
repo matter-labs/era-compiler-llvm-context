@@ -7,7 +7,6 @@ use num::ToPrimitive;
 
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::pointer::Pointer;
-use crate::context::value::Value;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::runtime::Runtime;
@@ -623,19 +622,21 @@ where
 ///
 pub fn linker_symbol<'ctx, D>(
     context: &mut Context<'ctx, D>,
-    mut arguments: [Value<'ctx>; 1],
+    path: &str,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
     D: Dependency,
 {
-    let path = arguments[0]
-        .original
-        .take()
-        .ok_or_else(|| anyhow::anyhow!("Linker symbol literal is missing"))?;
-
     Ok(context
-        .resolve_library(path.as_str())?
-        .as_basic_value_enum())
+        .build_call_metadata(
+            context.intrinsics().linker_symbol,
+            &[context
+                .llvm()
+                .metadata_node(&[context.llvm().metadata_string(path).into()])
+                .into()],
+            format!("linker_symbol_{path}").as_str(),
+        )?
+        .expect("Always exists"))
 }
 
 ///

@@ -15,6 +15,7 @@ pub mod yul_data;
 mod tests;
 
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -161,6 +162,7 @@ where
     pub fn build(
         mut self,
         contract_path: &str,
+        linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
         metadata_hash: Option<era_compiler_common::Hash>,
         output_assembly: bool,
         is_fallback_to_size: bool,
@@ -238,7 +240,13 @@ where
                     Function::set_size_attributes(self.llvm, function);
                 }
                 return self
-                    .build(contract_path, metadata_hash, output_assembly, true)
+                    .build(
+                        contract_path,
+                        linker_symbols,
+                        metadata_hash,
+                        output_assembly,
+                        true,
+                    )
                     .map_err(|error| {
                         anyhow::anyhow!("falling back to optimizing for size: {error}")
                     });
@@ -253,7 +261,12 @@ where
         let assembly_text = assembly_buffer
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
-        crate::eravm::build(bytecode_buffer, metadata_hash, assembly_text)
+        crate::eravm::build(
+            bytecode_buffer,
+            linker_symbols,
+            metadata_hash,
+            assembly_text,
+        )
     }
 
     ///
@@ -395,33 +408,6 @@ where
             .and_then(|manager| {
                 let full_path = manager.resolve_path(identifier)?;
                 Ok(full_path)
-            })
-    }
-
-    ///
-    /// Gets a deployed library address from the dependency manager.
-    ///
-    pub fn resolve_library(
-        &self,
-        identifier: &str,
-    ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
-        self.dependency_manager
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| match manager.resolve_library(identifier) {
-                Some(address) => Ok(self
-                    .field_const_str_hex(address.as_str())
-                    .as_basic_value_enum()),
-                None => Ok(self
-                    .build_call_metadata(
-                        self.intrinsics.linker_symbol,
-                        &[self
-                            .llvm
-                            .metadata_node(&[self.llvm.metadata_string(identifier).into()])
-                            .into()],
-                        format!("linker_symbol_{identifier}").as_str(),
-                    )?
-                    .expect("Always exists")),
             })
     }
 
