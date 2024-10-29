@@ -116,6 +116,7 @@ pub fn link(
 ///
 pub fn build(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
+    linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
     metadata_hash: Option<era_compiler_common::Hash>,
     assembly_text: Option<String>,
 ) -> anyhow::Result<Build> {
@@ -130,7 +131,7 @@ pub fn build(
         None => bytecode_buffer,
     };
     let (bytecode_buffer_linked, bytecode_hash) =
-        self::link(bytecode_buffer_with_metadata, &BTreeMap::new())?;
+        self::link(bytecode_buffer_with_metadata, linker_symbols)?;
     let bytecode = bytecode_buffer_linked.as_slice().to_vec();
 
     let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);

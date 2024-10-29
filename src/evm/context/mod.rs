@@ -214,25 +214,6 @@ where
     }
 
     ///
-    /// Gets a deployed library address from the dependency manager.
-    ///
-    pub fn resolve_library(
-        &self,
-        identifier: &str,
-    ) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
-        self.dependency_manager
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                let address = manager
-                    .resolve_library(identifier)
-                    .ok_or_else(|| anyhow::anyhow!("Could not resolve library `{identifier}"))?;
-                let address = self.field_const_str_hex(address.as_str());
-                Ok(address)
-            })
-    }
-
-    ///
     /// Returns a Yul function type with the specified arguments and number of return values.
     ///
     pub fn function_type<T>(
