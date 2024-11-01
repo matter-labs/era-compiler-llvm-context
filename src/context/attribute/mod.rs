@@ -4,16 +4,15 @@
 
 pub mod memory;
 
-use serde::Deserialize;
-use serde::Serialize;
-
 ///
 /// The LLVM attribute.
 ///
 /// In order to check the real order in a new major version of LLVM, find the `Attributes.inc` file
 /// inside of the LLVM build directory. This order is actually generated during the building.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum Attribute {
     /// Unused.
     Unused = 0,

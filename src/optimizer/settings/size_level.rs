@@ -2,13 +2,10 @@
 //! The LLVM optimizer settings size level.
 //!
 
-use serde::Deserialize;
-use serde::Serialize;
-
 ///
 /// The LLVM optimizer settings size level.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum SizeLevel {
     /// No size optimizations.
     Zero,

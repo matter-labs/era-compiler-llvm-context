@@ -4,13 +4,10 @@
 
 use std::collections::BTreeMap;
 
-use serde::Deserialize;
-use serde::Serialize;
-
 ///
 /// The LLVM module build.
 ///
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Build {
     /// The bytecode.
     pub bytecode: Vec<u8>,

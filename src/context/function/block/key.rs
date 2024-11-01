@@ -2,8 +2,6 @@
 //! The LLVM IR generator function block key.
 //!
 
-use crate::context::code_type::CodeType;
-
 ///
 /// The LLVM IR generator function block key.
 ///
@@ -12,7 +10,7 @@ use crate::context::code_type::CodeType;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Key {
     /// The block code type.
-    pub code_type: CodeType,
+    pub code_segment: era_compiler_common::CodeSegment,
     /// The block tag.
     pub tag: num::BigUint,
 }
@@ -21,8 +19,8 @@ impl Key {
     ///
     /// A shortcut constructor.
     ///
-    pub fn new(code_type: CodeType, tag: num::BigUint) -> Self {
-        Self { code_type, tag }
+    pub fn new(code_segment: era_compiler_common::CodeSegment, tag: num::BigUint) -> Self {
+        Self { code_segment, tag }
     }
 }
 
@@ -31,9 +29,9 @@ impl std::fmt::Display for Key {
         write!(
             f,
             "{}_{}",
-            match self.code_type {
-                CodeType::Deploy => "dt",
-                CodeType::Runtime => "rt",
+            match self.code_segment {
+                era_compiler_common::CodeSegment::Deploy => "dt",
+                era_compiler_common::CodeSegment::Runtime => "rt",
             },
             self.tag
         )

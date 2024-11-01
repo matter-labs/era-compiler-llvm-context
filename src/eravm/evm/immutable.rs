@@ -2,7 +2,6 @@
 //! Translates the contract immutable operations.
 //!
 
-use crate::context::code_type::CodeType;
 use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
@@ -22,11 +21,11 @@ pub fn load<'ctx, D>(
 where
     D: Dependency,
 {
-    match context.code_type() {
+    match context.code_segment() {
         None => {
-            panic!("code part is undefined");
+            panic!("Contract code segment is undefined");
         }
-        Some(CodeType::Deploy) => {
+        Some(era_compiler_common::CodeSegment::Deploy) => {
             let index_double = context.builder().build_int_mul(
                 index,
                 context.field_const(2),
@@ -50,7 +49,7 @@ where
             let immutable_value = context.build_load(immutable_pointer, "immutable_value")?;
             Ok(immutable_value)
         }
-        Some(CodeType::Runtime) => {
+        Some(era_compiler_common::CodeSegment::Runtime) => {
             let code_address = context
                 .build_call(
                     context.intrinsics().code_source,
@@ -85,11 +84,11 @@ pub fn store<'ctx, D>(
 where
     D: Dependency,
 {
-    match context.code_type() {
+    match context.code_segment() {
         None => {
-            anyhow::bail!("code part is undefined");
+            anyhow::bail!("code segment is undefined");
         }
-        Some(CodeType::Deploy) => {
+        Some(era_compiler_common::CodeSegment::Deploy) => {
             let index_double = context.builder().build_int_mul(
                 index,
                 context.field_const(2),
@@ -128,7 +127,7 @@ where
 
             Ok(())
         }
-        Some(CodeType::Runtime) => {
+        Some(era_compiler_common::CodeSegment::Runtime) => {
             anyhow::bail!("immutable writes are not available in runtime code");
         }
     }

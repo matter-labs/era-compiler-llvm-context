@@ -4,9 +4,6 @@
 
 pub mod size_level;
 
-use serde::Deserialize;
-use serde::Serialize;
-
 use itertools::Itertools;
 
 use self::size_level::SizeLevel;
@@ -14,7 +11,7 @@ use self::size_level::SizeLevel;
 ///
 /// The LLVM optimizer settings.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone, Eq)]
+#[derive(Debug, Clone, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Settings {
     /// The middle-end optimization level.
     pub level_middle_end: inkwell::OptimizationLevel,

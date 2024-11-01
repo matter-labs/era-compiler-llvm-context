@@ -17,7 +17,6 @@ pub(crate) mod target_machine;
 
 pub use self::context::attribute::memory::Memory as MemoryAttribute;
 pub use self::context::attribute::Attribute;
-pub use self::context::code_type::CodeType;
 pub use self::context::function::block::evmla_data::EVMLAData as FunctionBlockEVMLAData;
 pub use self::context::function::block::key::Key as BlockKey;
 pub use self::context::function::block::Block as FunctionBlock;
@@ -83,6 +82,7 @@ pub use self::eravm::utils as eravm_utils;
 pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
 pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
 pub use self::evm::context::address_space::AddressSpace as EVMAddressSpace;
+pub use self::evm::context::build::Build as EVMBuild;
 pub use self::evm::context::evmla_data::EVMLAData as EVMContextEVMLAData;
 pub use self::evm::context::function::intrinsics::Intrinsics as EVMIntrinsicFunction;
 pub use self::evm::context::function::runtime::entry::Entry as EVMEntryFunction;

@@ -4,9 +4,6 @@
 
 pub mod settings;
 
-use serde::Deserialize;
-use serde::Serialize;
-
 use crate::target_machine::TargetMachine;
 
 use self::settings::Settings;
@@ -14,7 +11,7 @@ use self::settings::Settings;
 ///
 /// The LLVM optimizing tools.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Optimizer {
     /// The optimizer settings.
     settings: Settings,

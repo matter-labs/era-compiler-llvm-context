@@ -3,7 +3,6 @@
 //!
 
 pub mod attribute;
-pub mod code_type;
 pub mod function;
 pub mod r#loop;
 pub mod pointer;
@@ -19,7 +18,6 @@ use inkwell::values::BasicValue;
 use crate::debug_config::DebugConfig;
 use crate::debug_info::DebugInfo;
 
-use self::code_type::CodeType;
 use self::function::declaration::Declaration as FunctionDeclaration;
 use self::pointer::Pointer;
 use self::r#loop::Loop;
@@ -95,12 +93,12 @@ pub trait IContext<'ctx> {
     ///
     /// Sets the code type.
     ///
-    fn set_code_type(&mut self, code_type: CodeType);
+    fn set_code_segment(&mut self, code_segment: era_compiler_common::CodeSegment);
 
     ///
     /// Returns the code type.
     ///
-    fn code_type(&self) -> Option<CodeType>;
+    fn code_segment(&self) -> Option<era_compiler_common::CodeSegment>;
 
     ///
     /// Appends a new basic block to the current function.
