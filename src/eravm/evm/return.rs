@@ -2,7 +2,6 @@
 //! Translates the transaction return operations.
 //!
 
-use crate::context::code_type::CodeType;
 use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
@@ -22,11 +21,11 @@ pub fn r#return<'ctx, D>(
 where
     D: Dependency,
 {
-    match context.code_type() {
+    match context.code_segment() {
         None => {
-            anyhow::bail!("code part is undefined");
+            anyhow::bail!("Contract code segment is undefined");
         }
-        Some(CodeType::Deploy) => {
+        Some(era_compiler_common::CodeSegment::Deploy) => {
             let immutables_offset_pointer = Pointer::new_with_offset(
                 context,
                 AddressSpace::HeapAuxiliary,
@@ -73,7 +72,7 @@ where
                 return_data_length,
             )?;
         }
-        Some(CodeType::Runtime) => {
+        Some(era_compiler_common::CodeSegment::Runtime) => {
             context.build_exit(context.llvm_runtime().r#return, offset, length)?;
         }
     }

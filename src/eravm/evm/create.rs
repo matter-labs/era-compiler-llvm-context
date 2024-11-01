@@ -5,7 +5,6 @@
 use inkwell::values::BasicValue;
 use num::Zero;
 
-use crate::context::code_type::CodeType;
 use crate::context::value::Value;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
@@ -105,17 +104,17 @@ pub fn contract_hash<'ctx, D>(
 where
     D: Dependency,
 {
-    let code_type = context
-        .code_type()
-        .expect("Contract code part type is undefined");
+    let code_segment = context
+        .code_segment()
+        .expect("Contract code segment type is undefined");
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
     let contract_path =
         context
             .resolve_path(identifier.as_str())
-            .map_err(|error| match code_type {
-                CodeType::Runtime if identifier.ends_with("_deployed") => {
+            .map_err(|error| match code_segment {
+                era_compiler_common::CodeSegment::Runtime if identifier.ends_with("_deployed") => {
                     anyhow::anyhow!("type({}).runtimeCode is not supported", identifier)
                 }
                 _ => error,
@@ -125,7 +124,9 @@ where
             context.field_const(0).as_basic_value_enum(),
             num::BigUint::zero(),
         ));
-    } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
+    } else if identifier.ends_with("_deployed")
+        && code_segment == era_compiler_common::CodeSegment::Runtime
+    {
         anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
@@ -157,17 +158,17 @@ pub fn header_size<'ctx, D>(
 where
     D: Dependency,
 {
-    let code_type = context
-        .code_type()
-        .expect("Contract code part type is undefined");
+    let code_segment = context
+        .code_segment()
+        .expect("Contract code segment type is undefined");
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
     let contract_path =
         context
             .resolve_path(identifier.as_str())
-            .map_err(|error| match code_type {
-                CodeType::Runtime if identifier.ends_with("_deployed") => {
+            .map_err(|error| match code_segment {
+                era_compiler_common::CodeSegment::Runtime if identifier.ends_with("_deployed") => {
                     anyhow::anyhow!("type({}).runtimeCode is not supported", identifier)
                 }
                 _ => error,
@@ -177,7 +178,9 @@ where
             context.field_const(0).as_basic_value_enum(),
             num::BigUint::zero(),
         ));
-    } else if identifier.ends_with("_deployed") && code_type == CodeType::Runtime {
+    } else if identifier.ends_with("_deployed")
+        && code_segment == era_compiler_common::CodeSegment::Runtime
+    {
         anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 

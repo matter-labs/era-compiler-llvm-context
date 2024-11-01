@@ -24,7 +24,6 @@ use inkwell::values::BasicMetadataValueEnum;
 use inkwell::values::BasicValue;
 
 use crate::context::attribute::Attribute;
-use crate::context::code_type::CodeType;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::function::r#return::Return as FunctionReturn;
 use crate::context::pointer::Pointer;
@@ -69,7 +68,7 @@ where
     /// The extra LLVM options.
     llvm_options: Vec<String>,
     /// The current contract code type, which can be deploy or runtime.
-    code_type: Option<CodeType>,
+    code_segment: Option<era_compiler_common::CodeSegment>,
     /// The global variables.
     globals: HashMap<String, Global<'ctx>>,
     /// The LLVM intrinsic functions, defined on the LLVM side.
@@ -137,7 +136,7 @@ where
             llvm_options,
             optimizer,
             module,
-            code_type: None,
+            code_segment: None,
             globals: HashMap::with_capacity(Self::GLOBALS_HASHMAP_INITIAL_CAPACITY),
             intrinsics,
             llvm_runtime,
@@ -179,7 +178,7 @@ where
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(
                 contract_path,
-                self.code_type,
+                self.code_segment,
                 self.module(),
                 is_fallback_to_size,
             )?;
@@ -193,7 +192,7 @@ where
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
                 contract_path,
-                self.code_type,
+                self.code_segment,
                 self.module(),
                 is_fallback_to_size,
             )?;
@@ -578,7 +577,8 @@ where
         offset: inkwell::values::IntValue<'ctx>,
         length: inkwell::values::IntValue<'ctx>,
     ) -> anyhow::Result<()> {
-        let return_forward_mode = if self.code_type() == Some(CodeType::Deploy)
+        let return_forward_mode = if self.code_segment()
+            == Some(era_compiler_common::CodeSegment::Deploy)
             && return_function == self.llvm_runtime().r#return
         {
             zkevm_opcode_defs::RetForwardPageType::UseAuxHeap
@@ -867,12 +867,12 @@ where
         self.debug_config.as_ref()
     }
 
-    fn set_code_type(&mut self, code_type: CodeType) {
-        self.code_type = Some(code_type);
+    fn set_code_segment(&mut self, code_segment: era_compiler_common::CodeSegment) {
+        self.code_segment = Some(code_segment);
     }
 
-    fn code_type(&self) -> Option<CodeType> {
-        self.code_type.to_owned()
+    fn code_segment(&self) -> Option<era_compiler_common::CodeSegment> {
+        self.code_segment.to_owned()
     }
 
     fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'ctx> {

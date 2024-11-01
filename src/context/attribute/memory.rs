@@ -2,13 +2,12 @@
 //! The LLVM memory attribute.
 //!
 
-use serde::Deserialize;
-use serde::Serialize;
-
 ///
 /// The LLVM memory attribute.
 ///
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum Memory {
     /// The corresponding value.
     None = 0,

@@ -4,7 +4,6 @@
 
 use std::marker::PhantomData;
 
-use crate::context::code_type::CodeType;
 use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
@@ -68,7 +67,7 @@ where
         context.set_current_function(Runtime::FUNCTION_DEPLOY_CODE)?;
 
         context.set_basic_block(context.current_function().borrow().entry_block());
-        context.set_code_type(CodeType::Deploy);
+        context.set_code_segment(era_compiler_common::CodeSegment::Deploy);
         if let Some(vyper) = context.vyper_data.as_ref() {
             for index in 0..vyper.immutables_size() / era_compiler_common::BYTE_LENGTH_FIELD {
                 let offset = (crate::eravm::r#const::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA

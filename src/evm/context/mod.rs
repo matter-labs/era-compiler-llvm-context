@@ -3,6 +3,7 @@
 //!
 
 pub mod address_space;
+pub mod build;
 pub mod evmla_data;
 pub mod function;
 
@@ -13,7 +14,6 @@ use std::rc::Rc;
 use inkwell::types::BasicType;
 
 use crate::context::attribute::Attribute;
-use crate::context::code_type::CodeType;
 use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::function::r#return::Return as FunctionReturn;
 use crate::context::r#loop::Loop;
@@ -50,7 +50,7 @@ where
     /// The extra LLVM options.
     llvm_options: Vec<String>,
     /// The current contract code type, which can be deploy or runtime.
-    code_type: CodeType,
+    code_segment: era_compiler_common::CodeSegment,
     /// The LLVM intrinsic functions, defined on the LLVM side.
     intrinsics: Intrinsics<'ctx>,
     /// The declared functions.
@@ -90,7 +90,7 @@ where
         llvm: &'ctx inkwell::context::Context,
         module: inkwell::module::Module<'ctx>,
         llvm_options: Vec<String>,
-        code_type: CodeType,
+        code_segment: era_compiler_common::CodeSegment,
         optimizer: Optimizer,
         dependency_manager: Option<D>,
         debug_config: Option<DebugConfig>,
@@ -105,7 +105,7 @@ where
             llvm_options,
             optimizer,
             module,
-            code_type,
+            code_segment,
             intrinsics,
             functions: HashMap::with_capacity(Self::FUNCTIONS_HASHMAP_INITIAL_CAPACITY),
             current_function: None,
@@ -136,7 +136,7 @@ where
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(
                 contract_path,
-                Some(self.code_type),
+                Some(self.code_segment),
                 self.module(),
                 false,
             )?;
@@ -144,17 +144,17 @@ where
         self.verify().map_err(|error| {
             anyhow::anyhow!(
                 "{} code unoptimized LLVM IR verification: {error}",
-                self.code_type,
+                self.code_segment,
             )
         })?;
 
         self.optimizer
             .run(&target_machine, self.module())
-            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_type))?;
+            .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_segment))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
                 contract_path,
-                Some(self.code_type),
+                Some(self.code_segment),
                 self.module(),
                 false,
             )?;
@@ -162,14 +162,14 @@ where
         self.verify().map_err(|error| {
             anyhow::anyhow!(
                 "{} code optimized LLVM IR verification: {error}",
-                self.code_type,
+                self.code_segment,
             )
         })?;
 
         let buffer = target_machine
             .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
             .map_err(|error| {
-                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_type)
+                anyhow::anyhow!("{} code assembly emitting: {error}", self.code_segment)
             })?;
         Ok(buffer)
     }
@@ -387,12 +387,12 @@ where
         self.debug_config.as_ref()
     }
 
-    fn set_code_type(&mut self, code_type: CodeType) {
-        self.code_type = code_type;
+    fn set_code_segment(&mut self, code_segment: era_compiler_common::CodeSegment) {
+        self.code_segment = code_segment;
     }
 
-    fn code_type(&self) -> Option<CodeType> {
-        Some(self.code_type.to_owned())
+    fn code_segment(&self) -> Option<era_compiler_common::CodeSegment> {
+        Some(self.code_segment.to_owned())
     }
 
     fn append_basic_block(&self, name: &str) -> inkwell::basic_block::BasicBlock<'ctx> {

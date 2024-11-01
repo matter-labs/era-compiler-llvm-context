@@ -4,7 +4,6 @@
 
 use std::marker::PhantomData;
 
-use crate::context::code_type::CodeType;
 use crate::context::IContext;
 use crate::eravm::context::function::runtime::Runtime;
 use crate::eravm::context::Context;
@@ -66,7 +65,7 @@ where
         context.set_current_function(Runtime::FUNCTION_RUNTIME_CODE)?;
 
         context.set_basic_block(context.current_function().borrow().entry_block());
-        context.set_code_type(CodeType::Runtime);
+        context.set_code_segment(era_compiler_common::CodeSegment::Runtime);
         self.inner.into_llvm(context)?;
         match context
             .basic_block()
