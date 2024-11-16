@@ -70,7 +70,7 @@ pub fn data_offset<'ctx, D>(
     object_name: &str,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let object_name = context
         .llvm()
@@ -93,7 +93,7 @@ pub fn data_size<'ctx, D>(
     object_name: &str,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
 where
-    D: Dependency + Clone,
+    D: Dependency,
 {
     let object_name = context
         .llvm()
