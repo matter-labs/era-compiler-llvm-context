@@ -650,6 +650,50 @@ where
     }
 
     ///
+    /// Returns a pointer to the end of calldata.
+    ///
+    pub fn get_calldata_end_pointer(&self) -> anyhow::Result<Pointer<'ctx, AddressSpace>> {
+        let calldata_length = self.get_global_value(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
+        let calldata_pointer_value =
+            self.get_global_value(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
+        let calldata_pointer = Pointer::new(
+            self.byte_type(),
+            AddressSpace::Generic,
+            calldata_pointer_value.into_pointer_value(),
+        );
+        let calldata_end_pointer = self.build_gep(
+            calldata_pointer,
+            &[calldata_length.into_int_value()],
+            self.ptr_type(AddressSpace::Generic.into())
+                .as_basic_type_enum(),
+            "calldata_end_pointer",
+        )?;
+        Ok(calldata_end_pointer)
+    }
+
+    ///
+    /// Resets the named pointers to the end of calldata which is always zero-initialized.
+    ///
+    pub fn reset_named_pointers(&mut self, names: &[&str]) -> anyhow::Result<()> {
+        let calldata_end_pointer = self.get_calldata_end_pointer()?;
+        for name in names.iter() {
+            self.write_abi_pointer(calldata_end_pointer, name)?;
+        }
+        Ok(())
+    }
+
+    ///
+    /// Resets the active pointers to the end of calldata which is always zero-initialized.
+    ///
+    pub fn reset_active_pointers(&mut self) -> anyhow::Result<()> {
+        let calldata_end_pointer = self.get_calldata_end_pointer()?;
+        for index in 0..crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER {
+            self.set_active_pointer(self.field_const(index as u64), calldata_end_pointer.value)?;
+        }
+        Ok(())
+    }
+
+    ///
     /// Returns a Yul function type with the specified arguments and number of return values.
     ///
     pub fn function_type<T>(
