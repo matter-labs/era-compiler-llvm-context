@@ -156,26 +156,12 @@ where
         );
         context.write_abi_pointer(calldata_abi_pointer, crate::eravm::GLOBAL_CALLDATA_POINTER)?;
         context.write_abi_data_size(calldata_abi_pointer, crate::eravm::GLOBAL_CALLDATA_SIZE)?;
-        let calldata_length = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
-        let calldata_end_pointer = context.build_gep(
-            calldata_abi_pointer,
-            &[calldata_length.into_int_value()],
-            context
-                .ptr_type(AddressSpace::Generic.into())
-                .as_basic_type_enum(),
-            "return_data_abi_initializer",
-        )?;
-        context.write_abi_pointer(
-            calldata_end_pointer,
+
+        context.reset_named_pointers(&[
             crate::eravm::GLOBAL_RETURN_DATA_POINTER,
-        )?;
-        context.write_abi_pointer(calldata_end_pointer, crate::eravm::GLOBAL_DECOMMIT_POINTER)?;
-        for index in 0..crate::eravm_const::AVAILABLE_ACTIVE_POINTERS_NUMBER {
-            context.set_active_pointer(
-                context.field_const(index as u64),
-                calldata_end_pointer.value,
-            )?;
-        }
+            crate::eravm::GLOBAL_DECOMMIT_POINTER,
+        ])?;
+        context.reset_active_pointers()?;
 
         let call_flags = context
             .current_function()

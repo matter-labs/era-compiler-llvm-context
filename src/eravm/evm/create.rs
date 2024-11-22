@@ -48,6 +48,14 @@ where
         )?
         .expect("Always exists");
 
+    context.reset_named_pointers(&[crate::eravm::GLOBAL_RETURN_DATA_POINTER])?;
+    context.set_global(
+        crate::eravm::GLOBAL_RETURN_DATA_SIZE,
+        context.field_type(),
+        AddressSpace::Stack,
+        context.field_const(0),
+    )?;
+
     Ok(result)
 }
 
@@ -87,6 +95,14 @@ where
             "create2_deployer_call",
         )?
         .expect("Always exists");
+
+    context.reset_named_pointers(&[crate::eravm::GLOBAL_RETURN_DATA_POINTER])?;
+    context.set_global(
+        crate::eravm::GLOBAL_RETURN_DATA_SIZE,
+        context.field_type(),
+        AddressSpace::Stack,
+        context.field_const(0),
+    )?;
 
     Ok(result)
 }
