@@ -12,10 +12,17 @@ concurrency:
 
 jobs:
 
-  # Check for secrets leak in the repository
-  secrets-scanner:
-    uses: matter-labs/era-compiler-ci/.github/workflows/secrets-scanner.yaml@main
-    secrets: inherit
+  # Cargo checks
+  cargo-check:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/matter-labs/zksync-llvm-runner:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cargo checks
+        uses: matter-labs/era-compiler-ci/.github/actions/cargo-check@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # Build and run regression tests
   build-and-test:
@@ -50,7 +57,16 @@ jobs:
           enable-coverage: ${{ github.event_name == 'push' }}
           coverage-token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Cargo checks
-        uses: matter-labs/era-compiler-ci/.github/actions/cargo-check@v1
+  # Special job that allows some of the jobs to be skipped or failed
+  # requiring others to be successful
+  pr-checks:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - cargo-check
+      - build-and-test
+    steps:
+      - name: Decide on PR checks
+        uses: re-actors/alls-green@release/v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          jobs: ${{ toJSON(needs) }}
