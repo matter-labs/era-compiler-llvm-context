@@ -79,13 +79,14 @@ pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::R
 pub fn link(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
     linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
+    factory_dependencies: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
 ) -> anyhow::Result<(
     inkwell::memory_buffer::MemoryBuffer,
     Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
 )> {
     let bytecode_buffer_linked = if bytecode_buffer.is_elf_eravm() {
         bytecode_buffer
-            .link_module_eravm(linker_symbols)
+            .link_module_eravm(linker_symbols, factory_dependencies)
             .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?
     } else {
         bytecode_buffer
@@ -117,6 +118,7 @@ pub fn link(
 pub fn build(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
     linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
+    factory_dependencies: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     metadata_hash: Option<era_compiler_common::Hash>,
     assembly_text: Option<String>,
 ) -> anyhow::Result<Build> {
@@ -130,8 +132,11 @@ pub fn build(
             .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))?,
         None => bytecode_buffer,
     };
-    let (bytecode_buffer_linked, bytecode_hash) =
-        self::link(bytecode_buffer_with_metadata, linker_symbols)?;
+    let (bytecode_buffer_linked, bytecode_hash) = self::link(
+        bytecode_buffer_with_metadata,
+        linker_symbols,
+        factory_dependencies,
+    )?;
     let bytecode = bytecode_buffer_linked.as_slice().to_vec();
 
     let build = Build::new(bytecode, bytecode_hash, metadata_hash, assembly_text);

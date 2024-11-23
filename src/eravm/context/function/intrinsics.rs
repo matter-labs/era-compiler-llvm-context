@@ -21,8 +21,11 @@ pub struct Intrinsics<'ctx> {
     pub memory_move_heap: FunctionDeclaration<'ctx>,
     /// The memory copy from a generic page.
     pub memory_copy_from_generic: FunctionDeclaration<'ctx>,
+
     /// The linker symbol.
     pub linker_symbol: FunctionDeclaration<'ctx>,
+    /// The factory dependency.
+    pub factory_dependency: FunctionDeclaration<'ctx>,
 
     /// The event emitting.
     pub event: FunctionDeclaration<'ctx>,
@@ -70,6 +73,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LINKER_SYMBOL: &'static str = "llvm.eravm.linkersymbol";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_FACTORY_DEPENDENCY: &'static str = "llvm.eravm.factorydependency";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_EVENT: &'static str = "llvm.eravm.event";
@@ -167,10 +173,17 @@ impl<'ctx> Intrinsics<'ctx> {
                 false,
             ),
         );
+
         let linker_symbol = Self::declare(
             llvm,
             module,
             Self::FUNCTION_LINKER_SYMBOL,
+            field_type.fn_type(&[llvm.metadata_type().into()], false),
+        );
+        let factory_dependency = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_FACTORY_DEPENDENCY,
             field_type.fn_type(&[llvm.metadata_type().into()], false),
         );
 
@@ -319,7 +332,9 @@ impl<'ctx> Intrinsics<'ctx> {
             trap,
             memory_move_heap,
             memory_copy_from_generic,
+
             linker_symbol,
+            factory_dependency,
 
             event,
             to_l1,

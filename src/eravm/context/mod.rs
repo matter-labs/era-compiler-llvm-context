@@ -162,6 +162,7 @@ where
         mut self,
         contract_path: &str,
         linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
+        factory_dependencies: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
         metadata_hash: Option<era_compiler_common::Hash>,
         output_assembly: bool,
         is_fallback_to_size: bool,
@@ -242,6 +243,7 @@ where
                     .build(
                         contract_path,
                         linker_symbols,
+                        factory_dependencies,
                         metadata_hash,
                         output_assembly,
                         true,
@@ -263,6 +265,7 @@ where
         crate::eravm::build(
             bytecode_buffer,
             linker_symbols,
+            factory_dependencies,
             metadata_hash,
             assembly_text,
         )
@@ -387,14 +390,14 @@ where
     ///
     /// Get the contract dependency data.
     ///
-    pub fn get_dependency_data(&mut self, identifier: &str) -> anyhow::Result<String> {
+    pub fn get_dependency_data(&mut self, identifier: &str) -> anyhow::Result<Option<String>> {
         if let Some(vyper_data) = self.vyper_data.as_mut() {
             vyper_data.set_is_minimal_proxy_used();
         }
         self.dependency_manager
             .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| manager.get(identifier))
+            .expect("Always exists")
+            .get_data(identifier)
     }
 
     ///

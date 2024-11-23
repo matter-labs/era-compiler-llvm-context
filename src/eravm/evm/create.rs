@@ -146,11 +146,31 @@ where
         anyhow::bail!("type({identifier}).runtimeCode is not supported");
     }
 
-    let hash_string = context.get_dependency_data(identifier.as_str())?;
-    let hash_value = context
-        .field_const_str_hex(hash_string.as_str())
-        .as_basic_value_enum();
-    Ok(Value::new_with_original(hash_value, hash_string))
+    let value = match context.get_dependency_data(identifier.as_str())? {
+        Some(hash_string) => {
+            let hash_value = context
+                .field_const_str_hex(hash_string.as_str())
+                .as_basic_value_enum();
+            Value::new_with_original(hash_value, hash_string)
+        }
+        None => {
+            let value = context
+                .build_call_metadata(
+                    context.intrinsics().factory_dependency,
+                    &[context
+                        .llvm()
+                        .metadata_node(&[context
+                            .llvm()
+                            .metadata_string(contract_path.as_str())
+                            .into()])
+                        .into()],
+                    format!("linker_symbol_{contract_path}").as_str(),
+                )?
+                .expect("Always exists");
+            Value::new(value)
+        }
+    };
+    Ok(value)
 }
 
 ///

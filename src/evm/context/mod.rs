@@ -193,11 +193,11 @@ where
     ///
     /// Get the contract dependency data.
     ///
-    pub fn get_dependency_data(&self, identifier: &str) -> anyhow::Result<String> {
-        self.dependency_manager
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| Dependency::get(manager, identifier))
+    pub fn get_dependency_data(&self, identifier: &str) -> anyhow::Result<Option<String>> {
+        Dependency::get_data(
+            self.dependency_manager.as_ref().expect("Always exists"),
+            identifier,
+        )
     }
 
     ///

@@ -9,7 +9,7 @@ pub trait Dependency {
     ///
     /// Gets the data of the specified dependency.
     ///
-    fn get(&self, path: &str) -> anyhow::Result<String>;
+    fn get_data(&self, path: &str) -> anyhow::Result<Option<String>>;
 
     ///
     /// Resolves a full contract path.
@@ -24,8 +24,8 @@ pub trait Dependency {
 pub struct DummyDependency {}
 
 impl Dependency for DummyDependency {
-    fn get(&self, _path: &str) -> anyhow::Result<String> {
-        Ok(String::new())
+    fn get_data(&self, _path: &str) -> anyhow::Result<Option<String>> {
+        Ok(None)
     }
 
     ///
