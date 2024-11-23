@@ -191,16 +191,6 @@ where
     }
 
     ///
-    /// Get the contract dependency data.
-    ///
-    pub fn get_dependency_data(&self, identifier: &str) -> anyhow::Result<Option<String>> {
-        Dependency::get_data(
-            self.dependency_manager.as_ref().expect("Always exists"),
-            identifier,
-        )
-    }
-
-    ///
     /// Gets a full contract_path from the dependency manager.
     ///
     pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
@@ -535,11 +525,11 @@ where
         panic!("Unused with the EVM target");
     }
 
-    fn solidity(&self) -> &Self::SolidityData {
+    fn solidity(&self) -> Option<&Self::SolidityData> {
         panic!("Unused with the EVM target");
     }
 
-    fn solidity_mut(&mut self) -> &mut Self::SolidityData {
+    fn solidity_mut(&mut self) -> Option<&mut Self::SolidityData> {
         panic!("Unused with the EVM target");
     }
 
@@ -547,11 +537,11 @@ where
         panic!("Unused with the EVM target");
     }
 
-    fn yul(&self) -> &Self::YulData {
+    fn yul(&self) -> Option<&Self::YulData> {
         panic!("Unused with the EVM target");
     }
 
-    fn yul_mut(&mut self) -> &mut Self::YulData {
+    fn yul_mut(&mut self) -> Option<&mut Self::YulData> {
         panic!("Unused with the EVM target");
     }
 
@@ -559,23 +549,23 @@ where
         self.evmla_data = Some(data);
     }
 
-    fn evmla(&self) -> &Self::EVMLAData {
-        self.evmla_data
-            .as_ref()
-            .expect("The EVMLA data must have been initialized")
+    fn evmla(&self) -> Option<&Self::EVMLAData> {
+        self.evmla_data.as_ref()
     }
 
-    fn evmla_mut(&mut self) -> &mut Self::EVMLAData {
-        self.evmla_data
-            .as_mut()
-            .expect("The EVMLA data must have been initialized")
+    fn evmla_mut(&mut self) -> Option<&mut Self::EVMLAData> {
+        self.evmla_data.as_mut()
     }
 
     fn set_vyper_data(&mut self, _data: Self::VyperData) {
         panic!("Unused with the EVM target");
     }
 
-    fn vyper(&self) -> &Self::VyperData {
+    fn vyper(&self) -> Option<&Self::VyperData> {
+        panic!("Unused with the EVM target");
+    }
+
+    fn vyper_mut(&mut self) -> Option<&mut Self::VyperData> {
         panic!("Unused with the EVM target");
     }
 }

@@ -510,7 +510,7 @@ pub trait IContext<'ctx> {
     /// # Panics
     /// If the Solidity data has not been initialized.
     ///
-    fn solidity(&self) -> &Self::SolidityData;
+    fn solidity(&self) -> Option<&Self::SolidityData>;
 
     ///
     /// Returns the Solidity data mutable reference.
@@ -518,7 +518,7 @@ pub trait IContext<'ctx> {
     /// # Panics
     /// If the Solidity data has not been initialized.
     ///
-    fn solidity_mut(&mut self) -> &mut Self::SolidityData;
+    fn solidity_mut(&mut self) -> Option<&mut Self::SolidityData>;
 
     ///
     /// Sets the Yul data.
@@ -531,7 +531,7 @@ pub trait IContext<'ctx> {
     /// # Panics
     /// If the Yul data has not been initialized.
     ///
-    fn yul(&self) -> &Self::YulData;
+    fn yul(&self) -> Option<&Self::YulData>;
 
     ///
     /// Returns the Yul data mutable reference.
@@ -539,7 +539,7 @@ pub trait IContext<'ctx> {
     /// # Panics
     /// If the Yul data has not been initialized.
     ///
-    fn yul_mut(&mut self) -> &mut Self::YulData;
+    fn yul_mut(&mut self) -> Option<&mut Self::YulData>;
 
     ///
     /// Sets the EVM legacy assembly data.
@@ -552,7 +552,7 @@ pub trait IContext<'ctx> {
     /// # Panics
     /// If the EVM data has not been initialized.
     ///
-    fn evmla(&self) -> &Self::EVMLAData;
+    fn evmla(&self) -> Option<&Self::EVMLAData>;
 
     ///
     /// Returns the EVM legacy assembly data mutable reference.
@@ -560,7 +560,7 @@ pub trait IContext<'ctx> {
     /// # Panics
     /// If the EVM data has not been initialized.
     ///
-    fn evmla_mut(&mut self) -> &mut Self::EVMLAData;
+    fn evmla_mut(&mut self) -> Option<&mut Self::EVMLAData>;
 
     ///
     /// Sets the EVM legacy assembly data.
@@ -573,5 +573,13 @@ pub trait IContext<'ctx> {
     /// # Panics
     /// If the Vyper data has not been initialized.
     ///
-    fn vyper(&self) -> &Self::VyperData;
+    fn vyper(&self) -> Option<&Self::VyperData>;
+
+    ///
+    /// Returns the Vyper data mutable reference.
+    ///
+    /// # Panics
+    /// If the Vyper data has not been initialized.
+    ///
+    fn vyper_mut(&mut self) -> Option<&mut Self::VyperData>;
 }

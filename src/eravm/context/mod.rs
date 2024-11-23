@@ -388,29 +388,13 @@ where
     }
 
     ///
-    /// Get the contract dependency data.
-    ///
-    pub fn get_dependency_data(&mut self, identifier: &str) -> anyhow::Result<Option<String>> {
-        if let Some(vyper_data) = self.vyper_data.as_mut() {
-            vyper_data.set_is_minimal_proxy_used();
-        }
-        self.dependency_manager
-            .as_ref()
-            .expect("Always exists")
-            .get_data(identifier)
-    }
-
-    ///
     /// Gets a full contract_path from the dependency manager.
     ///
     pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
         self.dependency_manager
             .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                let full_path = manager.resolve_path(identifier)?;
-                Ok(full_path)
-            })
+            .expect("Always exists")
+            .resolve_path(identifier)
     }
 
     ///
@@ -1163,57 +1147,47 @@ where
         self.solidity_data = Some(data);
     }
 
-    fn solidity(&self) -> &Self::SolidityData {
-        self.solidity_data
-            .as_ref()
-            .expect("The Solidity data must have been initialized")
+    fn solidity(&self) -> Option<&Self::SolidityData> {
+        self.solidity_data.as_ref()
     }
 
-    fn solidity_mut(&mut self) -> &mut Self::SolidityData {
-        self.solidity_data
-            .as_mut()
-            .expect("The Solidity data must have been initialized")
+    fn solidity_mut(&mut self) -> Option<&mut Self::SolidityData> {
+        self.solidity_data.as_mut()
     }
 
     fn set_yul_data(&mut self, data: Self::YulData) {
         self.yul_data = Some(data);
     }
 
-    fn yul(&self) -> &Self::YulData {
-        self.yul_data
-            .as_ref()
-            .expect("The Yul data must have been initialized")
+    fn yul(&self) -> Option<&Self::YulData> {
+        self.yul_data.as_ref()
     }
 
-    fn yul_mut(&mut self) -> &mut Self::YulData {
-        self.yul_data
-            .as_mut()
-            .expect("The Yul data must have been initialized")
+    fn yul_mut(&mut self) -> Option<&mut Self::YulData> {
+        self.yul_data.as_mut()
     }
 
     fn set_evmla_data(&mut self, data: Self::EVMLAData) {
         self.evmla_data = Some(data);
     }
 
-    fn evmla(&self) -> &Self::EVMLAData {
-        self.evmla_data
-            .as_ref()
-            .expect("The EVMLA data must have been initialized")
+    fn evmla(&self) -> Option<&Self::EVMLAData> {
+        self.evmla_data.as_ref()
     }
 
-    fn evmla_mut(&mut self) -> &mut Self::EVMLAData {
-        self.evmla_data
-            .as_mut()
-            .expect("The EVMLA data must have been initialized")
+    fn evmla_mut(&mut self) -> Option<&mut Self::EVMLAData> {
+        self.evmla_data.as_mut()
     }
 
     fn set_vyper_data(&mut self, data: Self::VyperData) {
         self.vyper_data = Some(data);
     }
 
-    fn vyper(&self) -> &Self::VyperData {
-        self.vyper_data
-            .as_ref()
-            .expect("The Vyper data must have been initialized")
+    fn vyper(&self) -> Option<&Self::VyperData> {
+        self.vyper_data.as_ref()
+    }
+
+    fn vyper_mut(&mut self) -> Option<&mut Self::VyperData> {
+        self.vyper_data.as_mut()
     }
 }
