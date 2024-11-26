@@ -128,23 +128,31 @@ where
         vyper_data.set_is_minimal_proxy_used();
     }
 
-    let parent = context.module().get_name().to_str().expect("Always valid");
-
-    let contract_path = match context.yul() {
+    let current_module_name = context.module().get_name().to_str().expect("Always valid");
+    let full_path = match context.yul() {
         Some(yul_data) => yul_data
-            .resolve_path(identifier.as_str())
-            .unwrap_or(identifier.as_str()),
+            .resolve_path(
+                identifier
+                    .strip_suffix(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX)
+                    .unwrap_or(identifier.as_str()),
+            )
+            .expect("Always exists"),
         None => identifier.as_str(),
     };
-    if contract_path == parent {
-        return Ok(Value::new_with_constant(
-            context.field_const(0).as_basic_value_enum(),
-            num::BigUint::zero(),
-        ));
-    } else if identifier.ends_with("_deployed")
-        && code_segment == era_compiler_common::CodeSegment::Runtime
-    {
-        anyhow::bail!("type({identifier}).runtimeCode is not supported");
+
+    match code_segment {
+        era_compiler_common::CodeSegment::Deploy if full_path == current_module_name => {
+            return Ok(Value::new_with_constant(
+                context.field_const(0).as_basic_value_enum(),
+                num::BigUint::zero(),
+            ));
+        }
+        era_compiler_common::CodeSegment::Runtime
+            if identifier.ends_with(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX) =>
+        {
+            anyhow::bail!("type({identifier}).runtimeCode is not supported");
+        }
+        _ => {}
     }
 
     let value = context
@@ -152,9 +160,9 @@ where
             context.intrinsics().factory_dependency,
             &[context
                 .llvm()
-                .metadata_node(&[context.llvm().metadata_string(contract_path).into()])
+                .metadata_node(&[context.llvm().metadata_string(full_path).into()])
                 .into()],
-            format!("linker_symbol_{contract_path}").as_str(),
+            format!("factory_dependency_{full_path}").as_str(),
         )?
         .expect("Always exists");
     Ok(Value::new(value))
@@ -185,23 +193,31 @@ where
         .code_segment()
         .expect("Contract code segment type is undefined");
 
-    let parent = context.module().get_name().to_str().expect("Always valid");
-
-    let contract_path = match context.yul() {
+    let current_module_name = context.module().get_name().to_str().expect("Always valid");
+    let full_path = match context.yul() {
         Some(yul_data) => yul_data
-            .resolve_path(identifier.as_str())
-            .unwrap_or(identifier.as_str()),
+            .resolve_path(
+                identifier
+                    .strip_suffix(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX)
+                    .unwrap_or(identifier.as_str()),
+            )
+            .expect("Always exists"),
         None => identifier.as_str(),
     };
-    if contract_path == parent {
-        return Ok(Value::new_with_constant(
-            context.field_const(0).as_basic_value_enum(),
-            num::BigUint::zero(),
-        ));
-    } else if identifier.ends_with("_deployed")
-        && code_segment == era_compiler_common::CodeSegment::Runtime
-    {
-        anyhow::bail!("type({identifier}).runtimeCode is not supported");
+
+    match code_segment {
+        era_compiler_common::CodeSegment::Deploy if full_path == current_module_name => {
+            return Ok(Value::new_with_constant(
+                context.field_const(0).as_basic_value_enum(),
+                num::BigUint::zero(),
+            ));
+        }
+        era_compiler_common::CodeSegment::Runtime
+            if identifier.ends_with(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX) =>
+        {
+            anyhow::bail!("type({identifier}).runtimeCode is not supported");
+        }
+        _ => {}
     }
 
     let size_bigint = num::BigUint::from(crate::eravm::DEPLOYER_CALL_HEADER_SIZE);
