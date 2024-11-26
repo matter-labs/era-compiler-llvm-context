@@ -130,16 +130,13 @@ where
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
-    let contract_path =
-        context
+    let contract_path = match context.yul() {
+        Some(yul_data) => yul_data
             .resolve_path(identifier.as_str())
-            .map_err(|error| match code_segment {
-                era_compiler_common::CodeSegment::Runtime if identifier.ends_with("_deployed") => {
-                    anyhow::anyhow!("type({}).runtimeCode is not supported", identifier)
-                }
-                _ => error,
-            })?;
-    if contract_path.as_str() == parent {
+            .unwrap_or(identifier.as_str()),
+        None => identifier.as_str(),
+    };
+    if contract_path == parent {
         return Ok(Value::new_with_constant(
             context.field_const(0).as_basic_value_enum(),
             num::BigUint::zero(),
@@ -155,10 +152,7 @@ where
             context.intrinsics().factory_dependency,
             &[context
                 .llvm()
-                .metadata_node(&[context
-                    .llvm()
-                    .metadata_string(contract_path.as_str())
-                    .into()])
+                .metadata_node(&[context.llvm().metadata_string(contract_path).into()])
                 .into()],
             format!("linker_symbol_{contract_path}").as_str(),
         )?
@@ -193,16 +187,13 @@ where
 
     let parent = context.module().get_name().to_str().expect("Always valid");
 
-    let contract_path =
-        context
+    let contract_path = match context.yul() {
+        Some(yul_data) => yul_data
             .resolve_path(identifier.as_str())
-            .map_err(|error| match code_segment {
-                era_compiler_common::CodeSegment::Runtime if identifier.ends_with("_deployed") => {
-                    anyhow::anyhow!("type({}).runtimeCode is not supported", identifier)
-                }
-                _ => error,
-            })?;
-    if contract_path.as_str() == parent {
+            .unwrap_or(identifier.as_str()),
+        None => identifier.as_str(),
+    };
+    if contract_path == parent {
         return Ok(Value::new_with_constant(
             context.field_const(0).as_basic_value_enum(),
             num::BigUint::zero(),

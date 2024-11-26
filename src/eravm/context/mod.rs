@@ -30,6 +30,7 @@ use crate::context::pointer::Pointer;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_info::DebugInfo;
+use crate::dependency::DummyDependency;
 use crate::eravm::DebugConfig;
 use crate::eravm::Dependency;
 use crate::optimizer::settings::Settings as OptimizerSettings;
@@ -53,7 +54,7 @@ use self::yul_data::YulData;
 /// It is a not-so-big god-like object glueing all the compilers' complexity and act as an adapter
 /// and a superstructure over the inner `inkwell` LLVM context.
 ///
-pub struct Context<'ctx, D>
+pub struct Context<'ctx, D = DummyDependency>
 where
     D: Dependency,
 {
@@ -82,10 +83,6 @@ where
     /// The loop context stack.
     loop_stack: Vec<Loop<'ctx>>,
 
-    /// The project dependency manager. It can be any entity implementing the trait.
-    /// The manager is used to get information about contracts and their dependencies during
-    /// the multi-threaded compilation process.
-    dependency_manager: Option<D>,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
@@ -99,6 +96,9 @@ where
     evmla_data: Option<EVMLAData<'ctx>>,
     /// The Vyper data.
     vyper_data: Option<VyperData>,
+
+    /// Dependency phantom data.
+    pd: std::marker::PhantomData<D>,
 }
 
 impl<'ctx, D> Context<'ctx, D>
@@ -122,7 +122,6 @@ where
         module: inkwell::module::Module<'ctx>,
         llvm_options: Vec<String>,
         optimizer: Optimizer,
-        dependency_manager: Option<D>,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -144,7 +143,6 @@ where
             current_function: None,
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
-            dependency_manager,
             debug_info,
             debug_config,
 
@@ -152,6 +150,8 @@ where
             yul_data: None,
             evmla_data: None,
             vyper_data: None,
+
+            pd: std::marker::PhantomData,
         }
     }
 
@@ -382,16 +382,6 @@ where
     ///
     pub fn llvm_runtime(&self) -> &LLVMRuntime<'ctx> {
         &self.llvm_runtime
-    }
-
-    ///
-    /// Gets a full contract_path from the dependency manager.
-    ///
-    pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
-        self.dependency_manager
-            .as_ref()
-            .expect("Always exists")
-            .resolve_path(identifier)
     }
 
     ///
