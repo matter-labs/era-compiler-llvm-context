@@ -2,8 +2,6 @@
 //! The LLVM module build.
 //!
 
-use std::collections::BTreeMap;
-
 ///
 /// The LLVM module build.
 ///
@@ -15,8 +13,6 @@ pub struct Build {
     pub bytecode_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
     /// The project metadata hash.
     pub metadata_hash: Option<Vec<u8>>,
-    /// The hash-to-full-path mapping of the contract factory dependencies.
-    pub factory_dependencies: BTreeMap<String, String>,
     /// The text assembly.
     pub assembly: Option<String>,
 }
@@ -35,7 +31,6 @@ impl Build {
             bytecode,
             bytecode_hash,
             metadata_hash,
-            factory_dependencies: BTreeMap::new(),
             assembly,
         }
     }
