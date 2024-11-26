@@ -162,7 +162,6 @@ where
         mut self,
         contract_path: &str,
         linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
-        factory_dependencies: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
         metadata_hash: Option<era_compiler_common::Hash>,
         output_assembly: bool,
         is_fallback_to_size: bool,
@@ -243,7 +242,6 @@ where
                     .build(
                         contract_path,
                         linker_symbols,
-                        factory_dependencies,
                         metadata_hash,
                         output_assembly,
                         true,
@@ -265,7 +263,6 @@ where
         crate::eravm::build(
             bytecode_buffer,
             linker_symbols,
-            factory_dependencies,
             metadata_hash,
             assembly_text,
         )
