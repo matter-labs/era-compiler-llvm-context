@@ -36,19 +36,11 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Checkout LLVM
-        uses: actions/checkout@v4
-        with:
-          repository: matter-labs/era-compiler-llvm
-          ref: main
-          path: llvm
-
       - name: Build LLVM
         uses: matter-labs/era-compiler-ci/.github/actions/build-llvm@v1
         with:
           build-type: 'RelWithDebInfo'
           enable-assertions: true
-          clone-llvm: false
 
       - name: Run tests
         uses: matter-labs/era-compiler-ci/.github/actions/rust-unit-tests@v1
