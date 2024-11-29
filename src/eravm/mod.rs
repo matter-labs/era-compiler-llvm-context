@@ -54,15 +54,12 @@ pub fn assemble(
 ///
 /// Disassembles `bytecode`, returning textual representation.
 ///
-pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::Result<String> {
-    let bytecode_buffer = inkwell::memory_buffer::MemoryBuffer::create_from_memory_range(
-        bytecode,
-        "bytecode_buffer",
-        false,
-    );
-
+pub fn disassemble(
+    target_machine: &TargetMachine,
+    bytecode_buffer: &inkwell::memory_buffer::MemoryBuffer,
+) -> anyhow::Result<String> {
     let disassembly_buffer = target_machine
-        .disassemble(&bytecode_buffer, 0, DISASSEMBLER_DEFAULT_MODE)
+        .disassemble(bytecode_buffer, 0, DISASSEMBLER_DEFAULT_MODE)
         .map_err(|error| anyhow::anyhow!("disassembling: {error}"))?;
 
     let disassembly_text = String::from_utf8_lossy(disassembly_buffer.as_slice());
@@ -70,11 +67,7 @@ pub fn disassemble(target_machine: &TargetMachine, bytecode: &[u8]) -> anyhow::R
 }
 
 ///
-/// Links `bytecode_buffer`.
-///
-/// `linker_symbols` is always empty at compile time, as all references are resolved
-/// at the time of LLVM IR emission.
-/// Thus, it is only used at linkage (post-compile-time or pre-deploy) time.
+/// Links `bytecode_buffer` with `linker_symbols` and `factory_dependencies`.
 ///
 pub fn link(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
@@ -82,34 +75,51 @@ pub fn link(
     factory_dependencies: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
 ) -> anyhow::Result<(
     inkwell::memory_buffer::MemoryBuffer,
-    Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+    era_compiler_common::ObjectFormat,
 )> {
-    let bytecode_buffer_linked = if bytecode_buffer.is_elf_eravm() {
-        bytecode_buffer
-            .link_module_eravm(linker_symbols, factory_dependencies)
-            .map_err(|error| anyhow::anyhow!("bytecode linking error: {error}"))?
-    } else {
-        bytecode_buffer
-    };
+    if !bytecode_buffer.is_elf_eravm() {
+        return Ok((bytecode_buffer, era_compiler_common::ObjectFormat::Raw));
+    }
 
-    let bytecode_hash = if !bytecode_buffer_linked.is_elf_eravm() {
-        let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> =
-            bytecode_buffer_linked
-                .as_slice()
-                .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
-                .map(|word| word.try_into().expect("Always valid"))
-                .collect();
-        let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
-            { era_compiler_common::BYTE_LENGTH_X64 },
-            zkevm_opcode_defs::decoding::EncodingModeProduction,
-        >(bytecode_words.as_slice())
-        .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
-        Some(bytecode_hash)
+    let bytecode_buffer_linked = bytecode_buffer
+        .link_module_eravm(linker_symbols, factory_dependencies)
+        .map_err(|error| anyhow::anyhow!("bytecode linking: {error}"))?;
+    let object_format = if bytecode_buffer_linked.is_elf_eravm() {
+        era_compiler_common::ObjectFormat::ELF
     } else {
-        None
+        era_compiler_common::ObjectFormat::Raw
     };
+    Ok((bytecode_buffer_linked, object_format))
+}
 
-    Ok((bytecode_buffer_linked, bytecode_hash))
+///
+/// Computes the EraVM bytecode hash.
+///
+/// # Panics
+/// If `bytecode_buffer` is an ELF object.
+///
+/// # Errors
+/// If the bytecode size is not an odd number of 32-byte words.
+///
+pub fn hash(
+    bytecode_buffer: &inkwell::memory_buffer::MemoryBuffer,
+) -> anyhow::Result<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> {
+    assert!(
+        !bytecode_buffer.is_elf_eravm(),
+        "bytecode is still an unlinked ELF object"
+    );
+
+    let bytecode_words: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]> = bytecode_buffer
+        .as_slice()
+        .chunks(era_compiler_common::BYTE_LENGTH_FIELD)
+        .map(|word| word.try_into().expect("Always valid"))
+        .collect();
+    let bytecode_hash = zkevm_opcode_defs::utils::bytecode_to_code_hash_for_mode::<
+        { era_compiler_common::BYTE_LENGTH_X64 },
+        zkevm_opcode_defs::decoding::EncodingModeProduction,
+    >(bytecode_words.as_slice())
+    .map_err(|_| anyhow::anyhow!("bytecode hashing error"))?;
+    Ok(bytecode_hash)
 }
 
 ///
