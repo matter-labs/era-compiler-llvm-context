@@ -316,6 +316,13 @@ where
             "deployer_call_address_or_status_code",
         )?;
         context.build_store(result_pointer, address_or_status_code)?;
+        context.reset_named_pointers(&[crate::eravm::GLOBAL_RETURN_DATA_POINTER])?;
+        context.set_global(
+            crate::eravm::GLOBAL_RETURN_DATA_SIZE,
+            context.field_type(),
+            AddressSpace::Stack,
+            context.field_const(0),
+        )?;
         context.build_unconditional_branch(context.current_function().borrow().return_block())?;
 
         context.set_basic_block(error_block);

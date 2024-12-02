@@ -21,7 +21,10 @@ pub fn declare<'ctx, D>(
 where
     D: Dependency,
 {
-    context.yul_mut().const_array_declare(index, size)?;
+    context
+        .yul_mut()
+        .expect("Always exists")
+        .const_array_declare(index, size)?;
 
     Ok(context.field_const(1).as_basic_value_enum())
 }
@@ -38,7 +41,10 @@ pub fn set<'ctx, D>(
 where
     D: Dependency,
 {
-    context.yul_mut().const_array_set(index, offset, value)?;
+    context
+        .yul_mut()
+        .expect("Always exists")
+        .const_array_set(index, offset, value)?;
 
     Ok(context.field_const(1).as_basic_value_enum())
 }
@@ -54,7 +60,10 @@ pub fn finalize<'ctx, D>(
 where
     D: Dependency,
 {
-    let const_array = context.yul_mut().const_array_take(index)?;
+    let const_array = context
+        .yul_mut()
+        .expect("Always exists")
+        .const_array_take(index)?;
     let array_type = context.field_type().array_type(const_array.len() as u32);
     let array_value = context.field_type().const_array(
         const_array

@@ -16,6 +16,8 @@ pub struct YulData {
     /// The EraVM extensions flag.
     /// The call simulations only work if this mode is enabled.
     are_eravm_extensions_enabled: bool,
+    /// Mapping from Yul object identifiers to full contract paths.
+    identifier_paths: BTreeMap<String, String>,
     /// The list of constant arrays in the code section.
     /// It is a temporary storage used until the finalization method is called.
     const_arrays: BTreeMap<u8, Vec<num::BigUint>>,
@@ -25,9 +27,13 @@ impl YulData {
     ///
     /// A shortcut constructor.
     ///
-    pub fn new(are_eravm_extensions_enabled: bool) -> Self {
+    pub fn new(
+        are_eravm_extensions_enabled: bool,
+        identifier_paths: BTreeMap<String, String>,
+    ) -> Self {
         Self {
             are_eravm_extensions_enabled,
+            identifier_paths,
             const_arrays: BTreeMap::new(),
         }
     }
@@ -37,6 +43,15 @@ impl YulData {
     ///
     pub fn are_eravm_extensions_enabled(&self) -> bool {
         self.are_eravm_extensions_enabled
+    }
+
+    ///
+    /// Resolves the full contract path by the Yul object identifier.
+    ///
+    pub fn resolve_path(&self, identifier: &str) -> Option<&str> {
+        self.identifier_paths
+            .get(identifier)
+            .map(|path| path.as_str())
     }
 
     ///

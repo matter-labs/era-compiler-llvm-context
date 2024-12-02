@@ -15,7 +15,6 @@ pub mod yul_data;
 mod tests;
 
 use std::cell::RefCell;
-use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -30,6 +29,7 @@ use crate::context::pointer::Pointer;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_info::DebugInfo;
+use crate::dependency::DummyDependency;
 use crate::eravm::DebugConfig;
 use crate::eravm::Dependency;
 use crate::optimizer::settings::Settings as OptimizerSettings;
@@ -53,7 +53,7 @@ use self::yul_data::YulData;
 /// It is a not-so-big god-like object glueing all the compilers' complexity and act as an adapter
 /// and a superstructure over the inner `inkwell` LLVM context.
 ///
-pub struct Context<'ctx, D>
+pub struct Context<'ctx, D = DummyDependency>
 where
     D: Dependency,
 {
@@ -82,10 +82,6 @@ where
     /// The loop context stack.
     loop_stack: Vec<Loop<'ctx>>,
 
-    /// The project dependency manager. It can be any entity implementing the trait.
-    /// The manager is used to get information about contracts and their dependencies during
-    /// the multi-threaded compilation process.
-    dependency_manager: Option<D>,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
@@ -99,6 +95,9 @@ where
     evmla_data: Option<EVMLAData<'ctx>>,
     /// The Vyper data.
     vyper_data: Option<VyperData>,
+
+    /// Dependency phantom data.
+    pd: std::marker::PhantomData<D>,
 }
 
 impl<'ctx, D> Context<'ctx, D>
@@ -122,7 +121,6 @@ where
         module: inkwell::module::Module<'ctx>,
         llvm_options: Vec<String>,
         optimizer: Optimizer,
-        dependency_manager: Option<D>,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -144,7 +142,6 @@ where
             current_function: None,
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
-            dependency_manager,
             debug_info,
             debug_config,
 
@@ -152,6 +149,8 @@ where
             yul_data: None,
             evmla_data: None,
             vyper_data: None,
+
+            pd: std::marker::PhantomData,
         }
     }
 
@@ -161,7 +160,6 @@ where
     pub fn build(
         mut self,
         contract_path: &str,
-        linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
         metadata_hash: Option<era_compiler_common::Hash>,
         output_assembly: bool,
         is_fallback_to_size: bool,
@@ -239,13 +237,7 @@ where
                     Function::set_size_attributes(self.llvm, function);
                 }
                 return self
-                    .build(
-                        contract_path,
-                        linker_symbols,
-                        metadata_hash,
-                        output_assembly,
-                        true,
-                    )
+                    .build(contract_path, metadata_hash, output_assembly, true)
                     .map_err(|error| {
                         anyhow::anyhow!("falling back to optimizing for size: {error}")
                     });
@@ -260,12 +252,7 @@ where
         let assembly_text = assembly_buffer
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
-        crate::eravm::build(
-            bytecode_buffer,
-            linker_symbols,
-            metadata_hash,
-            assembly_text,
-        )
+        crate::eravm::build(bytecode_buffer, metadata_hash, assembly_text)
     }
 
     ///
@@ -382,32 +369,6 @@ where
     ///
     pub fn llvm_runtime(&self) -> &LLVMRuntime<'ctx> {
         &self.llvm_runtime
-    }
-
-    ///
-    /// Get the contract dependency data.
-    ///
-    pub fn get_dependency_data(&mut self, identifier: &str) -> anyhow::Result<String> {
-        if let Some(vyper_data) = self.vyper_data.as_mut() {
-            vyper_data.set_is_minimal_proxy_used();
-        }
-        self.dependency_manager
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| manager.get(identifier))
-    }
-
-    ///
-    /// Gets a full contract_path from the dependency manager.
-    ///
-    pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
-        self.dependency_manager
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                let full_path = manager.resolve_path(identifier)?;
-                Ok(full_path)
-            })
     }
 
     ///
@@ -1160,57 +1121,47 @@ where
         self.solidity_data = Some(data);
     }
 
-    fn solidity(&self) -> &Self::SolidityData {
-        self.solidity_data
-            .as_ref()
-            .expect("The Solidity data must have been initialized")
+    fn solidity(&self) -> Option<&Self::SolidityData> {
+        self.solidity_data.as_ref()
     }
 
-    fn solidity_mut(&mut self) -> &mut Self::SolidityData {
-        self.solidity_data
-            .as_mut()
-            .expect("The Solidity data must have been initialized")
+    fn solidity_mut(&mut self) -> Option<&mut Self::SolidityData> {
+        self.solidity_data.as_mut()
     }
 
     fn set_yul_data(&mut self, data: Self::YulData) {
         self.yul_data = Some(data);
     }
 
-    fn yul(&self) -> &Self::YulData {
-        self.yul_data
-            .as_ref()
-            .expect("The Yul data must have been initialized")
+    fn yul(&self) -> Option<&Self::YulData> {
+        self.yul_data.as_ref()
     }
 
-    fn yul_mut(&mut self) -> &mut Self::YulData {
-        self.yul_data
-            .as_mut()
-            .expect("The Yul data must have been initialized")
+    fn yul_mut(&mut self) -> Option<&mut Self::YulData> {
+        self.yul_data.as_mut()
     }
 
     fn set_evmla_data(&mut self, data: Self::EVMLAData) {
         self.evmla_data = Some(data);
     }
 
-    fn evmla(&self) -> &Self::EVMLAData {
-        self.evmla_data
-            .as_ref()
-            .expect("The EVMLA data must have been initialized")
+    fn evmla(&self) -> Option<&Self::EVMLAData> {
+        self.evmla_data.as_ref()
     }
 
-    fn evmla_mut(&mut self) -> &mut Self::EVMLAData {
-        self.evmla_data
-            .as_mut()
-            .expect("The EVMLA data must have been initialized")
+    fn evmla_mut(&mut self) -> Option<&mut Self::EVMLAData> {
+        self.evmla_data.as_mut()
     }
 
     fn set_vyper_data(&mut self, data: Self::VyperData) {
         self.vyper_data = Some(data);
     }
 
-    fn vyper(&self) -> &Self::VyperData {
-        self.vyper_data
-            .as_ref()
-            .expect("The Vyper data must have been initialized")
+    fn vyper(&self) -> Option<&Self::VyperData> {
+        self.vyper_data.as_ref()
+    }
+
+    fn vyper_mut(&mut self) -> Option<&mut Self::VyperData> {
+        self.vyper_data.as_mut()
     }
 }
