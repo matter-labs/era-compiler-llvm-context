@@ -108,10 +108,6 @@ where
         .code_segment()
         .expect("Contract code segment type is undefined");
 
-    if let Some(vyper_data) = context.vyper_mut() {
-        vyper_data.set_is_minimal_proxy_used();
-    }
-
     let current_module_name = context.module().get_name().to_str().expect("Always valid");
     let full_path = match context.yul() {
         Some(yul_data) => yul_data
