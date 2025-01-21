@@ -1,5 +1,5 @@
 //!
-//! The LLVM context library.
+//! The LLVM EraVM context library.
 //!
 
 pub mod r#const;
