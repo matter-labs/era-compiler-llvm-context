@@ -8,20 +8,16 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates the `addmod` instruction.
 ///
-pub fn add_mod<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn add_mod<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
     modulo: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call(
             context.intrinsics().addmod,
@@ -38,15 +34,12 @@ where
 ///
 /// Translates the `mulmod` instruction.
 ///
-pub fn mul_mod<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn mul_mod<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
     modulo: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call(
             context.intrinsics().mulmod,
@@ -63,14 +56,11 @@ where
 ///
 /// Translates the `exp` instruction.
 ///
-pub fn exponent<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn exponent<'ctx>(
+    context: &mut Context<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
     exponent: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call(
             context.intrinsics().exp,
@@ -83,14 +73,11 @@ where
 ///
 /// Translates the `signextend` instruction.
 ///
-pub fn sign_extend<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn sign_extend<'ctx>(
+    context: &mut Context<'ctx>,
     bytes: inkwell::values::IntValue<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call(
             context.intrinsics().signextend,
@@ -103,14 +90,11 @@ where
 ///
 /// Translates the `keccak256` instruction.
 ///
-pub fn keccak256<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn keccak256<'ctx>(
+    context: &mut Context<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,

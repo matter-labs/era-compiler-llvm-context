@@ -6,19 +6,15 @@ use inkwell::values::BasicValue;
 
 use crate::context::IContext;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Performs a multiplication, returning the higher register, that is the overflown part.
 ///
-pub fn multiplication_512<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn multiplication_512<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let operand_1_extended = context.builder().build_int_z_extend_or_bit_cast(
         operand_1,
         context.integer_type(era_compiler_common::BIT_LENGTH_FIELD * 2),

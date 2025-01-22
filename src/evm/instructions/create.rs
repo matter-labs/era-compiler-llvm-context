@@ -8,20 +8,16 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates the contract `create` instruction.
 ///
-pub fn create<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn create<'ctx>(
+    context: &mut Context<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -46,16 +42,13 @@ where
 ///
 /// Translates the contract `create2` instruction.
 ///
-pub fn create2<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn create2<'ctx>(
+    context: &mut Context<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
     salt: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,

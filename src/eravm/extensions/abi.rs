@@ -9,18 +9,14 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Generates an extra ABI data getter call.
 ///
-pub fn get_extra_abi_data<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn get_extra_abi_data<'ctx>(
+    context: &mut Context<'ctx>,
     index: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let extra_active_data_global = context.get_global(crate::eravm::GLOBAL_EXTRA_ABI_DATA)?;
     let extra_active_data_pointer = extra_active_data_global.into();
     let extra_active_data_element_pointer = context.build_gep(
@@ -39,12 +35,9 @@ where
 ///
 /// Loads the calldata pointer to the active pointer.
 ///
-pub fn calldata_ptr_to_active<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn calldata_ptr_to_active<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let calldata_pointer = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
     context.set_active_pointer(
         context.field_const(0),
@@ -56,12 +49,9 @@ where
 ///
 /// Loads the return data pointer to the active pointer.
 ///
-pub fn return_data_ptr_to_active<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn return_data_ptr_to_active<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let return_data_pointer = context.get_global_value(crate::eravm::GLOBAL_RETURN_DATA_POINTER)?;
     context.set_active_pointer(
         context.field_const(0),
@@ -73,12 +63,9 @@ where
 ///
 /// Loads the decommit pointer to the active pointer.
 ///
-pub fn decommit_ptr_to_active<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn decommit_ptr_to_active<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let decommit_pointer = context.get_global_value(crate::eravm::GLOBAL_DECOMMIT_POINTER)?;
     context.set_active_pointer(
         context.field_const(0),
@@ -90,13 +77,10 @@ where
 ///
 /// Shifts the active pointer by the specified `offset`.
 ///
-pub fn active_ptr_add_assign<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn active_ptr_add_assign<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer_shifted = context.build_gep(
         Pointer::new(context.byte_type(), AddressSpace::Generic, active_pointer),
@@ -111,13 +95,10 @@ where
 ///
 /// Shrinks the active pointer by the specified `offset`.
 ///
-pub fn active_ptr_shrink_assign<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn active_ptr_shrink_assign<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer_shrunken = context
         .build_call(
@@ -139,13 +120,10 @@ where
 ///
 /// Writes the specified `data` into the upper 128 bits of the active pointer.
 ///
-pub fn active_ptr_pack_assign<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn active_ptr_pack_assign<'ctx>(
+    context: &mut Context<'ctx>,
     data: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer_packed = context
         .build_call(
@@ -167,13 +145,10 @@ where
 ///
 /// Loads a single word from the active pointer to the stack.
 ///
-pub fn active_ptr_data_load<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn active_ptr_data_load<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer = context.build_gep(
         Pointer::new(context.byte_type(), AddressSpace::Generic, active_pointer),
@@ -188,12 +163,9 @@ where
 ///
 /// Returns the active pointer data size.
 ///
-pub fn active_ptr_data_size<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn active_ptr_data_size<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let active_pointer = context.get_active_pointer(context.field_const(0))?;
     let active_pointer_value = context.builder().build_ptr_to_int(
         active_pointer,
@@ -217,15 +189,12 @@ where
 ///
 /// Copies a chunk of data from the active pointer to the heap.
 ///
-pub fn active_ptr_data_copy<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn active_ptr_data_copy<'ctx>(
+    context: &mut Context<'ctx>,
     destination_offset: inkwell::values::IntValue<'ctx>,
     source_offset: inkwell::values::IntValue<'ctx>,
     size: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let destination = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -255,12 +224,9 @@ where
 ///
 /// Generates a return forwarding the active pointer.
 ///
-pub fn active_ptr_return_forward<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn active_ptr_return_forward<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let active_pointer = context.get_active_pointer(context.field_const(0))?;
     context.build_call(
         context.llvm_runtime().return_forward,
@@ -274,12 +240,9 @@ where
 ///
 /// Generates a revert forwarding the active pointer.
 ///
-pub fn active_ptr_revert_forward<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn active_ptr_revert_forward<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let active_pointer = context.get_active_pointer(context.field_const(0))?;
     context.build_call(
         context.llvm_runtime().revert_forward,
@@ -293,14 +256,11 @@ where
 ///
 /// Swaps active pointers.
 ///
-pub fn active_ptr_swap<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn active_ptr_swap<'ctx>(
+    context: &mut Context<'ctx>,
     index_1: inkwell::values::IntValue<'ctx>,
     index_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let pointer_1 = context.get_active_pointer(index_1)?;
     let pointer_2 = context.get_active_pointer(index_2)?;
 

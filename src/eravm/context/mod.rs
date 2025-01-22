@@ -29,9 +29,7 @@ use crate::context::pointer::Pointer;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_info::DebugInfo;
-use crate::dependency::DummyDependency;
 use crate::eravm::DebugConfig;
-use crate::eravm::Dependency;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
 use crate::target_machine::TargetMachine;
@@ -53,10 +51,7 @@ use self::yul_data::YulData;
 /// It is a not-so-big god-like object glueing all the compilers' complexity and act as an adapter
 /// and a superstructure over the inner `inkwell` LLVM context.
 ///
-pub struct Context<'ctx, D = DummyDependency>
-where
-    D: Dependency,
-{
+pub struct Context<'ctx> {
     /// The inner LLVM context.
     llvm: &'ctx inkwell::context::Context,
     /// The inner LLVM context builder.
@@ -95,15 +90,9 @@ where
     evmla_data: Option<EVMLAData<'ctx>>,
     /// The Vyper data.
     vyper_data: Option<VyperData>,
-
-    /// Dependency phantom data.
-    pd: std::marker::PhantomData<D>,
 }
 
-impl<'ctx, D> Context<'ctx, D>
-where
-    D: Dependency,
-{
+impl<'ctx> Context<'ctx> {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
 
@@ -149,8 +138,6 @@ where
             yul_data: None,
             evmla_data: None,
             vyper_data: None,
-
-            pd: std::marker::PhantomData,
         }
     }
 
@@ -836,10 +823,7 @@ where
     }
 }
 
-impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
-where
-    D: Dependency,
-{
+impl<'ctx> IContext<'ctx> for Context<'ctx> {
     type Function = Function<'ctx>;
 
     type AddressSpace = AddressSpace;

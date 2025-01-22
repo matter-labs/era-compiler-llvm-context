@@ -12,7 +12,6 @@ use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::llvm_runtime::LLVMRuntime;
 use crate::eravm::context::function::Function;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 use crate::eravm::WriteLLVM;
 
 ///
@@ -73,10 +72,7 @@ impl DefaultCall {
     ///
     /// Returns the low-level call function.
     ///
-    fn inner_function<'ctx, D>(&self, context: &Context<'ctx, D>) -> FunctionDeclaration<'ctx>
-    where
-        D: Dependency,
-    {
+    fn inner_function<'ctx>(&self, context: &Context<'ctx>) -> FunctionDeclaration<'ctx> {
         match self.inner_name.as_str() {
             name if name == LLVMRuntime::FUNCTION_FARCALL => context.llvm_runtime().far_call,
             name if name == LLVMRuntime::FUNCTION_STATICCALL => context.llvm_runtime().static_call,
@@ -88,11 +84,8 @@ impl DefaultCall {
     }
 }
 
-impl<D> WriteLLVM<D> for DefaultCall
-where
-    D: Dependency,
-{
-    fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
+impl WriteLLVM for DefaultCall {
+    fn declare(&mut self, context: &mut Context) -> anyhow::Result<()> {
         let function_type = context.function_type(
             vec![
                 context.field_type().as_basic_type_enum(),
@@ -120,7 +113,7 @@ where
         Ok(())
     }
 
-    fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()> {
+    fn into_llvm(self, context: &mut Context) -> anyhow::Result<()> {
         context.set_current_function(self.name.as_str())?;
 
         let gas = context

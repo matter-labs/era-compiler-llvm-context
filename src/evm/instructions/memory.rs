@@ -8,20 +8,16 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates the `mload` instruction.
 ///
 /// Uses the main heap.
 ///
-pub fn load<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn load<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -38,14 +34,11 @@ where
 ///
 /// Uses the main heap.
 ///
-pub fn store<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn store<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -62,14 +55,11 @@ where
 ///
 /// Uses the main heap.
 ///
-pub fn store_byte<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn store_byte<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,

@@ -9,7 +9,6 @@ use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::runtime::Runtime;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 use crate::eravm::WriteLLVM;
 
 ///
@@ -37,10 +36,7 @@ impl Entry {
     ///
     /// The pointers are not initialized, because it's not possible to create a null pointer.
     ///
-    pub fn initialize_globals<D>(context: &mut Context<D>) -> anyhow::Result<()>
-    where
-        D: Dependency,
-    {
+    pub fn initialize_globals(context: &mut Context) -> anyhow::Result<()> {
         context.set_global(
             crate::eravm::GLOBAL_HEAP_MEMORY_POINTER,
             context.field_type(),
@@ -97,11 +93,8 @@ impl Entry {
     }
 }
 
-impl<D> WriteLLVM<D> for Entry
-where
-    D: Dependency,
-{
-    fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
+impl WriteLLVM for Entry {
+    fn declare(&mut self, context: &mut Context) -> anyhow::Result<()> {
         let mut entry_arguments =
             Vec::with_capacity(Self::MANDATORY_ARGUMENTS_COUNT + crate::eravm::EXTRA_ABI_DATA_SIZE);
         entry_arguments.push(
@@ -125,7 +118,7 @@ where
         Ok(())
     }
 
-    fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()> {
+    fn into_llvm(self, context: &mut Context) -> anyhow::Result<()> {
         context.set_current_function(Runtime::FUNCTION_ENTRY)?;
 
         let deploy_code_call_block = context.append_basic_block("deploy_code_call_block");

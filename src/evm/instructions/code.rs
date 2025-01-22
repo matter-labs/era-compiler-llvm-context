@@ -8,17 +8,13 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates the `codesize` instruction.
 ///
-pub fn size<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn size<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call(context.intrinsics().codesize, &[], "codesize")?
         .expect("Always exists"))
@@ -27,15 +23,12 @@ where
 ///
 /// Translates the `codecopy` instruction.
 ///
-pub fn copy<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn copy<'ctx>(
+    context: &mut Context<'ctx>,
     destination_offset: inkwell::values::IntValue<'ctx>,
     source_offset: inkwell::values::IntValue<'ctx>,
     size: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let destination = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -65,13 +58,10 @@ where
 ///
 /// Translates the `dataoffset` instruction.
 ///
-pub fn data_offset<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn data_offset<'ctx>(
+    context: &mut Context<'ctx>,
     object_name: &str,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let object_name = context
         .llvm()
         .metadata_node(&[context.llvm().metadata_string(object_name).into()]);
@@ -88,13 +78,10 @@ where
 ///
 /// Translates the `datasize` instruction.
 ///
-pub fn data_size<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn data_size<'ctx>(
+    context: &mut Context<'ctx>,
     object_name: &str,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let object_name = context
         .llvm()
         .metadata_node(&[context.llvm().metadata_string(object_name).into()]);
@@ -111,13 +98,10 @@ where
 ///
 /// Translates the `extcodesize` instruction.
 ///
-pub fn ext_size<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn ext_size<'ctx>(
+    context: &mut Context<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call(
             context.intrinsics().extcodesize,
@@ -130,16 +114,13 @@ where
 ///
 /// Translates the `extcodecopy` instruction.
 ///
-pub fn ext_copy<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn ext_copy<'ctx>(
+    context: &mut Context<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     destination_offset: inkwell::values::IntValue<'ctx>,
     source_offset: inkwell::values::IntValue<'ctx>,
     size: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let destination_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -166,13 +147,10 @@ where
 ///
 /// Translates the `extcodehash` instruction.
 ///
-pub fn ext_hash<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn ext_hash<'ctx>(
+    context: &mut Context<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call(
             context.intrinsics().extcodehash,

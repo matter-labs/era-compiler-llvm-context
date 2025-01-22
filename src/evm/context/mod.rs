@@ -20,7 +20,6 @@ use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_config::DebugConfig;
 use crate::debug_info::DebugInfo;
-use crate::dependency::Dependency;
 use crate::optimizer::Optimizer;
 use crate::target_machine::TargetMachine;
 
@@ -35,10 +34,7 @@ use self::function::Function;
 /// It is a not-so-big god-like object glueing all the compilers' complexity and act as an adapter
 /// and a superstructure over the inner `inkwell` LLVM context.
 ///
-pub struct Context<'ctx, D>
-where
-    D: Dependency,
-{
+pub struct Context<'ctx> {
     /// The inner LLVM context.
     llvm: &'ctx inkwell::context::Context,
     /// The inner LLVM context builder.
@@ -60,10 +56,6 @@ where
     /// The loop context stack.
     loop_stack: Vec<Loop<'ctx>>,
 
-    /// The project dependency manager. It can be any entity implementing the trait.
-    /// The manager is used to get information about contracts and their dependencies during
-    /// the multi-threaded compilation process.
-    dependency_manager: Option<D>,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
@@ -73,10 +65,7 @@ where
     evmla_data: Option<EVMLAData<'ctx>>,
 }
 
-impl<'ctx, D> Context<'ctx, D>
-where
-    D: Dependency,
-{
+impl<'ctx> Context<'ctx> {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
 
@@ -92,7 +81,6 @@ where
         llvm_options: Vec<String>,
         code_segment: era_compiler_common::CodeSegment,
         optimizer: Optimizer,
-        dependency_manager: Option<D>,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -111,7 +99,6 @@ where
             current_function: None,
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
-            dependency_manager,
             debug_info,
             debug_config,
 
@@ -188,19 +175,6 @@ where
     ///
     pub fn intrinsics(&self) -> &Intrinsics<'ctx> {
         &self.intrinsics
-    }
-
-    ///
-    /// Gets a full contract_path from the dependency manager.
-    ///
-    pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
-        self.dependency_manager
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                let full_path = manager.resolve_path(identifier)?;
-                Ok(full_path)
-            })
     }
 
     ///
@@ -341,10 +315,7 @@ where
     }
 }
 
-impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
-where
-    D: Dependency,
-{
+impl<'ctx> IContext<'ctx> for Context<'ctx> {
     type Function = Function<'ctx>;
 
     type AddressSpace = AddressSpace;

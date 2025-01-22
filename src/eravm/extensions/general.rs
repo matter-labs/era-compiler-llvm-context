@@ -7,20 +7,16 @@ use inkwell::values::BasicValue;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Generates a call to L1.
 ///
-pub fn to_l1<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn to_l1<'ctx>(
+    context: &mut Context<'ctx>,
     is_first: inkwell::values::IntValue<'ctx>,
     in_0: inkwell::values::IntValue<'ctx>,
     in_1: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let join_block = context.append_basic_block("contract_call_toL1_join_block");
 
     let contract_call_tol1_is_first_block =
@@ -77,12 +73,9 @@ where
 ///
 /// Generates a `code source` call.
 ///
-pub fn code_source<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn code_source<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let result = context
         .build_call(
             context.intrinsics().code_source,
@@ -96,14 +89,11 @@ where
 ///
 /// Generates a precompile call.
 ///
-pub fn precompile<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn precompile<'ctx>(
+    context: &mut Context<'ctx>,
     in_0: inkwell::values::IntValue<'ctx>,
     gas_left: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let result = context
         .build_call(
             context.intrinsics().precompile,
@@ -117,14 +107,11 @@ where
 ///
 /// Generates a decommit call.
 ///
-pub fn decommit<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn decommit<'ctx>(
+    context: &mut Context<'ctx>,
     in_0: inkwell::values::IntValue<'ctx>,
     gas_left: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let result = context
         .build_call(
             context.intrinsics().decommit,
@@ -144,12 +131,9 @@ where
 ///
 /// Generates a `meta` call.
 ///
-pub fn meta<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn meta<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let result = context
         .build_call(
             context.intrinsics().meta,
@@ -163,13 +147,10 @@ where
 ///
 /// Generates a `u128` context value setter call.
 ///
-pub fn set_context_value<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn set_context_value<'ctx>(
+    context: &mut Context<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     context.build_call(
         context.intrinsics().set_u128,
         &[value.as_basic_value_enum()],
@@ -181,13 +162,10 @@ where
 ///
 /// Generates a public data price setter call.
 ///
-pub fn set_pubdata_price<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn set_pubdata_price<'ctx>(
+    context: &mut Context<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     context.build_call(
         context.intrinsics().set_pubdata_price,
         &[value.as_basic_value_enum()],
@@ -199,12 +177,9 @@ where
 ///
 /// Generates a transaction counter increment call.
 ///
-pub fn increment_tx_counter<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn increment_tx_counter<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     context.build_call(
         context.intrinsics().increment_tx_counter,
         &[],
@@ -216,15 +191,12 @@ where
 ///
 /// Generates an event call.
 ///
-pub fn event<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn event<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
     is_initializer: bool,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     context.build_call(
         context.intrinsics().event,
         &[

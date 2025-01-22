@@ -8,19 +8,15 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates the `return` instruction.
 ///
-pub fn r#return<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn r#return<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
     length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -44,14 +40,11 @@ where
 ///
 /// Translates the `revert` instruction.
 ///
-pub fn revert<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn revert<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
     length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -75,10 +68,7 @@ where
 ///
 /// Translates the `stop` instruction.
 ///
-pub fn stop<D>(context: &mut Context<D>) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+pub fn stop(context: &mut Context) -> anyhow::Result<()> {
     context.build_call(context.intrinsics().stop, &[], "stop")?;
     context.build_unreachable()?;
     Ok(())
@@ -87,10 +77,7 @@ where
 ///
 /// Translates the `invalid` instruction.
 ///
-pub fn invalid<D>(context: &mut Context<D>) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+pub fn invalid(context: &mut Context) -> anyhow::Result<()> {
     context.build_call(context.intrinsics().invalid, &[], "invalid")?;
     context.build_unreachable()?;
     Ok(())

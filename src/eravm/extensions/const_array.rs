@@ -8,19 +8,15 @@ use inkwell::values::BasicValue;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Declares a constant array in the code section.
 ///
-pub fn declare<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn declare<'ctx>(
+    context: &mut Context<'ctx>,
     index: u8,
     size: u16,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     context
         .yul_mut()
         .expect("Always exists")
@@ -32,15 +28,12 @@ where
 ///
 /// Sets a value in a constant array in the code section.
 ///
-pub fn set<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn set<'ctx>(
+    context: &mut Context<'ctx>,
     index: u8,
     offset: u16,
     value: num::BigUint,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     context
         .yul_mut()
         .expect("Always exists")
@@ -53,13 +46,10 @@ where
 /// Finalizes a constant array in the code section, by extracting it from
 /// the temporary compile-time storage, and initializing it in LLVM IR.
 ///
-pub fn finalize<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn finalize<'ctx>(
+    context: &mut Context<'ctx>,
     index: u8,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let const_array = context
         .yul_mut()
         .expect("Always exists")
@@ -91,14 +81,11 @@ where
 ///
 /// Gets a value from a constant array in the code section.
 ///
-pub fn get<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn get<'ctx>(
+    context: &mut Context<'ctx>,
     index: u8,
     offset: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let identifier = format!(
         "{}{:03}",
         crate::eravm::r#const::GLOBAL_CONST_ARRAY_PREFIX,

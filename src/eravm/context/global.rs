@@ -6,7 +6,6 @@ use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
 use crate::context::IContext;
-use crate::dependency::Dependency;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
 
@@ -25,15 +24,14 @@ impl<'ctx> Global<'ctx> {
     ///
     /// A shortcut constructor.
     ///
-    pub fn new<D, T, V>(
-        context: &mut Context<'ctx, D>,
+    pub fn new<T, V>(
+        context: &mut Context<'ctx>,
         r#type: T,
         address_space: AddressSpace,
         initializer: V,
         name: &str,
     ) -> anyhow::Result<Self>
     where
-        D: Dependency,
         T: BasicType<'ctx>,
         V: BasicValue<'ctx>,
     {

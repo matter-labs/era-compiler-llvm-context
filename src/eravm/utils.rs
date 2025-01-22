@@ -9,20 +9,16 @@ use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::llvm_runtime::LLVMRuntime;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Clamps `value` to `max_value`, if `value` is bigger than `max_value`.
 ///
-pub fn clamp<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn clamp<'ctx>(
+    context: &mut Context<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
     max_value: inkwell::values::IntValue<'ctx>,
     name: &str,
-) -> anyhow::Result<inkwell::values::IntValue<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::IntValue<'ctx>> {
     let in_bounds_block = context.append_basic_block(format!("{name}_is_bounds_block").as_str());
     let join_block = context.append_basic_block(format!("{name}_join_block").as_str());
 
@@ -49,10 +45,7 @@ where
 ///
 /// Generates an exception.
 ///
-pub fn throw<D>(context: &Context<D>) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+pub fn throw(context: &Context) -> anyhow::Result<()> {
     context.build_call(
         context.llvm_runtime().cxa_throw,
         &[context
@@ -70,16 +63,13 @@ where
 ///
 /// Performs the extra ABI data padding and adds the mimic call extra argument.
 ///
-pub fn external_call_arguments<'ctx, D>(
-    context: &Context<'ctx, D>,
+pub fn external_call_arguments<'ctx>(
+    context: &Context<'ctx>,
     abi_data: inkwell::values::BasicValueEnum<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     extra_abi_data: Vec<inkwell::values::IntValue<'ctx>>,
     mimic: Option<inkwell::values::IntValue<'ctx>>,
-) -> Vec<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> Vec<inkwell::values::BasicValueEnum<'ctx>> {
     let mut result = Vec::with_capacity(
         crate::eravm::context::function::runtime::entry::Entry::MANDATORY_ARGUMENTS_COUNT
             + crate::eravm::EXTRA_ABI_DATA_SIZE
@@ -103,17 +93,14 @@ where
 ///
 /// If `gas` is `None`, it is fetched from the contract context.
 ///
-pub fn abi_data<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn abi_data<'ctx>(
+    context: &mut Context<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
     gas: Option<inkwell::values::IntValue<'ctx>>,
     address_space: AddressSpace,
     is_system_call: bool,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let input_offset = crate::eravm::utils::clamp(
         context,
         input_offset,
@@ -196,13 +183,10 @@ where
 ///
 /// Pads the extra ABI data with `i256::undef`, so it always consists of 10 values.
 ///
-pub fn pad_extra_abi_data<'ctx, D>(
-    context: &Context<'ctx, D>,
+pub fn pad_extra_abi_data<'ctx>(
+    context: &Context<'ctx>,
     initial_data: Vec<inkwell::values::IntValue<'ctx>>,
-) -> [inkwell::values::IntValue<'ctx>; crate::eravm::EXTRA_ABI_DATA_SIZE]
-where
-    D: Dependency,
-{
+) -> [inkwell::values::IntValue<'ctx>; crate::eravm::EXTRA_ABI_DATA_SIZE] {
     let mut padded_data = initial_data;
     padded_data.extend(vec![
         context.field_undef();
