@@ -5,6 +5,7 @@
 use inkwell::values::BasicValue;
 use num::Zero;
 
+use crate::context::traits::yul_data::IYulData;
 use crate::context::value::Value;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;

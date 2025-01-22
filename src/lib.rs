@@ -86,6 +86,7 @@ pub use self::evm::context::function::intrinsics::Intrinsics as EVMIntrinsicFunc
 pub use self::evm::context::function::runtime::entry::Entry as EVMEntryFunction;
 pub use self::evm::context::function::vyper_data::VyperData as EVMFunctionVyperData;
 pub use self::evm::context::function::Function as EVMFunction;
+pub use self::evm::context::yul_data::YulData as EVMContextYulData;
 pub use self::evm::context::Context as EVMContext;
 pub use self::evm::instructions::arithmetic as evm_arithmetic;
 pub use self::evm::instructions::bitwise as evm_bitwise;
