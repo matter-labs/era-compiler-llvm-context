@@ -5,7 +5,6 @@
 use inkwell::values::BasicValue;
 
 use crate::context::pointer::Pointer;
-use crate::context::value::Value;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
@@ -145,11 +144,20 @@ pub fn delegate_call<'ctx>(
 }
 
 ///
-/// Translates the Yul `linkersymbol` instruction.
+/// Translates the `linkersymbol` instruction.
 ///
 pub fn linker_symbol<'ctx>(
-    _context: &mut Context<'ctx>,
-    mut _arguments: [Value<'ctx>; 1],
+    context: &mut Context<'ctx>,
+    path: &str,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
-    unimplemented!()
+    Ok(context
+        .build_call_metadata(
+            context.intrinsics().linkersymbol,
+            &[context
+                .llvm()
+                .metadata_node(&[context.llvm().metadata_string(path).into()])
+                .into()],
+            format!("linker_symbol_{path}").as_str(),
+        )?
+        .expect("Always exists"))
 }

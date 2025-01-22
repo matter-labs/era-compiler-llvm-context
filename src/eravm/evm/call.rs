@@ -594,7 +594,7 @@ pub fn default<'ctx>(
 }
 
 ///
-/// Translates the Yul `linkersymbol` instruction.
+/// Translates the `linkersymbol` instruction.
 ///
 pub fn linker_symbol<'ctx>(
     context: &mut Context<'ctx>,
