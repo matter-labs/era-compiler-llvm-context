@@ -35,7 +35,7 @@ pub fn link(
     inkwell::memory_buffer::MemoryBuffer,
     era_compiler_common::ObjectFormat,
 )> {
-    if !deploy_bytecode_buffer.is_elf_eravm() && !runtime_bytecode_buffer.is_elf_eravm() {
+    if !deploy_bytecode_buffer.is_elf_evm() && !runtime_bytecode_buffer.is_elf_evm() {
         return Ok((
             deploy_bytecode_buffer,
             runtime_bytecode_buffer,
@@ -51,8 +51,8 @@ pub fn link(
         )
         .map_err(|error| anyhow::anyhow!("linking: {error}"))?;
 
-    let object_format = if deploy_bytecode_buffer_linked.is_elf_eravm()
-        || runtime_bytecode_buffer_linked.is_elf_eravm()
+    let object_format = if deploy_bytecode_buffer_linked.is_elf_evm()
+        || runtime_bytecode_buffer_linked.is_elf_evm()
     {
         era_compiler_common::ObjectFormat::ELF
     } else {
