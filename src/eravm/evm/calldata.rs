@@ -8,18 +8,14 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Translates the calldata load.
 ///
-pub fn load<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn load<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let calldata_pointer_global = context.get_global(crate::eravm::GLOBAL_CALLDATA_POINTER)?;
     let calldata_pointer_pointer = calldata_pointer_global.into();
     let calldata_pointer = context.build_load(calldata_pointer_pointer, "calldata_pointer")?;
@@ -40,12 +36,9 @@ where
 ///
 /// Translates the calldata size.
 ///
-pub fn size<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn size<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let value = context.get_global_value(crate::eravm::GLOBAL_CALLDATA_SIZE)?;
 
     Ok(value)
@@ -54,15 +47,12 @@ where
 ///
 /// Translates the calldata copy.
 ///
-pub fn copy<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn copy<'ctx>(
+    context: &mut Context<'ctx>,
     destination_offset: inkwell::values::IntValue<'ctx>,
     source_offset: inkwell::values::IntValue<'ctx>,
     size: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let destination = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,

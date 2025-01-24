@@ -7,7 +7,6 @@ use inkwell::values::BasicValue;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Translates a log or event call.
@@ -18,15 +17,12 @@ use crate::eravm::Dependency;
 /// emits topics and values sequentially by one, but the LLVM intrinsic and bytecode instruction
 /// accept two at once.
 ///
-pub fn log<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn log<'ctx>(
+    context: &mut Context<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
     topics: Vec<inkwell::values::IntValue<'ctx>>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let failure_block = context.append_basic_block("event_failure_block");
     let join_block = context.append_basic_block("event_join_block");
 

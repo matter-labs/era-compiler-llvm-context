@@ -1,5 +1,5 @@
 //!
-//! The LLVM context library.
+//! The LLVM EraVM context library.
 //!
 
 pub mod r#const;
@@ -13,7 +13,6 @@ pub use self::r#const::*;
 use std::collections::BTreeMap;
 
 use crate::debug_config::DebugConfig;
-use crate::dependency::Dependency;
 use crate::eravm::context::build::Build;
 use crate::target_machine::TargetMachine;
 
@@ -83,7 +82,7 @@ pub fn link(
 
     let bytecode_buffer_linked = bytecode_buffer
         .link_module_eravm(linker_symbols, factory_dependencies)
-        .map_err(|error| anyhow::anyhow!("bytecode linking: {error}"))?;
+        .map_err(|error| anyhow::anyhow!("linking: {error}"))?;
     let object_format = if bytecode_buffer_linked.is_elf_eravm() {
         era_compiler_common::ObjectFormat::ELF
     } else {
@@ -149,22 +148,19 @@ pub fn build(
 ///
 /// Implemented by items which are translated into LLVM IR.
 ///
-pub trait WriteLLVM<D>
-where
-    D: Dependency,
-{
+pub trait WriteLLVM {
     ///
     /// Declares the entity in the LLVM IR.
     /// Is usually performed in order to use the item before defining it.
     ///
-    fn declare(&mut self, _context: &mut Context<D>) -> anyhow::Result<()> {
+    fn declare(&mut self, _context: &mut Context) -> anyhow::Result<()> {
         Ok(())
     }
 
     ///
     /// Translates the entity into LLVM IR.
     ///
-    fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()>;
+    fn into_llvm(self, context: &mut Context) -> anyhow::Result<()>;
 }
 
 ///
@@ -173,11 +169,8 @@ where
 #[derive(Debug, Default, Clone)]
 pub struct DummyLLVMWritable {}
 
-impl<D> WriteLLVM<D> for DummyLLVMWritable
-where
-    D: Dependency,
-{
-    fn into_llvm(self, _context: &mut Context<D>) -> anyhow::Result<()> {
+impl WriteLLVM for DummyLLVMWritable {
+    fn into_llvm(self, _context: &mut Context) -> anyhow::Result<()> {
         Ok(())
     }
 }

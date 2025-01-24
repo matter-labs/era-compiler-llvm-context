@@ -4,18 +4,14 @@
 
 use crate::context::IContext;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Translates the `extcodesize` instruction.
 ///
-pub fn size<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn size<'ctx>(
+    context: &mut Context<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     crate::eravm::evm::call::request(
         context,
         context.field_const(zkevm_opcode_defs::ADDRESS_ACCOUNT_CODE_STORAGE.into()),
@@ -27,13 +23,10 @@ where
 ///
 /// Translates the `extcodehash` instruction.
 ///
-pub fn hash<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn hash<'ctx>(
+    context: &mut Context<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     crate::eravm::evm::call::request(
         context,
         context.field_const(zkevm_opcode_defs::ADDRESS_ACCOUNT_CODE_STORAGE.into()),

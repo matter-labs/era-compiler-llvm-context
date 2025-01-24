@@ -8,20 +8,16 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates an event log call.
 ///
-pub fn log<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn log<'ctx>(
+    context: &mut Context<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
     topics: Vec<inkwell::values::IntValue<'ctx>>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,

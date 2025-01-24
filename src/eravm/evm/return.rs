@@ -6,21 +6,17 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Translates the `return` instruction.
 ///
 /// Unlike in EVM, ZKsync constructors return the array of contract immutables.
 ///
-pub fn r#return<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn r#return<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
     length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     match context.code_segment() {
         None => {
             anyhow::bail!("Contract code segment is undefined");
@@ -83,14 +79,11 @@ where
 ///
 /// Translates the `revert` instruction.
 ///
-pub fn revert<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn revert<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
     length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     context.build_exit(context.llvm_runtime().revert, offset, length)?;
     Ok(())
 }
@@ -100,10 +93,7 @@ where
 ///
 /// Is the same as `return(0, 0)`.
 ///
-pub fn stop<D>(context: &mut Context<D>) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+pub fn stop(context: &mut Context) -> anyhow::Result<()> {
     r#return(context, context.field_const(0), context.field_const(0))
 }
 
@@ -112,10 +102,7 @@ where
 ///
 /// Burns all gas using an out-of-bounds memory store, causing a panic.
 ///
-pub fn invalid<D>(context: &mut Context<D>) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+pub fn invalid(context: &mut Context) -> anyhow::Result<()> {
     crate::eravm::evm::memory::store(
         context,
         context.field_type().const_all_ones(),

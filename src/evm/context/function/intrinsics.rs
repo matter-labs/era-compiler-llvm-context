@@ -47,6 +47,8 @@ pub struct Intrinsics<'ctx> {
     pub datasize: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub dataoffset: FunctionDeclaration<'ctx>,
+    /// The corresponding intrinsic function name.
+    pub linkersymbol: FunctionDeclaration<'ctx>,
 
     /// The corresponding intrinsic function name.
     pub log0: FunctionDeclaration<'ctx>,
@@ -176,6 +178,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_DATAOFFSET: &'static str = "llvm.evm.dataoffset";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_LINKER_SYMBOL: &'static str = "llvm.evm.linkersymbol";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LOG0: &'static str = "llvm.evm.log0";
@@ -448,6 +453,12 @@ impl<'ctx> Intrinsics<'ctx> {
             llvm,
             module,
             Self::FUNCTION_DATAOFFSET,
+            field_type.fn_type(&[llvm.metadata_type().into()], false),
+        );
+        let linkersymbol = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_LINKER_SYMBOL,
             field_type.fn_type(&[llvm.metadata_type().into()], false),
         );
 
@@ -829,6 +840,7 @@ impl<'ctx> Intrinsics<'ctx> {
             extcodehash,
             datasize,
             dataoffset,
+            linkersymbol,
 
             log0,
             log1,

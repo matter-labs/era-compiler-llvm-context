@@ -8,19 +8,15 @@ use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::Function as EraVMFunction;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Translates the `sha3` instruction.
 ///
-pub fn sha3<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn sha3<'ctx>(
+    context: &mut Context<'ctx>,
     offset: inkwell::values::IntValue<'ctx>,
     length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let offset_pointer = context.builder().build_int_to_ptr(
         offset,
         context.ptr_type(AddressSpace::Heap.into()),

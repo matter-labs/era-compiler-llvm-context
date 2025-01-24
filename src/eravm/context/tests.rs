@@ -4,7 +4,6 @@
 
 use crate::context::attribute::Attribute;
 use crate::context::IContext;
-use crate::dependency::DummyDependency;
 use crate::eravm::context::Context;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
@@ -12,13 +11,13 @@ use crate::optimizer::Optimizer;
 pub fn create_context(
     llvm: &inkwell::context::Context,
     optimizer_settings: OptimizerSettings,
-) -> Context<DummyDependency> {
+) -> Context {
     crate::eravm::initialize_target();
 
     let module = llvm.create_module("test");
     let optimizer = Optimizer::new(optimizer_settings);
 
-    Context::<_>::new(&llvm, module, vec![], optimizer, None)
+    Context::new(&llvm, module, vec![], optimizer, None)
 }
 
 #[test]

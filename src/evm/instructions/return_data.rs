@@ -6,17 +6,13 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates the return data size.
 ///
-pub fn size<'ctx, D>(
-    context: &mut Context<'ctx, D>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+pub fn size<'ctx>(
+    context: &mut Context<'ctx>,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call(context.intrinsics().returndatasize, &[], "returndatasize")?
         .expect("Always exists"))
@@ -25,15 +21,12 @@ where
 ///
 /// Translates the return data copy.
 ///
-pub fn copy<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn copy<'ctx>(
+    context: &mut Context<'ctx>,
     destination_offset: inkwell::values::IntValue<'ctx>,
     source_offset: inkwell::values::IntValue<'ctx>,
     size: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let destination = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,

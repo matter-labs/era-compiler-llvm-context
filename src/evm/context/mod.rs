@@ -6,6 +6,7 @@ pub mod address_space;
 pub mod build;
 pub mod evmla_data;
 pub mod function;
+pub mod yul_data;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -20,7 +21,6 @@ use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_config::DebugConfig;
 use crate::debug_info::DebugInfo;
-use crate::dependency::Dependency;
 use crate::optimizer::Optimizer;
 use crate::target_machine::TargetMachine;
 
@@ -28,6 +28,7 @@ use self::address_space::AddressSpace;
 use self::evmla_data::EVMLAData;
 use self::function::intrinsics::Intrinsics;
 use self::function::Function;
+use self::yul_data::YulData;
 
 ///
 /// The LLVM IR generator context.
@@ -35,10 +36,7 @@ use self::function::Function;
 /// It is a not-so-big god-like object glueing all the compilers' complexity and act as an adapter
 /// and a superstructure over the inner `inkwell` LLVM context.
 ///
-pub struct Context<'ctx, D>
-where
-    D: Dependency,
-{
+pub struct Context<'ctx> {
     /// The inner LLVM context.
     llvm: &'ctx inkwell::context::Context,
     /// The inner LLVM context builder.
@@ -60,23 +58,18 @@ where
     /// The loop context stack.
     loop_stack: Vec<Loop<'ctx>>,
 
-    /// The project dependency manager. It can be any entity implementing the trait.
-    /// The manager is used to get information about contracts and their dependencies during
-    /// the multi-threaded compilation process.
-    dependency_manager: Option<D>,
     /// The debug info of the current module.
     debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
     debug_config: Option<DebugConfig>,
 
+    /// The Yul data.
+    yul_data: Option<YulData>,
     /// The EVM legacy assembly data.
     evmla_data: Option<EVMLAData<'ctx>>,
 }
 
-impl<'ctx, D> Context<'ctx, D>
-where
-    D: Dependency,
-{
+impl<'ctx> Context<'ctx> {
     /// The functions hashmap default capacity.
     const FUNCTIONS_HASHMAP_INITIAL_CAPACITY: usize = 64;
 
@@ -92,7 +85,6 @@ where
         llvm_options: Vec<String>,
         code_segment: era_compiler_common::CodeSegment,
         optimizer: Optimizer,
-        dependency_manager: Option<D>,
         debug_config: Option<DebugConfig>,
     ) -> Self {
         let builder = llvm.create_builder();
@@ -111,10 +103,10 @@ where
             current_function: None,
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
-            dependency_manager,
             debug_info,
             debug_config,
 
+            yul_data: None,
             evmla_data: None,
         }
     }
@@ -188,19 +180,6 @@ where
     ///
     pub fn intrinsics(&self) -> &Intrinsics<'ctx> {
         &self.intrinsics
-    }
-
-    ///
-    /// Gets a full contract_path from the dependency manager.
-    ///
-    pub fn resolve_path(&self, identifier: &str) -> anyhow::Result<String> {
-        self.dependency_manager
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("The dependency manager is unset"))
-            .and_then(|manager| {
-                let full_path = manager.resolve_path(identifier)?;
-                Ok(full_path)
-            })
     }
 
     ///
@@ -341,17 +320,14 @@ where
     }
 }
 
-impl<'ctx, D> IContext<'ctx> for Context<'ctx, D>
-where
-    D: Dependency,
-{
+impl<'ctx> IContext<'ctx> for Context<'ctx> {
     type Function = Function<'ctx>;
 
     type AddressSpace = AddressSpace;
 
     type SolidityData = ();
 
-    type YulData = ();
+    type YulData = YulData;
 
     type EVMLAData = EVMLAData<'ctx>;
 
@@ -533,16 +509,16 @@ where
         panic!("Unused with the EVM target");
     }
 
-    fn set_yul_data(&mut self, _data: Self::YulData) {
-        panic!("Unused with the EVM target");
+    fn set_yul_data(&mut self, data: Self::YulData) {
+        self.yul_data = Some(data);
     }
 
     fn yul(&self) -> Option<&Self::YulData> {
-        panic!("Unused with the EVM target");
+        self.yul_data.as_ref()
     }
 
     fn yul_mut(&mut self) -> Option<&mut Self::YulData> {
-        panic!("Unused with the EVM target");
+        self.yul_data.as_mut()
     }
 
     fn set_evmla_data(&mut self, data: Self::EVMLAData) {

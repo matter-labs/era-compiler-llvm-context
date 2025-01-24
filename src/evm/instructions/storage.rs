@@ -6,18 +6,14 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates the contract storage load.
 ///
-pub fn load<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn load<'ctx>(
+    context: &mut Context<'ctx>,
     position: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let position_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Storage,
@@ -32,14 +28,11 @@ where
 ///
 /// Translates the contract storage store.
 ///
-pub fn store<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn store<'ctx>(
+    context: &mut Context<'ctx>,
     position: inkwell::values::IntValue<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     let position_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Storage,

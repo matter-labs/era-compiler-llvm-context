@@ -12,7 +12,6 @@ use crate::context::function::declaration::Declaration as FunctionDeclaration;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 use crate::eravm::WriteLLVM;
 
 use self::default_call::DefaultCall;
@@ -37,13 +36,10 @@ impl Runtime {
     ///
     /// Returns the corresponding runtime function.
     ///
-    pub fn default_call<'ctx, D>(
-        context: &Context<'ctx, D>,
+    pub fn default_call<'ctx>(
+        context: &Context<'ctx>,
         call_function: FunctionDeclaration<'ctx>,
-    ) -> FunctionDeclaration<'ctx>
-    where
-        D: Dependency,
-    {
+    ) -> FunctionDeclaration<'ctx> {
         context
             .get_function(DefaultCall::name(call_function).as_str())
             .expect("Always exists")
@@ -54,13 +50,10 @@ impl Runtime {
     ///
     /// Returns the corresponding runtime function.
     ///
-    pub fn deployer_call<'ctx, D>(
-        context: &Context<'ctx, D>,
+    pub fn deployer_call<'ctx>(
+        context: &Context<'ctx>,
         address_space: AddressSpace,
-    ) -> FunctionDeclaration<'ctx>
-    where
-        D: Dependency,
-    {
+    ) -> FunctionDeclaration<'ctx> {
         context
             .get_function(DeployerCall::name(address_space).as_str())
             .expect("Always exists")
@@ -69,11 +62,8 @@ impl Runtime {
     }
 }
 
-impl<D> WriteLLVM<D> for Runtime
-where
-    D: Dependency,
-{
-    fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
+impl WriteLLVM for Runtime {
+    fn declare(&mut self, context: &mut Context) -> anyhow::Result<()> {
         DefaultCall::new(context.llvm_runtime().far_call).declare(context)?;
         DefaultCall::new(context.llvm_runtime().static_call).declare(context)?;
         DefaultCall::new(context.llvm_runtime().delegate_call).declare(context)?;
@@ -83,7 +73,7 @@ where
         Ok(())
     }
 
-    fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()> {
+    fn into_llvm(self, context: &mut Context) -> anyhow::Result<()> {
         DefaultCall::new(context.llvm_runtime().far_call).into_llvm(context)?;
         DefaultCall::new(context.llvm_runtime().static_call).into_llvm(context)?;
         DefaultCall::new(context.llvm_runtime().delegate_call).into_llvm(context)?;

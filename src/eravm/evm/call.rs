@@ -10,7 +10,6 @@ use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::runtime::Runtime;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Translates a contract call.
@@ -19,8 +18,8 @@ use crate::eravm::Dependency;
 /// according to the specification.
 ///
 #[allow(clippy::too_many_arguments)]
-pub fn default<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn default<'ctx>(
+    context: &mut Context<'ctx>,
     function: FunctionDeclaration<'ctx>,
     gas: inkwell::values::IntValue<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
@@ -30,10 +29,7 @@ pub fn default<'ctx, D>(
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
     mut constants: Vec<Option<num::BigUint>>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     if context.are_eravm_extensions_enabled() {
         let simulation_address = constants
             .get_mut(1)
@@ -598,15 +594,12 @@ where
 }
 
 ///
-/// Translates the Yul `linkersymbol` instruction.
+/// Translates the `linkersymbol` instruction.
 ///
-pub fn linker_symbol<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn linker_symbol<'ctx>(
+    context: &mut Context<'ctx>,
     path: &str,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .build_call_metadata(
             context.intrinsics().linker_symbol,
@@ -622,15 +615,12 @@ where
 ///
 /// Generates a custom request to a system contract.
 ///
-pub fn request<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn request<'ctx>(
+    context: &mut Context<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     signature: &'static str,
     arguments: Vec<inkwell::values::IntValue<'ctx>>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let signature_hash = era_compiler_common::Hash::keccak256(signature.as_bytes());
     let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
@@ -671,8 +661,8 @@ where
 /// is not zero.
 ///
 #[allow(clippy::too_many_arguments)]
-fn default_wrapped<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+fn default_wrapped<'ctx>(
+    context: &mut Context<'ctx>,
     function: FunctionDeclaration<'ctx>,
     gas: inkwell::values::IntValue<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
@@ -681,10 +671,7 @@ fn default_wrapped<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let value_zero_block = context.append_basic_block("contract_call_value_zero_block");
     let value_non_zero_block = context.append_basic_block("contract_call_value_non_zero_block");
     let value_join_block = context.append_basic_block("contract_call_value_join_block");

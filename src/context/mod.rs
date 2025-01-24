@@ -24,6 +24,7 @@ use self::r#loop::Loop;
 use self::traits::address_space::IAddressSpace;
 use self::traits::evmla_data::IEVMLAData;
 use self::traits::evmla_function::IEVMLAFunction;
+use self::traits::yul_data::IYulData;
 
 ///
 /// The LLVM module context trait.
@@ -53,7 +54,7 @@ pub trait IContext<'ctx> {
     ///
     /// The Yul extra data type.
     ///
-    type YulData;
+    type YulData: IYulData;
 
     ///
     /// The EVMLA extra data type.

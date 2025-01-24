@@ -5,18 +5,16 @@
 use inkwell::values::BasicValue;
 
 use crate::context::pointer::Pointer;
-use crate::context::value::Value;
 use crate::context::IContext;
 use crate::evm::context::address_space::AddressSpace;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates an external call.
 ///
 #[allow(clippy::too_many_arguments)]
-pub fn call<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn call<'ctx>(
+    context: &mut Context<'ctx>,
     gas: inkwell::values::IntValue<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
@@ -24,10 +22,7 @@ pub fn call<'ctx, D>(
     input_length: inkwell::values::IntValue<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -64,18 +59,15 @@ where
 /// Translates a static call.
 ///
 #[allow(clippy::too_many_arguments)]
-pub fn static_call<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn static_call<'ctx>(
+    context: &mut Context<'ctx>,
     gas: inkwell::values::IntValue<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -111,18 +103,15 @@ where
 /// Translates a delegate call.
 ///
 #[allow(clippy::too_many_arguments)]
-pub fn delegate_call<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn delegate_call<'ctx>(
+    context: &mut Context<'ctx>,
     gas: inkwell::values::IntValue<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let input_offset_pointer = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
@@ -155,14 +144,20 @@ where
 }
 
 ///
-/// Translates the Yul `linkersymbol` instruction.
+/// Translates the `linkersymbol` instruction.
 ///
-pub fn linker_symbol<'ctx, D>(
-    _context: &mut Context<'ctx, D>,
-    mut _arguments: [Value<'ctx>; 1],
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
-    unimplemented!()
+pub fn linker_symbol<'ctx>(
+    context: &mut Context<'ctx>,
+    path: &str,
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
+    Ok(context
+        .build_call_metadata(
+            context.intrinsics().linkersymbol,
+            &[context
+                .llvm()
+                .metadata_node(&[context.llvm().metadata_string(path).into()])
+                .into()],
+            format!("linker_symbol_{path}").as_str(),
+        )?
+        .expect("Always exists"))
 }

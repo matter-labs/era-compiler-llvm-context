@@ -7,7 +7,6 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Generates a mimic call.
@@ -16,17 +15,14 @@ use crate::eravm::Dependency;
 /// ZKsync. The call allows to call a contract with custom `msg.sender`, allowing to insert
 /// system contracts as middlewares.
 ///
-pub fn mimic<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn mimic<'ctx>(
+    context: &mut Context<'ctx>,
     function: FunctionDeclaration<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     mimic: inkwell::values::IntValue<'ctx>,
     abi_data: inkwell::values::BasicValueEnum<'ctx>,
     extra_abi_data: Vec<inkwell::values::IntValue<'ctx>>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),
         "mimic_call_result_status_code_pointer",
@@ -90,17 +86,14 @@ where
 ///
 /// Such calls can accept extra ABI arguments passed via the virtual machine registers.
 ///
-pub fn raw_far<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn raw_far<'ctx>(
+    context: &mut Context<'ctx>,
     function: FunctionDeclaration<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     abi_data: inkwell::values::BasicValueEnum<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),
         "system_far_call_result_status_code_pointer",
@@ -177,18 +170,15 @@ where
 /// Such calls can accept extra ABI arguments passed via the virtual machine registers. It is used,
 /// for example, to pass the callee address and the Ether value to the `msg.value` simulator.
 ///
-pub fn system<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn system<'ctx>(
+    context: &mut Context<'ctx>,
     function: FunctionDeclaration<'ctx>,
     address: inkwell::values::IntValue<'ctx>,
     abi_data: inkwell::values::BasicValueEnum<'ctx>,
     output_offset: inkwell::values::IntValue<'ctx>,
     output_length: inkwell::values::IntValue<'ctx>,
     extra_abi_data: Vec<inkwell::values::IntValue<'ctx>>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let status_code_result_pointer = context.build_alloca(
         context.field_type(),
         "system_far_call_result_status_code_pointer",

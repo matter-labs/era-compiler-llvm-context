@@ -2,11 +2,8 @@
 //! The entry function.
 //!
 
-use std::marker::PhantomData;
-
 use crate::context::IContext;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 use crate::evm::WriteLLVM;
 
 ///
@@ -15,39 +12,31 @@ use crate::evm::WriteLLVM;
 /// Is a special runtime function that is only used by the front-end generated code.
 ///
 #[derive(Debug)]
-pub struct Entry<B, D>
+pub struct Entry<B>
 where
-    B: WriteLLVM<D>,
-    D: Dependency,
+    B: WriteLLVM,
 {
     /// The runtime code AST representation.
     inner: B,
-    /// The `D` phantom data.
-    _pd: PhantomData<D>,
 }
 
-impl<B, D> Entry<B, D>
+impl<B> Entry<B>
 where
-    B: WriteLLVM<D>,
-    D: Dependency,
+    B: WriteLLVM,
 {
     ///
     /// A shortcut constructor.
     ///
     pub fn new(inner: B) -> Self {
-        Self {
-            inner,
-            _pd: PhantomData,
-        }
+        Self { inner }
     }
 }
 
-impl<B, D> WriteLLVM<D> for Entry<B, D>
+impl<B> WriteLLVM for Entry<B>
 where
-    B: WriteLLVM<D>,
-    D: Dependency,
+    B: WriteLLVM,
 {
-    fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
+    fn declare(&mut self, context: &mut Context) -> anyhow::Result<()> {
         let function_type = context.function_type::<inkwell::types::BasicTypeEnum>(vec![], 0);
         context.add_function(
             crate::evm::r#const::ENTRY_FUNCTION_NAME,
@@ -59,7 +48,7 @@ where
         self.inner.declare(context)
     }
 
-    fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()> {
+    fn into_llvm(self, context: &mut Context) -> anyhow::Result<()> {
         context.set_current_function(crate::evm::r#const::ENTRY_FUNCTION_NAME)?;
 
         context.set_basic_block(context.current_function().borrow().entry_block());

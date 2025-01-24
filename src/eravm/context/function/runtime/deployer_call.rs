@@ -10,7 +10,6 @@ use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::Function;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 use crate::eravm::WriteLLVM;
 
 ///
@@ -66,11 +65,8 @@ impl DeployerCall {
     }
 }
 
-impl<D> WriteLLVM<D> for DeployerCall
-where
-    D: Dependency,
-{
-    fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
+impl WriteLLVM for DeployerCall {
+    fn declare(&mut self, context: &mut Context) -> anyhow::Result<()> {
         let function_type = context.function_type(
             vec![
                 context.field_type().as_basic_type_enum(),
@@ -97,7 +93,7 @@ where
         Ok(())
     }
 
-    fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()> {
+    fn into_llvm(self, context: &mut Context) -> anyhow::Result<()> {
         context.set_current_function(Self::name(self.address_space).as_str())?;
 
         let value = context

@@ -6,6 +6,8 @@ use std::collections::BTreeMap;
 
 use num::Zero;
 
+use crate::context::traits::yul_data::IYulData;
+
 ///
 /// The LLVM IR generator Yul data.
 ///
@@ -43,15 +45,6 @@ impl YulData {
     ///
     pub fn are_eravm_extensions_enabled(&self) -> bool {
         self.are_eravm_extensions_enabled
-    }
-
-    ///
-    /// Resolves the full contract path by the Yul object identifier.
-    ///
-    pub fn resolve_path(&self, identifier: &str) -> Option<&str> {
-        self.identifier_paths
-            .get(identifier)
-            .map(|path| path.as_str())
     }
 
     ///
@@ -98,5 +91,13 @@ impl YulData {
         self.const_arrays.remove(&index).ok_or_else(|| {
             anyhow::anyhow!("The constant array with index {} is not declared", index)
         })
+    }
+}
+
+impl IYulData for YulData {
+    fn resolve_path(&self, identifier: &str) -> Option<&str> {
+        self.identifier_paths
+            .get(identifier)
+            .map(|path| path.as_str())
     }
 }

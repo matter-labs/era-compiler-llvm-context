@@ -5,28 +5,25 @@
 use inkwell::values::BasicValue;
 use num::Zero;
 
+use crate::context::traits::yul_data::IYulData;
 use crate::context::value::Value;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::function::runtime::Runtime;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Translates the contract `create` instruction.
 ///
 /// The instruction is simulated by a call to a system contract.
 ///
-pub fn create<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn create<'ctx>(
+    context: &mut Context<'ctx>,
     address_space: AddressSpace,
     value: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let signature_hash =
         era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
     let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
@@ -56,17 +53,14 @@ where
 ///
 /// The instruction is simulated by a call to a system contract.
 ///
-pub fn create2<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn create2<'ctx>(
+    context: &mut Context<'ctx>,
     address_space: AddressSpace,
     value: inkwell::values::IntValue<'ctx>,
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
     salt: Option<inkwell::values::IntValue<'ctx>>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let signature_hash =
         era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE2.as_bytes());
     let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
@@ -97,13 +91,10 @@ where
 ///
 /// Represents `dataoffset` in Yul and `PUSH [$]` in the EVM legacy assembly.
 ///
-pub fn contract_hash<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn contract_hash<'ctx>(
+    context: &mut Context<'ctx>,
     identifier: String,
-) -> anyhow::Result<Value<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<Value<'ctx>> {
     let code_segment = context
         .code_segment()
         .expect("Contract code segment type is undefined");
@@ -162,13 +153,10 @@ where
 ///
 /// Represents `datasize` in Yul and `PUSH #[$]` in the EVM legacy assembly.
 ///
-pub fn header_size<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn header_size<'ctx>(
+    context: &mut Context<'ctx>,
     identifier: String,
-) -> anyhow::Result<Value<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<Value<'ctx>> {
     let code_segment = context
         .code_segment()
         .expect("Contract code segment type is undefined");

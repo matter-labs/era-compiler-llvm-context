@@ -2,12 +2,9 @@
 //! The runtime code function.
 //!
 
-use std::marker::PhantomData;
-
 use crate::context::IContext;
 use crate::eravm::context::function::runtime::Runtime;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 use crate::eravm::WriteLLVM;
 
 ///
@@ -16,39 +13,31 @@ use crate::eravm::WriteLLVM;
 /// Is a special function that is only used by the front-end generated code.
 ///
 #[derive(Debug)]
-pub struct RuntimeCode<B, D>
+pub struct RuntimeCode<B>
 where
-    B: WriteLLVM<D>,
-    D: Dependency,
+    B: WriteLLVM,
 {
     /// The runtime code AST representation.
     inner: B,
-    /// The `D` phantom data.
-    _pd: PhantomData<D>,
 }
 
-impl<B, D> RuntimeCode<B, D>
+impl<B> RuntimeCode<B>
 where
-    B: WriteLLVM<D>,
-    D: Dependency,
+    B: WriteLLVM,
 {
     ///
     /// A shortcut constructor.
     ///
     pub fn new(inner: B) -> Self {
-        Self {
-            inner,
-            _pd: PhantomData,
-        }
+        Self { inner }
     }
 }
 
-impl<B, D> WriteLLVM<D> for RuntimeCode<B, D>
+impl<B> WriteLLVM for RuntimeCode<B>
 where
-    B: WriteLLVM<D>,
-    D: Dependency,
+    B: WriteLLVM,
 {
-    fn declare(&mut self, context: &mut Context<D>) -> anyhow::Result<()> {
+    fn declare(&mut self, context: &mut Context) -> anyhow::Result<()> {
         let function_type =
             context.function_type::<inkwell::types::BasicTypeEnum>(vec![], 0, false);
         context.add_function(
@@ -61,7 +50,7 @@ where
         self.inner.declare(context)
     }
 
-    fn into_llvm(self, context: &mut Context<D>) -> anyhow::Result<()> {
+    fn into_llvm(self, context: &mut Context) -> anyhow::Result<()> {
         context.set_current_function(Runtime::FUNCTION_RUNTIME_CODE)?;
 
         context.set_basic_block(context.current_function().borrow().entry_block());

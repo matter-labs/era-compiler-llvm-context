@@ -6,7 +6,6 @@ use crate::context::pointer::Pointer;
 use crate::context::IContext;
 use crate::eravm::context::address_space::AddressSpace;
 use crate::eravm::context::Context;
-use crate::eravm::Dependency;
 
 ///
 /// Translates the contract immutable load.
@@ -14,13 +13,10 @@ use crate::eravm::Dependency;
 /// In the deploy code the values are read from the auxiliary heap.
 /// In the runtime code they are requested from the system contract.
 ///
-pub fn load<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn load<'ctx>(
+    context: &mut Context<'ctx>,
     index: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     match context.code_segment() {
         None => {
             panic!("Contract code segment is undefined");
@@ -76,14 +72,11 @@ where
 ///
 /// Ignored in the runtime code.
 ///
-pub fn store<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn store<'ctx>(
+    context: &mut Context<'ctx>,
     index: inkwell::values::IntValue<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<()>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<()> {
     match context.code_segment() {
         None => {
             anyhow::bail!("code segment is undefined");

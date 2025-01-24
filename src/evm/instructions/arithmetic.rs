@@ -6,21 +6,17 @@ use inkwell::values::BasicValue;
 
 use crate::context::IContext;
 use crate::evm::context::Context;
-use crate::evm::Dependency;
 
 ///
 /// Translates the arithmetic addition.
 ///
 /// There is not difference between the EVM and LLVM IR behaviors.
 ///
-pub fn addition<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn addition<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .builder()
         .build_int_add(operand_1, operand_2, "addition_result")?
@@ -32,14 +28,11 @@ where
 ///
 /// There is not difference between the EVM and LLVM IR behaviors.
 ///
-pub fn subtraction<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn subtraction<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .builder()
         .build_int_sub(operand_1, operand_2, "subtraction_result")?
@@ -51,14 +44,11 @@ where
 ///
 /// There is not difference between the EVM and LLVM IR behaviors.
 ///
-pub fn multiplication<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn multiplication<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     Ok(context
         .builder()
         .build_int_mul(operand_1, operand_2, "multiplication_result")?
@@ -71,14 +61,11 @@ where
 /// The only difference between the EVM and LLVM IR is that 0 must be returned in case of
 /// division by zero.
 ///
-pub fn division<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn division<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let zero_block = context.append_basic_block("division_zero");
     let non_zero_block = context.append_basic_block("division_non_zero");
     let join_block = context.append_basic_block("division_join");
@@ -116,14 +103,11 @@ where
 /// The only difference between the EVM and LLVM IR is that 0 must be returned in case of
 /// division by zero.
 ///
-pub fn remainder<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn remainder<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let zero_block = context.append_basic_block("remainder_zero");
     let non_zero_block = context.append_basic_block("remainder_non_zero");
     let join_block = context.append_basic_block("remainder_join");
@@ -162,14 +146,11 @@ where
 /// 1. In case of division by zero, 0 is returned.
 /// 2. In case of overflow, the first argument is returned.
 ///
-pub fn division_signed<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn division_signed<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let zero_block = context.append_basic_block("division_signed_zero");
     let non_zero_block = context.append_basic_block("division_signed_non_zero");
     let overflow_block = context.append_basic_block("division_signed_overflow");
@@ -236,14 +217,11 @@ where
 /// The only differences between the EVM and LLVM IR are that 0 must be returned in cases of
 /// division by zero or overflow.
 ///
-pub fn remainder_signed<'ctx, D>(
-    context: &mut Context<'ctx, D>,
+pub fn remainder_signed<'ctx>(
+    context: &mut Context<'ctx>,
     operand_1: inkwell::values::IntValue<'ctx>,
     operand_2: inkwell::values::IntValue<'ctx>,
-) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>>
-where
-    D: Dependency,
-{
+) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
     let zero_block = context.append_basic_block("remainder_signed_zero");
     let non_zero_block = context.append_basic_block("remainder_signed_non_zero");
     let join_block = context.append_basic_block("remainder_signed_join");
