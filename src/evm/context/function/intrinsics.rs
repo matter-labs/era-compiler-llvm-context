@@ -43,12 +43,15 @@ pub struct Intrinsics<'ctx> {
     pub extcodecopy: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub extcodehash: FunctionDeclaration<'ctx>,
+
     /// The corresponding intrinsic function name.
     pub datasize: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub dataoffset: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub linkersymbol: FunctionDeclaration<'ctx>,
+    /// The corresponding intrinsic function name.
+    pub loadimmutable: FunctionDeclaration<'ctx>,
 
     /// The corresponding intrinsic function name.
     pub log0: FunctionDeclaration<'ctx>,
@@ -181,6 +184,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LINKER_SYMBOL: &'static str = "llvm.evm.linkersymbol";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_LOAD_IMMUTABLE: &'static str = "llvm.evm.loadimmutable";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LOG0: &'static str = "llvm.evm.log0";
@@ -459,6 +465,12 @@ impl<'ctx> Intrinsics<'ctx> {
             llvm,
             module,
             Self::FUNCTION_LINKER_SYMBOL,
+            field_type.fn_type(&[llvm.metadata_type().into()], false),
+        );
+        let loadimmutable = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_LOAD_IMMUTABLE,
             field_type.fn_type(&[llvm.metadata_type().into()], false),
         );
 
@@ -841,6 +853,7 @@ impl<'ctx> Intrinsics<'ctx> {
             datasize,
             dataoffset,
             linkersymbol,
+            loadimmutable,
 
             log0,
             log1,

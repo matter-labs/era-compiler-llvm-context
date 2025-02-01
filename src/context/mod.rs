@@ -24,6 +24,7 @@ use self::r#loop::Loop;
 use self::traits::address_space::IAddressSpace;
 use self::traits::evmla_data::IEVMLAData;
 use self::traits::evmla_function::IEVMLAFunction;
+use self::traits::solidity_data::ISolidityData;
 use self::traits::yul_data::IYulData;
 
 ///
@@ -49,7 +50,7 @@ pub trait IContext<'ctx> {
     ///
     /// The Solidity extra data type.
     ///
-    type SolidityData;
+    type SolidityData: ISolidityData;
 
     ///
     /// The Yul extra data type.
