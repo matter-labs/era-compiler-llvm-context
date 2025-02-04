@@ -50,34 +50,18 @@ jobs:
 
   check-zksolc:
     needs: define-dependencies
-    runs-on: ubuntu-latest
-    steps:
-      - uses: convictional/trigger-workflow-and-wait@v1.6.1
-        with:
-          owner: matter-labs
-          repo: era-compiler-solidity
-          workflow_file_name: dependencies.yaml
-          github_token: ${{ secrets.ZKSYNC_DISPATCH_TOKEN }}
-          ref: ${{ needs.define-dependencies.outputs.zksolc_branch || 'main' }}
-          wait_interval: 30
-          client_payload: '{ "dependencies_list": "${{ needs.define-dependencies.outputs.dependencies_list }}", "dependencies_branch": "${{ github.head_ref }}" }'
-          propagate_failure: true
-          trigger_workflow: true
-          wait_workflow: true
+    uses: matter-labs/era-compiler-solidity/.github/workflows/dependencies.yaml@main
+    secrets: inherit
+    with:
+      ref: ${{ needs.define-dependencies.outputs.zksolc_branch || 'main' }}
+      dependencies_list: ${{ needs.define-dependencies.outputs.dependencies_list }}
+      dependencies_branch: ${{ github.head_ref }}
 
   check-zkvyper:
     needs: define-dependencies
-    runs-on: ubuntu-latest
-    steps:
-      - uses: convictional/trigger-workflow-and-wait@v1.6.1
-        with:
-          owner: matter-labs
-          repo: era-compiler-vyper
-          github_token: ${{ secrets.ZKSYNC_DISPATCH_TOKEN }}
-          workflow_file_name: dependencies.yaml
-          ref: ${{ needs.define-dependencies.outputs.zkvyper_branch || 'main' }}
-          wait_interval: 30
-          client_payload: '{ "dependencies_list": "${{ needs.define-dependencies.outputs.dependencies_list }}", "dependencies_branch": "${{ github.head_ref }}" }'
-          propagate_failure: true
-          trigger_workflow: true
-          wait_workflow: true
+    uses: matter-labs/era-compiler-vyper/.github/workflows/dependencies.yaml@main
+    secrets: inherit
+    with:
+      ref: ${{ needs.define-dependencies.outputs.zkvyper_branch || 'main' }}
+      dependencies_list: ${{ needs.define-dependencies.outputs.dependencies_list }}
+      dependencies_branch: ${{ github.head_ref }}
