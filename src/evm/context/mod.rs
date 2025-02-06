@@ -6,6 +6,7 @@ pub mod address_space;
 pub mod build;
 pub mod evmla_data;
 pub mod function;
+pub mod solidity_data;
 pub mod yul_data;
 
 use std::cell::RefCell;
@@ -28,6 +29,7 @@ use self::address_space::AddressSpace;
 use self::evmla_data::EVMLAData;
 use self::function::intrinsics::Intrinsics;
 use self::function::Function;
+use self::solidity_data::SolidityData;
 use self::yul_data::YulData;
 
 ///
@@ -63,6 +65,8 @@ pub struct Context<'ctx> {
     /// The debug configuration telling whether to dump the needed IRs.
     debug_config: Option<DebugConfig>,
 
+    /// The Solidity data.
+    solidity_data: Option<SolidityData>,
     /// The Yul data.
     yul_data: Option<YulData>,
     /// The EVM legacy assembly data.
@@ -106,6 +110,7 @@ impl<'ctx> Context<'ctx> {
             debug_info,
             debug_config,
 
+            solidity_data: None,
             yul_data: None,
             evmla_data: None,
         }
@@ -325,7 +330,7 @@ impl<'ctx> IContext<'ctx> for Context<'ctx> {
 
     type AddressSpace = AddressSpace;
 
-    type SolidityData = ();
+    type SolidityData = SolidityData;
 
     type YulData = YulData;
 
@@ -497,16 +502,16 @@ impl<'ctx> IContext<'ctx> for Context<'ctx> {
         Self::build_call(self, function, arguments, name)
     }
 
-    fn set_solidity_data(&mut self, _data: Self::SolidityData) {
-        panic!("Unused with the EVM target");
+    fn set_solidity_data(&mut self, data: Self::SolidityData) {
+        self.solidity_data = Some(data);
     }
 
     fn solidity(&self) -> Option<&Self::SolidityData> {
-        panic!("Unused with the EVM target");
+        self.solidity_data.as_ref()
     }
 
     fn solidity_mut(&mut self) -> Option<&mut Self::SolidityData> {
-        panic!("Unused with the EVM target");
+        self.solidity_data.as_mut()
     }
 
     fn set_yul_data(&mut self, data: Self::YulData) {

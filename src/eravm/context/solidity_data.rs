@@ -3,6 +3,9 @@
 //!
 
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+
+use crate::context::traits::solidity_data::ISolidityData;
 
 ///
 /// The LLVM IR generator Solidity data.
@@ -14,6 +17,12 @@ pub struct SolidityData {
     /// The immutables identifier-to-offset mapping. Is only used by Solidity due to
     /// the arbitrariness of its identifiers.
     immutables: BTreeMap<String, usize>,
+}
+
+impl ISolidityData for SolidityData {
+    fn offsets(&self, _id: &str) -> Option<&BTreeSet<u64>> {
+        None
+    }
 }
 
 impl SolidityData {
