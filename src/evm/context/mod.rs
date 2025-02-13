@@ -3,7 +3,6 @@
 //!
 
 pub mod address_space;
-pub mod build;
 pub mod evmla_data;
 pub mod function;
 pub mod solidity_data;
