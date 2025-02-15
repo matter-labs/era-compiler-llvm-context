@@ -81,7 +81,7 @@ pub fn link(
     }
 
     let bytecode_buffer_linked = bytecode_buffer
-        .link_module_eravm(linker_symbols, factory_dependencies)
+        .link_eravm(linker_symbols, factory_dependencies)
         .map_err(|error| anyhow::anyhow!("linking: {error}"))?;
     let object_format = if bytecode_buffer_linked.is_elf_eravm() {
         era_compiler_common::ObjectFormat::ELF
