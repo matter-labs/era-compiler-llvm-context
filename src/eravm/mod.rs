@@ -35,7 +35,7 @@ pub fn assemble(
     debug_config: Option<&DebugConfig>,
 ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
     if let Some(debug_config) = debug_config {
-        debug_config.dump_assembly(contract_path, None, assembly_text)?;
+        debug_config.dump_assembly(contract_path, assembly_text)?;
     }
 
     let assembly_buffer = inkwell::memory_buffer::MemoryBuffer::create_from_memory_range(

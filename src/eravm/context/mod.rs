@@ -163,7 +163,6 @@ impl<'ctx> Context<'ctx> {
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(
                 contract_path,
-                self.code_segment,
                 self.module(),
                 is_fallback_to_size,
             )?;
@@ -177,7 +176,6 @@ impl<'ctx> Context<'ctx> {
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
                 contract_path,
-                self.code_segment,
                 self.module(),
                 is_fallback_to_size,
             )?;
@@ -192,7 +190,7 @@ impl<'ctx> Context<'ctx> {
 
             if let Some(ref debug_config) = self.debug_config {
                 let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
-                debug_config.dump_assembly(contract_path, None, assembly_text.as_ref())?;
+                debug_config.dump_assembly(contract_path, assembly_text.as_ref())?;
             }
 
             Some(assembly_buffer)

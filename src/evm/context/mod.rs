@@ -118,10 +118,7 @@ impl<'ctx> Context<'ctx> {
     ///
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
-    pub fn build(
-        self,
-        contract_path: &str,
-    ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
+    pub fn build(self) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EVM,
             self.optimizer.settings(),
@@ -131,8 +128,7 @@ impl<'ctx> Context<'ctx> {
 
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(
-                contract_path,
-                Some(self.code_segment),
+                self.module().get_name().to_str().expect("Always valid"),
                 self.module(),
                 false,
             )?;
@@ -149,8 +145,7 @@ impl<'ctx> Context<'ctx> {
             .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_segment))?;
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_optimized(
-                contract_path,
-                Some(self.code_segment),
+                self.module().get_name().to_str().expect("Always valid"),
                 self.module(),
                 false,
             )?;
