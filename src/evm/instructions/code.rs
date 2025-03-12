@@ -121,26 +121,32 @@ pub fn ext_copy<'ctx>(
     source_offset: inkwell::values::IntValue<'ctx>,
     size: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()> {
-    let destination_offset_pointer = Pointer::new_with_offset(
+    let destination = Pointer::new_with_offset(
         context,
         AddressSpace::Heap,
         context.byte_type(),
         destination_offset,
-        "extcodecopy_destination_offset_pointer",
+        "extcodecopy_destination_pointer",
     )?;
 
-    context
-        .build_call(
-            context.intrinsics().extcodecopy,
-            &[
-                address.as_basic_value_enum(),
-                destination_offset_pointer.as_basic_value_enum(),
-                source_offset.as_basic_value_enum(),
-                size.as_basic_value_enum(),
-            ],
-            "extcodecopy",
-        )?
-        .expect("Always exists");
+    let source = Pointer::new_with_offset(
+        context,
+        AddressSpace::Code,
+        context.byte_type(),
+        source_offset,
+        "extcodecopy_source_pointer",
+    )?;
+
+    context.build_call(
+        context.intrinsics().extcodecopy,
+        &[
+            address.as_basic_value_enum(),
+            destination.as_basic_value_enum(),
+            source.as_basic_value_enum(),
+            size.as_basic_value_enum(),
+        ],
+        "extcodecopy",
+    )?;
     Ok(())
 }
 

@@ -23,9 +23,18 @@ pub fn initialize_target() {
 pub fn assemble(
     bytecode_buffers: &[&inkwell::memory_buffer::MemoryBuffer],
     bytecode_buffer_ids: &[&str],
+    code_segment: era_compiler_common::CodeSegment,
 ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
-    inkwell::memory_buffer::MemoryBuffer::assembly_evm(bytecode_buffers, bytecode_buffer_ids)
-        .map_err(|error| anyhow::anyhow!("linking: {error}"))
+    let code_segment = match code_segment {
+        era_compiler_common::CodeSegment::Deploy => inkwell::memory_buffer::CodeSegment::Deploy,
+        era_compiler_common::CodeSegment::Runtime => inkwell::memory_buffer::CodeSegment::Runtime,
+    };
+    inkwell::memory_buffer::MemoryBuffer::assembly_evm(
+        bytecode_buffers,
+        bytecode_buffer_ids,
+        code_segment,
+    )
+    .map_err(|error| anyhow::anyhow!("linking: {error}"))
 }
 
 ///
