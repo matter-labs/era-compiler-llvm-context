@@ -99,7 +99,17 @@ pub fn contract_hash<'ctx>(
         .code_segment()
         .expect("Contract code segment type is undefined");
 
-    let current_module_name = context.module().get_name().to_str().expect("Always valid");
+    let mut current_module_name = context
+        .module()
+        .get_name()
+        .to_str()
+        .expect("Always valid")
+        .to_owned();
+    if context.evmla().is_some() {
+        current_module_name
+            .push_str(format!(".{}", era_compiler_common::CodeSegment::Runtime).as_str());
+    }
+
     let full_path = match context.yul() {
         Some(yul_data) => yul_data
             .resolve_path(
@@ -161,7 +171,17 @@ pub fn header_size<'ctx>(
         .code_segment()
         .expect("Contract code segment type is undefined");
 
-    let current_module_name = context.module().get_name().to_str().expect("Always valid");
+    let mut current_module_name = context
+        .module()
+        .get_name()
+        .to_str()
+        .expect("Always valid")
+        .to_owned();
+    if context.evmla().is_some() {
+        current_module_name
+            .push_str(format!(".{}", era_compiler_common::CodeSegment::Runtime).as_str());
+    }
+
     let full_path = match context.yul() {
         Some(yul_data) => yul_data
             .resolve_path(

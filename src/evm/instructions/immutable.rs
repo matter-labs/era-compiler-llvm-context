@@ -39,8 +39,7 @@ pub fn store<'ctx>(
 ) -> anyhow::Result<()> {
     let offsets = match context.solidity().expect("Always exists").offsets(id) {
         Some(offsets) => offsets,
-        None if id == crate::r#const::LIBRARY_DEPLOY_ADDRESS_TAG => return Ok(()),
-        None => anyhow::bail!("Undefined immutable identifier: {id}"),
+        None => return Ok(()),
     };
 
     for offset in offsets.iter() {
