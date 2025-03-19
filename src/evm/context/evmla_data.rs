@@ -19,7 +19,7 @@ pub struct EVMLAData<'ctx> {
     pub stack: Vec<Value<'ctx>>,
 }
 
-impl<'ctx> EVMLAData<'ctx> {
+impl EVMLAData<'_> {
     /// The default stack size.
     pub const DEFAULT_STACK_SIZE: usize = 64;
 
