@@ -212,5 +212,5 @@ pub fn event<'ctx>(
             "event_write"
         },
     )?;
-    return Ok(context.field_const(1).as_basic_value_enum());
+    Ok(context.field_const(1).as_basic_value_enum())
 }
