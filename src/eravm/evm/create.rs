@@ -99,16 +99,7 @@ pub fn contract_hash<'ctx>(
         .code_segment()
         .expect("Contract code segment type is undefined");
 
-    let mut current_module_name = context
-        .module()
-        .get_name()
-        .to_str()
-        .expect("Always valid")
-        .to_owned();
-    if context.evmla().is_some() {
-        current_module_name
-            .push_str(format!(".{}", era_compiler_common::CodeSegment::Runtime).as_str());
-    }
+    let current_module_name = context.module().get_name().to_str().expect("Always valid");
 
     let full_path = match context.yul() {
         Some(yul_data) => yul_data
@@ -129,7 +120,8 @@ pub fn contract_hash<'ctx>(
             ));
         }
         era_compiler_common::CodeSegment::Runtime
-            if identifier.ends_with(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX) =>
+            if context.yul().is_some()
+                && identifier.ends_with(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX) =>
         {
             anyhow::bail!("type({identifier}).runtimeCode is not supported");
         }
@@ -171,16 +163,7 @@ pub fn header_size<'ctx>(
         .code_segment()
         .expect("Contract code segment type is undefined");
 
-    let mut current_module_name = context
-        .module()
-        .get_name()
-        .to_str()
-        .expect("Always valid")
-        .to_owned();
-    if context.evmla().is_some() {
-        current_module_name
-            .push_str(format!(".{}", era_compiler_common::CodeSegment::Runtime).as_str());
-    }
+    let current_module_name = context.module().get_name().to_str().expect("Always valid");
 
     let full_path = match context.yul() {
         Some(yul_data) => yul_data
@@ -201,7 +184,8 @@ pub fn header_size<'ctx>(
             ));
         }
         era_compiler_common::CodeSegment::Runtime
-            if identifier.ends_with(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX) =>
+            if context.yul().is_some()
+                && identifier.ends_with(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX) =>
         {
             anyhow::bail!("type({identifier}).runtimeCode is not supported");
         }
