@@ -52,6 +52,8 @@ pub struct Intrinsics<'ctx> {
     pub linkersymbol: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub loadimmutable: FunctionDeclaration<'ctx>,
+    /// The corresponding intrinsic function name.
+    pub pushdeployaddress: FunctionDeclaration<'ctx>,
 
     /// The corresponding intrinsic function name.
     pub log0: FunctionDeclaration<'ctx>,
@@ -187,6 +189,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LOAD_IMMUTABLE: &'static str = "llvm.evm.loadimmutable";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_PUSH_DEPLOY_ADDRESS: &'static str = "llvm.evm.pushdeployaddress";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LOG0: &'static str = "llvm.evm.log0";
@@ -472,6 +477,12 @@ impl<'ctx> Intrinsics<'ctx> {
             module,
             Self::FUNCTION_LOAD_IMMUTABLE,
             field_type.fn_type(&[llvm.metadata_type().into()], false),
+        );
+        let pushdeployaddress = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_PUSH_DEPLOY_ADDRESS,
+            field_type.fn_type(&[], false),
         );
 
         let log0 = Self::declare(
@@ -854,6 +865,7 @@ impl<'ctx> Intrinsics<'ctx> {
             dataoffset,
             linkersymbol,
             loadimmutable,
+            pushdeployaddress,
 
             log0,
             log1,
