@@ -178,6 +178,23 @@ impl<'ctx> Function<'ctx> {
     }
 
     ///
+    /// Sets the size optimization attributes.
+    ///
+    pub fn set_size_attributes(
+        llvm: &'ctx inkwell::context::Context,
+        function: inkwell::values::FunctionValue<'ctx>,
+    ) {
+        function.add_attribute(
+            inkwell::attributes::AttributeLoc::Function,
+            llvm.create_enum_attribute(Attribute::OptimizeForSize as u32, 0),
+        );
+        function.add_attribute(
+            inkwell::attributes::AttributeLoc::Function,
+            llvm.create_enum_attribute(Attribute::MinSize as u32, 0),
+        );
+    }
+
+    ///
     /// Saves the pointer to a stack variable, returning the pointer to the shadowed variable,
     /// if it exists.
     ///
