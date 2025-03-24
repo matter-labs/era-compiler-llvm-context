@@ -21,6 +21,7 @@ use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_config::DebugConfig;
 use crate::debug_info::DebugInfo;
+use crate::evm::warning::Warning;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
 use crate::target_machine::TargetMachine;
@@ -119,7 +120,7 @@ impl<'ctx> Context<'ctx> {
     ///
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
-    pub fn build(mut self) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
+    pub fn build(mut self) -> anyhow::Result<(inkwell::memory_buffer::MemoryBuffer, Vec<Warning>)> {
         let module_clone = self.module.clone();
 
         let target_machine = TargetMachine::new(
@@ -164,35 +165,30 @@ impl<'ctx> Context<'ctx> {
             .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
             .map_err(|error| anyhow::anyhow!("{} bytecode emitting: {error}", self.code_segment))?;
 
-        if let era_compiler_common::CodeSegment::Runtime = self.code_segment {
-            let bytecode_size = buffer.as_slice().len();
-            if bytecode_size > crate::evm::r#const::EVM_BYTECODE_SIZE_LIMIT {
-                if self.optimizer.settings() != &OptimizerSettings::size()
-                    && self.optimizer.settings().is_fallback_to_size_enabled()
-                {
-                    self.optimizer = Optimizer::new(OptimizerSettings::size());
-                    self.module = module_clone;
-                    for function in self.module.get_functions() {
-                        Function::set_size_attributes(self.llvm, function);
-                    }
-                    return self.build().map_err(|error| {
-                        anyhow::anyhow!(
-                            "falling back to optimizing {} bytecode for size: {error}",
-                            era_compiler_common::CodeSegment::Runtime
-                        )
-                    });
-                } else {
-                    anyhow::bail!(
-                        "{} bytecode size is {}B that exceeds the EVM limit of {}B",
-                        era_compiler_common::CodeSegment::Runtime,
-                        bytecode_size,
-                        crate::evm::r#const::EVM_BYTECODE_SIZE_LIMIT,
-                    );
+        let mut warnings = Vec::with_capacity(1);
+        let bytecode_size = buffer.as_slice().len();
+        if bytecode_size > crate::evm::r#const::EVM_DEPLOY_CODE_SIZE_LIMIT {
+            if self.optimizer.settings() != &OptimizerSettings::size()
+                && self.optimizer.settings().is_fallback_to_size_enabled()
+            {
+                self.optimizer = Optimizer::new(OptimizerSettings::size());
+                self.module = module_clone;
+                for function in self.module.get_functions() {
+                    Function::set_size_attributes(self.llvm, function);
                 }
-            }
+                return self.build();
+            } else {
+                warnings.push(match self.code_segment {
+                    era_compiler_common::CodeSegment::Deploy => Warning::DeployCodeSize {
+                        found: bytecode_size,
+                    },
+                    era_compiler_common::CodeSegment::Runtime => Warning::RuntimeCodeSize {
+                        found: bytecode_size,
+                    },
+                })
+            };
         }
-
-        Ok(buffer)
+        Ok((buffer, warnings))
     }
 
     ///
