@@ -39,7 +39,7 @@ where
     fn declare(&mut self, context: &mut Context) -> anyhow::Result<()> {
         let function_type = context.function_type::<inkwell::types::BasicTypeEnum>(vec![], 0);
         context.add_function(
-            crate::evm::r#const::ENTRY_FUNCTION_NAME,
+            crate::r#const::ENTRY_FUNCTION_NAME,
             function_type,
             0,
             Some(inkwell::module::Linkage::External),
@@ -49,7 +49,7 @@ where
     }
 
     fn into_llvm(self, context: &mut Context) -> anyhow::Result<()> {
-        context.set_current_function(crate::evm::r#const::ENTRY_FUNCTION_NAME)?;
+        context.set_current_function(crate::r#const::ENTRY_FUNCTION_NAME)?;
 
         context.set_basic_block(context.current_function().borrow().entry_block());
         self.inner.into_llvm(context)?;

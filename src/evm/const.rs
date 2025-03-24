@@ -2,11 +2,8 @@
 //! The LLVM context constants.
 //!
 
-/// The entry function name.
-pub const ENTRY_FUNCTION_NAME: &str = "__entry";
+/// The deploy bytecode size limit.
+pub const DEPLOY_CODE_SIZE_LIMIT: usize = 49152;
 
-/// The EVM deploy bytecode size limit.
-pub const EVM_DEPLOY_CODE_SIZE_LIMIT: usize = 49152;
-
-/// The EVM runtime bytecode size limit.
-pub const EVM_RUNTIME_CODE_SIZE_LIMIT: usize = 24576;
+/// The runtime bytecode size limit.
+pub const RUNTIME_CODE_SIZE_LIMIT: usize = 24576;

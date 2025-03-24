@@ -3,10 +3,7 @@
 //!
 
 /// The EraVM version.
-pub const ZKEVM_VERSION: semver::Version = semver::Version::new(1, 3, 2);
-
-/// The deployed Yul object identifier suffix.
-pub static YUL_OBJECT_DEPLOYED_SUFFIX: &str = "_deployed";
+pub const ERAVM_VERSION: semver::Version = semver::Version::new(1, 5, 0);
 
 /// The heap memory pointer pointer global variable name.
 pub static GLOBAL_HEAP_MEMORY_POINTER: &str = "memory_pointer";
