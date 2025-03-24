@@ -13,6 +13,7 @@ doctest = false
 
 [dependencies]
 anyhow = "=1.0.89"
+thiserror = "=1.0.64"
 semver = "=1.0.23"
 serde = { version = "=1.0.210", "features" = [ "derive" ] }
 num = "=0.4.3"

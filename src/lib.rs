@@ -107,6 +107,7 @@ pub use self::evm::instructions::return_data as evm_return_data;
 pub use self::evm::instructions::storage as evm_storage;
 pub use self::evm::link as evm_link;
 pub use self::evm::r#const as evm_const;
+pub use self::evm::warning::Warning as EVMWarning;
 pub use self::evm::DummyLLVMWritable as EVMDummyLLVMWritable;
 pub use self::evm::WriteLLVM as EVMWriteLLVM;
 pub use self::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;

@@ -5,6 +5,7 @@
 pub mod r#const;
 pub mod context;
 pub mod instructions;
+pub mod warning;
 
 use std::collections::BTreeMap;
 
