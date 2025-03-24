@@ -11,7 +11,7 @@ pub enum Warning {
     #[error(
         "{0} bytecode size is {found}B that exceeds the EVM limit of {1}B",
         era_compiler_common::CodeSegment::Deploy,
-        crate::evm::r#const::EVM_DEPLOY_CODE_SIZE_LIMIT
+        crate::evm::r#const::DEPLOY_CODE_SIZE_LIMIT
     )]
     DeployCodeSize {
         /// Bytecode size.
@@ -22,7 +22,7 @@ pub enum Warning {
     #[error(
         "{0} bytecode size is {found}B that exceeds the EVM limit of {1}B",
         era_compiler_common::CodeSegment::Runtime,
-        crate::evm::r#const::EVM_RUNTIME_CODE_SIZE_LIMIT
+        crate::evm::r#const::RUNTIME_CODE_SIZE_LIMIT
     )]
     RuntimeCodeSize {
         /// Bytecode size.

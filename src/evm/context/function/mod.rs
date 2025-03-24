@@ -97,7 +97,7 @@ impl<'ctx> Function<'ctx> {
     ///
     pub fn is_name_external(name: &str) -> bool {
         name.starts_with("llvm.")
-            || (name.starts_with("__") && name != crate::evm_const::ENTRY_FUNCTION_NAME)
+            || (name.starts_with("__") && name != crate::r#const::ENTRY_FUNCTION_NAME)
     }
 
     ///

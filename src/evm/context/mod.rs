@@ -167,7 +167,7 @@ impl<'ctx> Context<'ctx> {
 
         let mut warnings = Vec::with_capacity(1);
         let bytecode_size = buffer.as_slice().len();
-        if bytecode_size > crate::evm::r#const::EVM_DEPLOY_CODE_SIZE_LIMIT {
+        if bytecode_size > crate::evm::r#const::DEPLOY_CODE_SIZE_LIMIT {
             if self.optimizer.settings() != &OptimizerSettings::size()
                 && self.optimizer.settings().is_fallback_to_size_enabled()
             {

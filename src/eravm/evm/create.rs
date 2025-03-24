@@ -105,7 +105,7 @@ pub fn contract_hash<'ctx>(
         Some(yul_data) => yul_data
             .resolve_path(
                 identifier
-                    .strip_suffix(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX)
+                    .strip_suffix(crate::r#const::YUL_OBJECT_DEPLOYED_SUFFIX)
                     .unwrap_or(identifier.as_str()),
             )
             .expect("Always exists"),
@@ -121,7 +121,7 @@ pub fn contract_hash<'ctx>(
         }
         era_compiler_common::CodeSegment::Runtime
             if context.yul().is_some()
-                && identifier.ends_with(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX) =>
+                && identifier.ends_with(crate::r#const::YUL_OBJECT_DEPLOYED_SUFFIX) =>
         {
             anyhow::bail!("type({identifier}).runtimeCode is not supported");
         }
@@ -177,7 +177,7 @@ pub fn header_size<'ctx>(
         Some(yul_data) => yul_data
             .resolve_path(
                 identifier
-                    .strip_suffix(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX)
+                    .strip_suffix(crate::r#const::YUL_OBJECT_DEPLOYED_SUFFIX)
                     .unwrap_or(identifier.as_str()),
             )
             .expect("Always exists"),
@@ -193,7 +193,7 @@ pub fn header_size<'ctx>(
         }
         era_compiler_common::CodeSegment::Runtime
             if context.yul().is_some()
-                && identifier.ends_with(crate::eravm::YUL_OBJECT_DEPLOYED_SUFFIX) =>
+                && identifier.ends_with(crate::r#const::YUL_OBJECT_DEPLOYED_SUFFIX) =>
         {
             anyhow::bail!("type({identifier}).runtimeCode is not supported");
         }
