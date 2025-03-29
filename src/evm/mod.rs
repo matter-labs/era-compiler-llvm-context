@@ -65,6 +65,34 @@ pub fn link(
 }
 
 ///
+/// Returns a minimal EVM deploy code returning the specified runtime code length.
+///
+pub fn minimal_deploy_code(runtime_code_length: usize) -> Vec<u8> {
+    assert!(
+        runtime_code_length <= crate::evm_const::DEPLOY_CODE_SIZE_LIMIT,
+        "Runtime code length exceeds the limit of {}B",
+        crate::evm_const::DEPLOY_CODE_SIZE_LIMIT,
+    );
+
+    static MINIMAL_DEPLOY_CODE: &[u8] = &[
+        0x61, 0x00, 0x00, // PUSH2 <runtime_length> (placeholder, big-endian)
+        0x60, 0x00, // PUSH1 0x00             (dest in memory = 0)
+        0x60, 0x0d, // PUSH1 0x0d             (offset where runtime code begins)
+        0x82, // DUP3                   (duplicate <runtime_length>)
+        0x39, // CODECOPY               (codecopy(0, 0x0d, <runtime_length>))
+        0x60, 0x00, // PUSH1 0x00             (return from memory offset = 0)
+        0x90, // SWAP1                  (put <runtime_length> on top)
+        0xF3, // RETURN                 (return memory[0..length])
+    ];
+
+    let mut minimal_deploy_code = MINIMAL_DEPLOY_CODE.to_vec();
+    let runtime_length = (runtime_code_length as u16).to_be_bytes();
+    minimal_deploy_code[1] = runtime_length[0];
+    minimal_deploy_code[2] = runtime_length[1];
+    minimal_deploy_code
+}
+
+///
 /// Implemented by items which are translated into LLVM IR.
 ///
 pub trait WriteLLVM {
