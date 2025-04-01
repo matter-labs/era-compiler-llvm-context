@@ -155,10 +155,14 @@ impl Settings {
     ///
     /// Returns the middle-end optimization parameter as string.
     ///
-    pub fn middle_end_as_string(&self) -> String {
-        match self.level_middle_end_size {
-            SizeLevel::Zero => (self.level_middle_end as u8).to_string(),
-            size_level => size_level.to_string(),
+    pub fn middle_end_as_char(&self) -> char {
+        match (self.level_middle_end, self.level_middle_end_size) {
+            (inkwell::OptimizationLevel::None, SizeLevel::Zero) => '0',
+            (inkwell::OptimizationLevel::Less, SizeLevel::Zero) => '1',
+            (inkwell::OptimizationLevel::Default, SizeLevel::Zero) => '2',
+            (inkwell::OptimizationLevel::Aggressive, SizeLevel::Zero) => '3',
+            (_, SizeLevel::S) => 's',
+            (_, SizeLevel::Z) => 'z',
         }
     }
 
@@ -175,33 +179,45 @@ impl Settings {
     ///
     /// Used only for testing purposes.
     ///
-    pub fn combinations() -> Vec<Self> {
-        let performance_combinations: Vec<Self> = vec![
-            inkwell::OptimizationLevel::None,
-            inkwell::OptimizationLevel::Less,
-            inkwell::OptimizationLevel::Default,
-            inkwell::OptimizationLevel::Aggressive,
-        ]
-        .into_iter()
-        .cartesian_product(vec![
-            inkwell::OptimizationLevel::None,
-            inkwell::OptimizationLevel::Aggressive,
-        ])
-        .map(|(optimization_level_middle, optimization_level_back)| {
-            Self::new(
-                optimization_level_middle,
-                SizeLevel::Zero,
-                optimization_level_back,
-            )
-        })
-        .collect();
+    pub fn combinations(target: era_compiler_common::Target) -> Vec<Self> {
+        let middle_end_levels = match target {
+            era_compiler_common::Target::EraVM => vec![
+                inkwell::OptimizationLevel::None,
+                inkwell::OptimizationLevel::Less,
+                inkwell::OptimizationLevel::Default,
+                inkwell::OptimizationLevel::Aggressive,
+            ],
+            era_compiler_common::Target::EVM => vec![
+                inkwell::OptimizationLevel::Less,
+                inkwell::OptimizationLevel::Default,
+                inkwell::OptimizationLevel::Aggressive,
+            ],
+        };
+        let back_end_levels = match target {
+            era_compiler_common::Target::EraVM => vec![
+                inkwell::OptimizationLevel::None,
+                inkwell::OptimizationLevel::Less,
+                inkwell::OptimizationLevel::Default,
+                inkwell::OptimizationLevel::Aggressive,
+            ],
+            era_compiler_common::Target::EVM => vec![inkwell::OptimizationLevel::Aggressive],
+        };
+
+        let performance_combinations: Vec<Self> = middle_end_levels
+            .into_iter()
+            .cartesian_product(back_end_levels.clone())
+            .map(|(optimization_level_middle, optimization_level_back)| {
+                Self::new(
+                    optimization_level_middle,
+                    SizeLevel::Zero,
+                    optimization_level_back,
+                )
+            })
+            .collect();
 
         let size_combinations: Vec<Self> = vec![SizeLevel::S, SizeLevel::Z]
             .into_iter()
-            .cartesian_product(vec![
-                inkwell::OptimizationLevel::None,
-                inkwell::OptimizationLevel::Aggressive,
-            ])
+            .cartesian_product(back_end_levels)
             .map(|(size_level, optimization_level_back)| {
                 Self::new(
                     inkwell::OptimizationLevel::Default,
@@ -245,7 +261,7 @@ impl std::fmt::Display for Settings {
         write!(
             f,
             "M{}B{}",
-            self.middle_end_as_string(),
+            self.middle_end_as_char(),
             self.level_back_end as u8,
         )
     }

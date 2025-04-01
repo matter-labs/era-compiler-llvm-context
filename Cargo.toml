@@ -21,7 +21,7 @@ itertools = "=0.13.0"
 
 zkevm_opcode_defs = "=0.150.6"
 
-era-compiler-common = { git = "https://github.com/matter-labs/era-compiler-common", branch = "evm-llvmit-tests" }
+era-compiler-common = { git = "https://github.com/matter-labs/era-compiler-common", branch = "main" }
 
 [dependencies.inkwell]
 git = "https://github.com/matter-labs-forks/inkwell"

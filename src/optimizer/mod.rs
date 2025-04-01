@@ -35,7 +35,7 @@ impl Optimizer {
     ) -> Result<(), inkwell::support::LLVMString> {
         target_machine.run_optimization_passes(
             module,
-            format!("default<O{}>", self.settings.middle_end_as_string()).as_str(),
+            format!("default<O{}>", self.settings.middle_end_as_char()).as_str(),
         )
     }
 
