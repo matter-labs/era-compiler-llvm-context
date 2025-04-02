@@ -106,6 +106,7 @@ pub use self::evm::instructions::r#return as evm_return;
 pub use self::evm::instructions::return_data as evm_return_data;
 pub use self::evm::instructions::storage as evm_storage;
 pub use self::evm::link as evm_link;
+pub use self::evm::minimal_deploy_code as evm_minimal_deploy_code;
 pub use self::evm::r#const as evm_const;
 pub use self::evm::warning::Warning as EVMWarning;
 pub use self::evm::DummyLLVMWritable as EVMDummyLLVMWritable;
