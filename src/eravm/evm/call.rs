@@ -621,7 +621,7 @@ pub fn request<'ctx>(
     signature: &'static str,
     arguments: Vec<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
-    let signature_hash = era_compiler_common::Hash::keccak256(signature.as_bytes());
+    let signature_hash = era_compiler_common::Keccak256Hash::from_slice(signature.as_bytes());
     let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let calldata_size = context.field_const(
