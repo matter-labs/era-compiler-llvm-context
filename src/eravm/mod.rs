@@ -127,21 +127,39 @@ pub fn hash(
 pub fn build(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
     metadata_hash: Option<era_compiler_common::Hash>,
+    cbor_data: Option<(String, Vec<(String, semver::Version)>)>,
     assembly_text: Option<String>,
 ) -> anyhow::Result<Build> {
-    let metadata_hash = metadata_hash.as_ref().map(|hash| match hash {
-        era_compiler_common::Hash::Keccak256 { bytes, .. } => bytes.to_vec(),
-        hash @ era_compiler_common::Hash::Ipfs { .. } => hash.as_cbor_bytes(),
-    });
-    let bytecode_buffer_with_metadata = match metadata_hash {
-        Some(ref metadata) => bytecode_buffer
+    let metadata = match (metadata_hash, cbor_data) {
+        (Some(era_compiler_common::Hash::IPFS(hash)), Some((cbor_key, cbor_data))) => {
+            let cbor = era_compiler_common::CBOR::new(
+                Some((
+                    era_compiler_common::EraVMMetadataHashType::IPFS,
+                    hash.as_bytes(),
+                )),
+                cbor_key,
+                cbor_data,
+            );
+            cbor.to_vec()
+        }
+        (None, Some((cbor_key, cbor_data))) => {
+            let cbor = era_compiler_common::CBOR::<'_, String>::new(None, cbor_key, cbor_data);
+            cbor.to_vec()
+        }
+        (Some(era_compiler_common::Hash::Keccak256(hash)), _) => hash.to_vec(),
+        (_, None) => vec![],
+    };
+
+    let bytecode_buffer_with_metadata = if metadata.is_empty() {
+        bytecode_buffer
+    } else {
+        bytecode_buffer
             .append_metadata_eravm(metadata.as_slice())
-            .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))?,
-        None => bytecode_buffer,
+            .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))?
     };
     let bytecode = bytecode_buffer_with_metadata.as_slice().to_vec();
 
-    let build = Build::new(bytecode, metadata_hash, assembly_text);
+    let build = Build::new(bytecode, metadata, assembly_text);
     Ok(build)
 }
 

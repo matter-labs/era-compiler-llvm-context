@@ -1,23 +1,23 @@
 [package]
 name = "era-compiler-llvm-context"
-version = "1.5.0"
+version = "2.0.0"
 authors = [
     "Oleksandr Zarudnyi <a.zarudnyy@matterlabs.dev>",
 ]
 license = "MIT OR Apache-2.0"
 edition = "2021"
-description = "Shared front-end code of the ZKsync compilers"
+description = "Shared front-end code of LLVM-based compilers"
 
 [lib]
 doctest = false
 
 [dependencies]
-anyhow = "=1.0.89"
-thiserror = "=1.0.64"
-semver = "=1.0.23"
-serde = { version = "=1.0.210", "features" = [ "derive" ] }
-num = "=0.4.3"
-itertools = "=0.13.0"
+anyhow = "1.0"
+thiserror = "2.0"
+semver = "1.0"
+serde = { version = "1.0", "features" = [ "derive" ] }
+num = "0.4"
+itertools = "0.14"
 
 zkevm_opcode_defs = "=0.150.6"
 

@@ -5,7 +5,7 @@ sovereignty! We welcome contributions from anyone on the internet, and are grate
 
 ## Ways to contribute
 
-There are many ways to contribute to the ZK Stack:
+There are many ways to contribute:
 
 1. Open issues: if you find a bug, have something you believe needs to be fixed, or have an idea for a feature, please
    open an issue.
@@ -13,8 +13,6 @@ There are many ways to contribute to the ZK Stack:
    issues.
 3. Resolve issues: either by showing an issue isn't a problem and the current state is ok as is or by fixing the problem
    and opening a PR.
-4. Report security issues, see [our security policy](./SECURITY.md).
-5. [Join the team!](https://matterlabs.notion.site/Shape-the-future-of-Ethereum-at-Matter-Labs-dfb3b5a037044bb3a8006af2eb0575e0)
 
 ## Fixing issues
 
@@ -25,16 +23,7 @@ for guidance how to work with PRs created from a fork.
 
 ## Licenses
 
-If you contribute to this project, your contributions will be made to the project under both Apache 2.0 and the MIT
-license.
-
-## Resources
-
-We aim to make it as easy as possible to contribute to the mission. This is still WIP, and we're happy for contributions
-and suggestions here too. Some resources to help:
-
-1. [ZKsync Era docs!](https://docs.zksync.io/)
-2. Company links can be found in the [repo's readme](README.md)
+If you contribute to this project, your contributions will be made to the project under both Apache 2.0 and the MIT licenses.
 
 ## Code of Conduct
 

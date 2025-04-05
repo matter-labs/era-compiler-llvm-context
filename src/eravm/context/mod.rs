@@ -148,6 +148,7 @@ impl<'ctx> Context<'ctx> {
         mut self,
         contract_path: &str,
         metadata_hash: Option<era_compiler_common::Hash>,
+        cbor_data: Option<(String, Vec<(String, semver::Version)>)>,
         output_assembly: bool,
         is_fallback_to_size: bool,
     ) -> anyhow::Result<Build> {
@@ -222,7 +223,13 @@ impl<'ctx> Context<'ctx> {
                     Function::set_size_attributes(self.llvm, function);
                 }
                 return self
-                    .build(contract_path, metadata_hash, output_assembly, true)
+                    .build(
+                        contract_path,
+                        metadata_hash,
+                        cbor_data,
+                        output_assembly,
+                        true,
+                    )
                     .map_err(|error| {
                         anyhow::anyhow!("falling back to optimizing for size: {error}")
                     });
@@ -237,7 +244,7 @@ impl<'ctx> Context<'ctx> {
         let assembly_text = assembly_buffer
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
-        crate::eravm::build(bytecode_buffer, metadata_hash, assembly_text)
+        crate::eravm::build(bytecode_buffer, metadata_hash, cbor_data, assembly_text)
     }
 
     ///

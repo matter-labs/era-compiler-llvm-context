@@ -24,8 +24,9 @@ pub fn create<'ctx>(
     input_offset: inkwell::values::IntValue<'ctx>,
     input_length: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
-    let signature_hash =
-        era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes());
+    let signature_hash = era_compiler_common::Keccak256Hash::from_slice(
+        crate::eravm::DEPLOYER_SIGNATURE_CREATE.as_bytes(),
+    );
     let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let salt = context.field_const(0);
@@ -61,8 +62,9 @@ pub fn create2<'ctx>(
     input_length: inkwell::values::IntValue<'ctx>,
     salt: Option<inkwell::values::IntValue<'ctx>>,
 ) -> anyhow::Result<inkwell::values::BasicValueEnum<'ctx>> {
-    let signature_hash =
-        era_compiler_common::Hash::keccak256(crate::eravm::DEPLOYER_SIGNATURE_CREATE2.as_bytes());
+    let signature_hash = era_compiler_common::Keccak256Hash::from_slice(
+        crate::eravm::DEPLOYER_SIGNATURE_CREATE2.as_bytes(),
+    );
     let signature_hash_value = context.field_const_str_hex(signature_hash.to_string().as_str());
 
     let salt = salt.unwrap_or_else(|| context.field_const(0));
