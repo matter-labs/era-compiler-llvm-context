@@ -75,14 +75,13 @@ pub fn minimal_deploy_code(runtime_code_length: usize) -> Vec<u8> {
     );
 
     static MINIMAL_DEPLOY_CODE: &[u8] = &[
-        0x61, 0x00, 0x00, // PUSH2 <runtime_length> (placeholder, big-endian)
-        0x60, 0x00, // PUSH1 0x00             (dest in memory = 0)
-        0x60, 0x0d, // PUSH1 0x0d             (offset where runtime code begins)
-        0x82, // DUP3                   (duplicate <runtime_length>)
-        0x39, // CODECOPY               (codecopy(0, 0x0d, <runtime_length>))
-        0x60, 0x00, // PUSH1 0x00             (return from memory offset = 0)
-        0x90, // SWAP1                  (put <runtime_length> on top)
-        0xF3, // RETURN                 (return memory[0..length])
+        0x61, 0x00, 0x00, // PUSH2 <runtime_length>    (placeholder, big-endian)
+        0x80, // DUP1                                  (duplicate <runtime_length>)
+        0x60, 0x0a, // PUSH1 0x0a                      (offset where runtime code begins)
+        0x5F, // PUSH0                                 (dest in memory = 0)
+        0x39, // CODECOPY                              (codecopy(0, 0x0d, <runtime_length>))
+        0x5F, // PUSH0                                 (return from memory offset = 0)
+        0xF3, // RETURN                                (return memory[0..length])
     ];
 
     let mut minimal_deploy_code = MINIMAL_DEPLOY_CODE.to_vec();
