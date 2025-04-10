@@ -19,6 +19,16 @@ jobs:
       image: ghcr.io/matter-labs/zksync-llvm-runner:latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      # This step is required to checkout submodules
+      # that are disabled in .gitmodules config
+      - name: Checkout submodules
+        run: |
+          git config --global --add safe.directory '*'
+          git submodule update --force --depth=1 --recursive --checkout
+
       - name: Cargo checks
         uses: matter-labs/era-compiler-ci/.github/actions/cargo-check@v1
         with:
@@ -35,10 +45,20 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      # This step is required to checkout submodules
+      # that are disabled in .gitmodules config
+      - name: Checkout submodules
+        run: |
+          git config --global --add safe.directory '*'
+          git submodule update --force --depth=1 --recursive --checkout
 
       - name: Build LLVM
         uses: matter-labs/era-compiler-ci/.github/actions/build-llvm@v1
         with:
+          clone-llvm: 'false'
           build-type: 'RelWithDebInfo'
           enable-assertions: true
 
