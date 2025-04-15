@@ -19,6 +19,42 @@ pub fn initialize_target() {
 }
 
 ///
+/// Appends metadata to runtime code.
+///
+pub fn append_metadata(
+    bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
+    metadata_hash: Option<Vec<u8>>,
+    cbor_data: Option<(String, Vec<(String, semver::Version)>)>,
+) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
+    let metadata = match (metadata_hash, cbor_data) {
+        (Some(hash), Some((cbor_key, cbor_data))) => {
+            let cbor = era_compiler_common::CBOR::new(
+                Some((
+                    era_compiler_common::EVMMetadataHashType::IPFS,
+                    hash.as_slice(),
+                )),
+                cbor_key,
+                cbor_data,
+            );
+            cbor.to_vec()
+        }
+        (None, Some((cbor_key, cbor_data))) => {
+            let cbor = era_compiler_common::CBOR::<'_, String>::new(None, cbor_key, cbor_data);
+            cbor.to_vec()
+        }
+        (_, None) => vec![],
+    };
+
+    if metadata.is_empty() {
+        return Ok(bytecode_buffer);
+    }
+
+    bytecode_buffer
+        .append_metadata_evm(metadata.as_slice())
+        .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))
+}
+
+///
 /// Assembles the main buffer and its dependencies from `bytecode_buffers`.
 ///
 pub fn assemble(
@@ -30,7 +66,7 @@ pub fn assemble(
         era_compiler_common::CodeSegment::Deploy => inkwell::memory_buffer::CodeSegment::Deploy,
         era_compiler_common::CodeSegment::Runtime => inkwell::memory_buffer::CodeSegment::Runtime,
     };
-    inkwell::memory_buffer::MemoryBuffer::assembly_evm(
+    inkwell::memory_buffer::MemoryBuffer::assemble_evm(
         bytecode_buffers,
         bytecode_buffer_ids,
         code_segment,
@@ -65,30 +101,47 @@ pub fn link(
 }
 
 ///
-/// Returns a minimal EVM deploy code returning the specified runtime code length.
+/// Returns minimal deploy code patched with specified identifiers.
 ///
-pub fn minimal_deploy_code(runtime_code_length: usize) -> Vec<u8> {
-    assert!(
-        runtime_code_length <= crate::evm_const::DEPLOY_CODE_SIZE_LIMIT,
-        "Runtime code length exceeds the limit of {}B",
-        crate::evm_const::DEPLOY_CODE_SIZE_LIMIT,
-    );
+pub fn minimal_deploy_code(deploy_code_identifier: &str, runtime_code_identifier: &str) -> String {
+    format!(
+        r#"
+; ModuleID = '{deploy_code_identifier}'
+source_filename = "{deploy_code_identifier}"
+target datalayout = "E-p:256:256-i256:256:256-S256-a:256:256"
+target triple = "evm-unknown-unknown"
 
-    static MINIMAL_DEPLOY_CODE: &[u8] = &[
-        0x61, 0x00, 0x00, // PUSH2 <runtime_length>    (placeholder, big-endian)
-        0x80, // DUP1                                  (duplicate <runtime_length>)
-        0x60, 0x0a, // PUSH1 0x0a                      (offset where runtime code begins)
-        0x5F, // PUSH0                                 (dest in memory = 0)
-        0x39, // CODECOPY                              (codecopy(0, 0x0d, <runtime_length>))
-        0x5F, // PUSH0                                 (return from memory offset = 0)
-        0xF3, // RETURN                                (return memory[0..length])
-    ];
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i256 @llvm.evm.datasize(metadata) #0
 
-    let mut minimal_deploy_code = MINIMAL_DEPLOY_CODE.to_vec();
-    let runtime_length = (runtime_code_length as u16).to_be_bytes();
-    minimal_deploy_code[1] = runtime_length[0];
-    minimal_deploy_code[2] = runtime_length[1];
-    minimal_deploy_code
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i256 @llvm.evm.dataoffset(metadata) #0
+
+; Function Attrs: noreturn nounwind
+declare void @llvm.evm.return(ptr addrspace(1), i256) #1
+
+; Function Attrs: mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p1.p4.i256(ptr addrspace(1) noalias nocapture writeonly, ptr addrspace(4) noalias nocapture readonly, i256, i1 immarg) #2
+
+; Function Attrs: nofree noreturn null_pointer_is_valid
+define void @__entry() local_unnamed_addr #3 {{
+entry:
+  %datasize = tail call i256 @llvm.evm.datasize(metadata !0)
+  %dataoffset = tail call i256 @llvm.evm.dataoffset(metadata !0)
+  %codecopy_source_pointer = inttoptr i256 %dataoffset to ptr addrspace(4)
+  tail call void @llvm.memcpy.p1.p4.i256(ptr addrspace(1) align 4294967296 null, ptr addrspace(4) align 1 %codecopy_source_pointer, i256 %datasize, i1 false)
+  tail call void @llvm.evm.return(ptr addrspace(1) noalias nocapture nofree noundef nonnull align 32 null, i256 %datasize)
+  unreachable
+}}
+
+attributes #0 = {{ mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none) }}
+attributes #1 = {{ noreturn nounwind }}
+attributes #2 = {{ mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite) }}
+attributes #3 = {{ nofree noreturn null_pointer_is_valid }}
+
+!0 = !{{!"{runtime_code_identifier}"}}
+"#
+    )
 }
 
 ///
