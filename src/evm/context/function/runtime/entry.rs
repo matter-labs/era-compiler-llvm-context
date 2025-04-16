@@ -60,11 +60,12 @@ where
         {
             Some(inkwell::values::InstructionOpcode::Br) => {}
             Some(inkwell::values::InstructionOpcode::Switch) => {}
-            _ => context.build_unreachable()?,
+            _ => context
+                .build_unconditional_branch(context.current_function().borrow().return_block())?,
         }
 
         context.set_basic_block(context.current_function().borrow().return_block());
-        context.build_return(None)?;
+        crate::evm::instructions::r#return::stop(context)?;
 
         Ok(())
     }
