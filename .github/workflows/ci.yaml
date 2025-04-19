@@ -41,7 +41,7 @@ jobs:
       image: ghcr.io/matter-labs/zksync-llvm-runner:latest
     env:
       TARGET: x86_64-unknown-linux-gnu
-      LLVM_SYS_170_PREFIX: "${{ github.workspace }}/target-llvm/target-final"
+      LLVM_SYS_191_PREFIX: "${{ github.workspace }}/target-llvm/target-final"
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
