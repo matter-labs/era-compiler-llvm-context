@@ -21,6 +21,7 @@ use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_config::DebugConfig;
 use crate::debug_info::DebugInfo;
+use crate::evm::build::Build as EVMBuild;
 use crate::evm::warning::Warning;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
@@ -120,8 +121,13 @@ impl<'ctx> Context<'ctx> {
     ///
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
-    pub fn build(mut self) -> anyhow::Result<(inkwell::memory_buffer::MemoryBuffer, Vec<Warning>)> {
+    pub fn build(
+        mut self,
+        output_assembly: bool,
+        output_bytecode: bool,
+    ) -> anyhow::Result<EVMBuild> {
         let module_clone = self.module.clone();
+        let contract_path = self.module.get_name().to_str().expect("Always valid");
 
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EVM,
@@ -131,11 +137,7 @@ impl<'ctx> Context<'ctx> {
         target_machine.set_target_data(self.module());
 
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_unoptimized(
-                self.module().get_name().to_str().expect("Always valid"),
-                self.module(),
-                false,
-            )?;
+            debug_config.dump_llvm_ir_unoptimized(contract_path, self.module(), false)?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
@@ -148,11 +150,7 @@ impl<'ctx> Context<'ctx> {
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_segment))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(
-                self.module().get_name().to_str().expect("Always valid"),
-                self.module(),
-                false,
-            )?;
+            debug_config.dump_llvm_ir_optimized(contract_path, self.module(), false)?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
@@ -161,34 +159,59 @@ impl<'ctx> Context<'ctx> {
             )
         })?;
 
-        let buffer = target_machine
-            .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
-            .map_err(|error| anyhow::anyhow!("{} bytecode emitting: {error}", self.code_segment))?;
+        let assembly_buffer = if output_assembly || self.debug_config.is_some() {
+            let assembly_buffer = target_machine
+                .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
+                .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
 
-        let mut warnings = Vec::with_capacity(1);
-        let bytecode_size = buffer.as_slice().len();
-        if bytecode_size > crate::evm::r#const::DEPLOY_CODE_SIZE_LIMIT {
-            if self.optimizer.settings() != &OptimizerSettings::size()
-                && self.optimizer.settings().is_fallback_to_size_enabled()
-            {
-                self.optimizer = Optimizer::new(OptimizerSettings::size());
-                self.module = module_clone;
-                for function in self.module.get_functions() {
-                    Function::set_size_attributes(self.llvm, function);
-                }
-                return self.build();
-            } else {
-                warnings.push(match self.code_segment {
-                    era_compiler_common::CodeSegment::Deploy => Warning::DeployCodeSize {
-                        found: bytecode_size,
-                    },
-                    era_compiler_common::CodeSegment::Runtime => Warning::RuntimeCodeSize {
-                        found: bytecode_size,
-                    },
-                })
-            };
-        }
-        Ok((buffer, warnings))
+            if let Some(ref debug_config) = self.debug_config {
+                let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
+                debug_config.dump_assembly(contract_path, assembly_text.as_ref())?;
+            }
+
+            Some(assembly_buffer)
+        } else {
+            None
+        };
+        let assembly = assembly_buffer
+            .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
+
+        let (bytecode, warnings) = if output_bytecode {
+            let bytecode_buffer = target_machine
+                .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
+                .map_err(|error| {
+                    anyhow::anyhow!("{} bytecode emitting: {error}", self.code_segment)
+                })?;
+
+            let mut warnings = Vec::with_capacity(1);
+            let bytecode_size = bytecode_buffer.as_slice().len();
+            if bytecode_size > crate::evm::r#const::DEPLOY_CODE_SIZE_LIMIT {
+                if self.optimizer.settings() != &OptimizerSettings::size()
+                    && self.optimizer.settings().is_fallback_to_size_enabled()
+                {
+                    self.optimizer = Optimizer::new(OptimizerSettings::size());
+                    self.module = module_clone;
+                    for function in self.module.get_functions() {
+                        Function::set_size_attributes(self.llvm, function);
+                    }
+                    return self.build(output_assembly, output_bytecode);
+                } else {
+                    warnings.push(match self.code_segment {
+                        era_compiler_common::CodeSegment::Deploy => Warning::DeployCodeSize {
+                            found: bytecode_size,
+                        },
+                        era_compiler_common::CodeSegment::Runtime => Warning::RuntimeCodeSize {
+                            found: bytecode_size,
+                        },
+                    })
+                };
+            }
+            (Some(bytecode_buffer.as_slice().to_vec()), warnings)
+        } else {
+            (None, vec![])
+        };
+
+        Ok(EVMBuild::new(bytecode, assembly, warnings))
     }
 
     ///

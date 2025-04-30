@@ -2,6 +2,7 @@
 //! The LLVM EVM context library.
 //!
 
+pub mod build;
 pub mod r#const;
 pub mod context;
 pub mod instructions;
@@ -120,7 +121,7 @@ declare i256 @llvm.evm.dataoffset(metadata) #0
 ; Function Attrs: noreturn nounwind
 declare void @llvm.evm.return(ptr addrspace(1), i256) #1
 
-; Function Attrs: mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite)
+; Function Attrs: mustprogress nocallback nofree nounwind memory(argmem: readwrite)
 declare void @llvm.memcpy.p1.p4.i256(ptr addrspace(1) noalias nocapture writeonly, ptr addrspace(4) noalias nocapture readonly, i256, i1 immarg) #2
 
 ; Function Attrs: nofree noreturn null_pointer_is_valid
@@ -136,7 +137,7 @@ entry:
 
 attributes #0 = {{ mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none) }}
 attributes #1 = {{ noreturn nounwind }}
-attributes #2 = {{ mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite) }}
+attributes #2 = {{ mustprogress nocallback nofree nounwind memory(argmem: readwrite) }}
 attributes #3 = {{ nofree noreturn null_pointer_is_valid }}
 
 !0 = !{{!"{runtime_code_identifier}"}}

@@ -9,15 +9,15 @@ use std::collections::BTreeMap;
 ///
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Build {
-    /// The bytecode.
+    /// Bytecode.
     pub bytecode: Vec<u8>,
-    /// The bytecode hash. Only available after linking.
+    /// Bytecode hash. Only available after linking.
     pub bytecode_hash: Option<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
-    /// The project metadata.
+    /// Project metadata.
     pub metadata: Vec<u8>,
-    /// The hash-to-full-path mapping of the contract factory dependencies.
+    /// Hash-to-full-path mapping of the contract factory dependencies.
     pub factory_dependencies: BTreeMap<String, String>,
-    /// The text assembly.
+    /// Text assembly.
     pub assembly: Option<String>,
 }
 
