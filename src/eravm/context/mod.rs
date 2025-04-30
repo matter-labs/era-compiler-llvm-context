@@ -3,7 +3,6 @@
 //!
 
 pub mod address_space;
-pub mod build;
 pub mod evmla_data;
 pub mod function;
 pub mod global;
@@ -29,13 +28,13 @@ use crate::context::pointer::Pointer;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_info::DebugInfo;
+use crate::eravm::build::Build;
 use crate::eravm::DebugConfig;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
 use crate::target_machine::TargetMachine;
 
 use self::address_space::AddressSpace;
-use self::build::Build;
 use self::evmla_data::EVMLAData;
 use self::function::intrinsics::Intrinsics;
 use self::function::llvm_runtime::LLVMRuntime;

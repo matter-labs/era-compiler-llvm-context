@@ -2,6 +2,7 @@
 //! The LLVM EVM context library.
 //!
 
+pub mod build;
 pub mod r#const;
 pub mod context;
 pub mod instructions;

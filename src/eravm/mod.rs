@@ -2,6 +2,7 @@
 //! The LLVM EraVM context library.
 //!
 
+pub mod build;
 pub mod r#const;
 pub mod context;
 pub mod evm;
@@ -13,9 +14,9 @@ pub use self::r#const::*;
 use std::collections::BTreeMap;
 
 use crate::debug_config::DebugConfig;
-use crate::eravm::context::build::Build;
 use crate::target_machine::TargetMachine;
 
+use self::build::Build;
 use self::context::Context;
 
 ///
