@@ -176,12 +176,19 @@ impl<'ctx> Context<'ctx> {
         let assembly = assembly_buffer
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
-        let (bytecode, warnings) = if output_bytecode {
+        if output_bytecode {
             let bytecode_buffer = target_machine
                 .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
                 .map_err(|error| {
                     anyhow::anyhow!("{} bytecode emitting: {error}", self.code_segment)
                 })?;
+
+            let immutables = match self.code_segment {
+                era_compiler_common::CodeSegment::Deploy => None,
+                era_compiler_common::CodeSegment::Runtime => {
+                    Some(bytecode_buffer.get_immutables_evm())
+                }
+            };
 
             let mut warnings = Vec::with_capacity(1);
             let bytecode_size = bytecode_buffer.as_slice().len();
@@ -206,12 +213,15 @@ impl<'ctx> Context<'ctx> {
                     })
                 };
             }
-            (Some(bytecode_buffer.as_slice().to_vec()), warnings)
+            Ok(EVMBuild::new(
+                Some(bytecode_buffer.as_slice().to_vec()),
+                assembly,
+                immutables,
+                warnings,
+            ))
         } else {
-            (None, vec![])
-        };
-
-        Ok(EVMBuild::new(bytecode, assembly, warnings))
+            Ok(EVMBuild::new(None, assembly, None, vec![]))
+        }
     }
 
     ///
