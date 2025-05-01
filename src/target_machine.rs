@@ -75,6 +75,13 @@ impl TargetMachine {
     }
 
     ///
+    /// Sets the assembly printer verbosity.
+    ///
+    pub fn set_asm_verbosity(&self, verbosity: bool) {
+        self.target_machine.set_asm_verbosity(verbosity);
+    }
+
+    ///
     /// Translates textual assembly to the object code.
     ///
     pub fn assemble(

@@ -135,6 +135,7 @@ impl<'ctx> Context<'ctx> {
             self.llvm_options.as_slice(),
         )?;
         target_machine.set_target_data(self.module());
+        target_machine.set_asm_verbosity(true);
 
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(contract_path, self.module(), false)?;
