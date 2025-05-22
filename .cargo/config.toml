@@ -4,10 +4,25 @@ rustflags = [
 ]
 incremental = true
 
-[env]
-LLVM_SYS_191_PREFIX = { value = "./target-llvm/target-final/", relative = true, force = false }
-
 [tools.clippy]
 warn = [
     "missing_docs_in_private_items",
 ]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-W", "missing_docs",
+    "-C", "link-arg=-mmacosx-version-min=11.0",
+]
+
+[target.aarch64-apple-darwin]
+rustflags = [
+    "-W", "missing_docs",
+    "-C", "link-arg=-mmacosx-version-min=11.0",
+]
+
+[target.aarch64-unknown-linux-musl]
+linker = "rust-lld"
+
+[env]
+LLVM_SYS_191_PREFIX = { value = "./target-llvm/target-final/", relative = true, force = false }
