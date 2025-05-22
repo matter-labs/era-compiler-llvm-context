@@ -76,29 +76,21 @@ pub fn assemble(
 }
 
 ///
-/// Links `bytecode_buffer` with `linker_symbols.
+/// Links `bytecode_buffer` with `linker_symbols`.
 ///
 pub fn link(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
     linker_symbols: &BTreeMap<String, [u8; era_compiler_common::BYTE_LENGTH_ETH_ADDRESS]>,
-) -> anyhow::Result<(
-    inkwell::memory_buffer::MemoryBuffer,
-    era_compiler_common::ObjectFormat,
-)> {
+) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
     if !bytecode_buffer.is_elf_evm() {
-        return Ok((bytecode_buffer, era_compiler_common::ObjectFormat::Raw));
+        return Ok(bytecode_buffer);
     }
 
     let bytecode_buffer_linked = bytecode_buffer
         .link_evm(linker_symbols)
         .map_err(|error| anyhow::anyhow!("linking: {error}"))?;
 
-    let object_format = if bytecode_buffer_linked.is_elf_evm() {
-        era_compiler_common::ObjectFormat::ELF
-    } else {
-        era_compiler_common::ObjectFormat::Raw
-    };
-    Ok((bytecode_buffer_linked, object_format))
+    Ok(bytecode_buffer_linked)
 }
 
 ///

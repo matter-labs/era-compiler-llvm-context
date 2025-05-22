@@ -9,6 +9,8 @@ pub mod solidity_data;
 pub mod yul_data;
 
 use std::cell::RefCell;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -125,6 +127,7 @@ impl<'ctx> Context<'ctx> {
         mut self,
         output_assembly: bool,
         output_bytecode: bool,
+        unlinked_libraries: BTreeSet<String>,
     ) -> anyhow::Result<EVMBuild> {
         let module_clone = self.module.clone();
         let contract_path = self.module.get_name().to_str().expect("Always valid");
@@ -191,6 +194,16 @@ impl<'ctx> Context<'ctx> {
                 }
             };
 
+            let unlinked_symbols = unlinked_libraries
+                .iter()
+                .map(|library| {
+                    (
+                        library.to_owned(),
+                        bytecode_buffer.get_symbol_offsets_evm(library.as_str()),
+                    )
+                })
+                .collect::<BTreeMap<String, Vec<u64>>>();
+
             let mut warnings = Vec::with_capacity(1);
             let bytecode_size = bytecode_buffer.as_slice().len();
             if bytecode_size > crate::evm::r#const::DEPLOY_CODE_SIZE_LIMIT {
@@ -202,7 +215,7 @@ impl<'ctx> Context<'ctx> {
                     for function in self.module.get_functions() {
                         Function::set_size_attributes(self.llvm, function);
                     }
-                    return self.build(output_assembly, output_bytecode);
+                    return self.build(output_assembly, output_bytecode, unlinked_libraries);
                 } else {
                     warnings.push(match self.code_segment {
                         era_compiler_common::CodeSegment::Deploy => Warning::DeployCodeSize {
@@ -218,10 +231,11 @@ impl<'ctx> Context<'ctx> {
                 Some(bytecode_buffer.as_slice().to_vec()),
                 assembly,
                 immutables,
+                Some(unlinked_symbols),
                 warnings,
             ))
         } else {
-            Ok(EVMBuild::new(None, assembly, None, vec![]))
+            Ok(EVMBuild::new(None, assembly, None, None, vec![]))
         }
     }
 
