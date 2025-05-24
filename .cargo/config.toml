@@ -21,8 +21,5 @@ rustflags = [
     "-C", "link-arg=-mmacosx-version-min=11.0",
 ]
 
-[target.aarch64-unknown-linux-musl]
-linker = "rust-lld"
-
 [env]
 LLVM_SYS_191_PREFIX = { value = "./target-llvm/target-final/", relative = true, force = false }
