@@ -18,8 +18,6 @@ pub struct Build {
     pub assembly: Option<String>,
     /// Mapping with immutables.
     pub immutables: Option<BTreeMap<String, BTreeSet<u64>>>,
-    /// Unlinked symbols.
-    pub unlinked_symbols: Option<BTreeMap<String, Vec<u64>>>,
     /// Warnings produced during compilation.
     pub warnings: Vec<Warning>,
 }
@@ -32,14 +30,12 @@ impl Build {
         bytecode: Option<Vec<u8>>,
         assembly: Option<String>,
         immutables: Option<BTreeMap<String, BTreeSet<u64>>>,
-        unlinked_symbols: Option<BTreeMap<String, Vec<u64>>>,
         warnings: Vec<Warning>,
     ) -> Self {
         Self {
             bytecode,
             assembly,
             immutables,
-            unlinked_symbols,
             warnings,
         }
     }
