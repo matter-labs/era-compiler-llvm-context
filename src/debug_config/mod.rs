@@ -92,13 +92,13 @@ impl DebugConfig {
         &self,
         contract_path: &str,
         module: &inkwell::module::Module,
-        is_fallback_to_size: bool,
+        is_size_fallback: bool,
     ) -> anyhow::Result<()> {
         let llvm_code = module.print_to_string().to_string();
 
         let mut suffix = "unoptimized".to_owned();
-        if is_fallback_to_size {
-            suffix.push_str("_fallback_to_size");
+        if is_size_fallback {
+            suffix.push_str(".size_fallback");
         }
 
         let mut file_path = self.output_directory.to_owned();
@@ -117,13 +117,13 @@ impl DebugConfig {
         &self,
         contract_path: &str,
         module: &inkwell::module::Module,
-        is_fallback_to_size: bool,
+        is_size_fallback: bool,
     ) -> anyhow::Result<()> {
         let llvm_code = module.print_to_string().to_string();
 
         let mut suffix = "optimized".to_owned();
-        if is_fallback_to_size {
-            suffix.push_str("_fallback_to_size");
+        if is_size_fallback {
+            suffix.push_str(".size_fallback");
         }
 
         let mut file_path = self.output_directory.to_owned();
@@ -138,9 +138,20 @@ impl DebugConfig {
     ///
     /// Dumps the assembly.
     ///
-    pub fn dump_assembly(&self, contract_path: &str, code: &str) -> anyhow::Result<()> {
+    pub fn dump_assembly(
+        &self,
+        contract_path: &str,
+        code: &str,
+        is_size_fallback: bool,
+    ) -> anyhow::Result<()> {
+        let suffix = if is_size_fallback {
+            Some("size_fallback")
+        } else {
+            None
+        };
+
         let mut file_path = self.output_directory.to_owned();
-        let full_file_name = Self::full_file_name(contract_path, None, IRType::Assembly);
+        let full_file_name = Self::full_file_name(contract_path, suffix, IRType::Assembly);
         file_path.push(full_file_name);
         std::fs::write(file_path, code)?;
 

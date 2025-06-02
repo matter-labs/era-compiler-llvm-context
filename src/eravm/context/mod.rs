@@ -149,7 +149,7 @@ impl<'ctx> Context<'ctx> {
         metadata_hash: Option<era_compiler_common::Hash>,
         cbor_data: Option<(String, Vec<(String, semver::Version)>)>,
         output_assembly: bool,
-        is_fallback_to_size: bool,
+        is_size_fallback: bool,
     ) -> anyhow::Result<Build> {
         let module_clone = self.module.clone();
 
@@ -164,7 +164,7 @@ impl<'ctx> Context<'ctx> {
             debug_config.dump_llvm_ir_unoptimized(
                 contract_path,
                 self.module(),
-                is_fallback_to_size,
+                is_size_fallback,
             )?;
         }
         self.verify()
@@ -174,11 +174,7 @@ impl<'ctx> Context<'ctx> {
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("optimizing: {error}",))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(
-                contract_path,
-                self.module(),
-                is_fallback_to_size,
-            )?;
+            debug_config.dump_llvm_ir_optimized(contract_path, self.module(), is_size_fallback)?;
         }
         self.verify()
             .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;
@@ -190,7 +186,11 @@ impl<'ctx> Context<'ctx> {
 
             if let Some(ref debug_config) = self.debug_config {
                 let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
-                debug_config.dump_assembly(contract_path, assembly_text.as_ref())?;
+                debug_config.dump_assembly(
+                    contract_path,
+                    assembly_text.as_ref(),
+                    is_size_fallback,
+                )?;
             }
 
             Some(assembly_buffer)

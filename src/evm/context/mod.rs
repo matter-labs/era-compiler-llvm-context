@@ -125,6 +125,7 @@ impl<'ctx> Context<'ctx> {
         mut self,
         output_assembly: bool,
         output_bytecode: bool,
+        is_size_fallback: bool,
     ) -> anyhow::Result<EVMBuild> {
         let module_clone = self.module.clone();
         let contract_path = self.module.get_name().to_str().expect("Always valid");
@@ -138,7 +139,11 @@ impl<'ctx> Context<'ctx> {
         target_machine.set_asm_verbosity(true);
 
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_unoptimized(contract_path, self.module(), false)?;
+            debug_config.dump_llvm_ir_unoptimized(
+                contract_path,
+                self.module(),
+                is_size_fallback,
+            )?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
@@ -151,7 +156,7 @@ impl<'ctx> Context<'ctx> {
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_segment))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(contract_path, self.module(), false)?;
+            debug_config.dump_llvm_ir_optimized(contract_path, self.module(), is_size_fallback)?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
@@ -167,7 +172,11 @@ impl<'ctx> Context<'ctx> {
 
             if let Some(ref debug_config) = self.debug_config {
                 let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
-                debug_config.dump_assembly(contract_path, assembly_text.as_ref())?;
+                debug_config.dump_assembly(
+                    contract_path,
+                    assembly_text.as_ref(),
+                    is_size_fallback,
+                )?;
             }
 
             Some(assembly_buffer)
@@ -202,7 +211,7 @@ impl<'ctx> Context<'ctx> {
                     for function in self.module.get_functions() {
                         Function::set_size_attributes(self.llvm, function);
                     }
-                    return self.build(output_assembly, output_bytecode);
+                    return self.build(output_assembly, output_bytecode, true);
                 } else {
                     warnings.push(match self.code_segment {
                         era_compiler_common::CodeSegment::Deploy => Warning::DeployCodeSize {
