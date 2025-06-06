@@ -122,7 +122,7 @@ impl<'ctx> Context<'ctx> {
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
     pub fn build(
-        mut self,
+        &mut self,
         output_assembly: bool,
         output_bytecode: bool,
         is_size_fallback: bool,
@@ -232,6 +232,15 @@ impl<'ctx> Context<'ctx> {
         } else {
             Ok(EVMBuild::new(None, assembly, None, vec![]))
         }
+    }
+
+    ///
+    /// Returns the spill area size.
+    ///
+    /// The size must be non-zero after the build has failed with a stack-too-deep error.
+    ///
+    pub fn spill_area_size(&self) -> u64 {
+        self.llvm.get_spill_area_size()
     }
 
     ///
