@@ -122,7 +122,7 @@ impl<'ctx> Context<'ctx> {
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
     pub fn build(
-        mut self,
+        &mut self,
         output_assembly: bool,
         output_bytecode: bool,
         is_size_fallback: bool,
@@ -132,17 +132,30 @@ impl<'ctx> Context<'ctx> {
 
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EVM,
+            Some(self.code_segment),
             self.optimizer.settings(),
             self.llvm_options.as_slice(),
         )?;
         target_machine.set_target_data(self.module());
         target_machine.set_asm_verbosity(true);
 
+        let spill_area = self
+            .optimizer
+            .settings()
+            .spill_area_size(self.code_segment)
+            .map(|spill_area_size| {
+                (
+                    crate::evm::r#const::SOLC_GENERAL_MEMORY_OFFSET,
+                    spill_area_size,
+                )
+            });
+
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(
                 contract_path,
                 self.module(),
                 is_size_fallback,
+                spill_area,
             )?;
         }
         self.verify().map_err(|error| {
@@ -156,7 +169,12 @@ impl<'ctx> Context<'ctx> {
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_segment))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(contract_path, self.module(), is_size_fallback)?;
+            debug_config.dump_llvm_ir_optimized(
+                contract_path,
+                self.module(),
+                is_size_fallback,
+                spill_area,
+            )?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
@@ -232,6 +250,15 @@ impl<'ctx> Context<'ctx> {
         } else {
             Ok(EVMBuild::new(None, assembly, None, vec![]))
         }
+    }
+
+    ///
+    /// Returns the spill area size.
+    ///
+    /// The size must be non-zero after the build has failed with a stack-too-deep error.
+    ///
+    pub fn spill_area_size(&self) -> u64 {
+        self.llvm.get_spill_area_size()
     }
 
     ///

@@ -22,6 +22,11 @@ pub struct Settings {
     /// Fallback to optimizing for size if the bytecode is too large.
     pub is_fallback_to_size_enabled: bool,
 
+    /// Deploy code spill area size.
+    pub deploy_code_spill_area_size: Option<u64>,
+    /// Runtime code spill area size.
+    pub runtime_code_spill_area_size: Option<u64>,
+
     /// Whether the LLVM `verify each` option is enabled.
     pub is_verify_each_enabled: bool,
     /// Whether the LLVM `debug logging` option is enabled.
@@ -46,6 +51,9 @@ impl Settings {
             level_back_end,
             is_fallback_to_size_enabled: false,
 
+            deploy_code_spill_area_size: None,
+            runtime_code_spill_area_size: None,
+
             is_verify_each_enabled: false,
             is_debug_logging_enabled: false,
         }
@@ -67,6 +75,9 @@ impl Settings {
             level_middle_end_size,
             level_back_end,
             is_fallback_to_size_enabled: false,
+
+            deploy_code_spill_area_size: None,
+            runtime_code_spill_area_size: None,
 
             is_verify_each_enabled,
             is_debug_logging_enabled,
@@ -245,6 +256,30 @@ impl Settings {
     ///
     pub fn is_fallback_to_size_enabled(&self) -> bool {
         self.is_fallback_to_size_enabled
+    }
+
+    ///
+    /// Sets the deploy code spill area size.
+    ///
+    pub fn set_deploy_code_spill_area_size(&mut self, size: u64) {
+        self.deploy_code_spill_area_size = Some(size);
+    }
+
+    ///
+    /// Returns the spill area size depending on the code segment.
+    ///
+    pub fn spill_area_size(&self, code_segment: era_compiler_common::CodeSegment) -> Option<u64> {
+        match code_segment {
+            era_compiler_common::CodeSegment::Deploy => self.deploy_code_spill_area_size,
+            era_compiler_common::CodeSegment::Runtime => self.runtime_code_spill_area_size,
+        }
+    }
+
+    ///
+    /// Sets the runtime code spill area size.
+    ///
+    pub fn set_runtime_code_spill_area_size(&mut self, size: u64) {
+        self.runtime_code_spill_area_size = Some(size);
     }
 }
 

@@ -155,6 +155,7 @@ impl<'ctx> Context<'ctx> {
 
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EraVM,
+            self.code_segment,
             self.optimizer.settings(),
             self.llvm_options.as_slice(),
         )?;
@@ -165,6 +166,7 @@ impl<'ctx> Context<'ctx> {
                 contract_path,
                 self.module(),
                 is_size_fallback,
+                None,
             )?;
         }
         self.verify()
@@ -174,7 +176,12 @@ impl<'ctx> Context<'ctx> {
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("optimizing: {error}",))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(contract_path, self.module(), is_size_fallback)?;
+            debug_config.dump_llvm_ir_optimized(
+                contract_path,
+                self.module(),
+                is_size_fallback,
+                None,
+            )?;
         }
         self.verify()
             .map_err(|error| anyhow::anyhow!("optimized LLVM IR verification: {error}",))?;

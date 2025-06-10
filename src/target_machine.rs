@@ -19,27 +19,44 @@ pub struct TargetMachine {
 }
 
 impl TargetMachine {
-    /// The LLVM target name.
-    pub const VM_TARGET_NAME: &'static str = "eravm";
-
-    /// The LLVM target triple.
-    pub const VM_TARGET_TRIPLE: &'static str = "eravm-unknown-unknown";
-
     ///
     /// A shortcut constructor.
     ///
-    /// Supported LLVM options:
+    /// Supported LLVM options for EraVM target:
     /// `-eravm-disable-sha3-sreq-cse`
     /// `-eravm-jump-table-density-threshold <value>`
     ///
+    /// Supported LLVM options for EVM target:
+    /// `-evm-stack-region-size <value>`
+    /// `-evm-stack-region-offset <value>`
+    ///
     pub fn new(
         target: era_compiler_common::Target,
+        code_segment: Option<era_compiler_common::CodeSegment>,
         optimizer_settings: &OptimizerSettings,
         llvm_options: &[String],
     ) -> anyhow::Result<Self> {
         let mut arguments = Vec::with_capacity(1 + llvm_options.len());
         arguments.push(target.to_string());
         arguments.extend_from_slice(llvm_options);
+        if let era_compiler_common::Target::EVM = target {
+            let spill_area_size = match code_segment {
+                Some(era_compiler_common::CodeSegment::Deploy) => {
+                    optimizer_settings.deploy_code_spill_area_size
+                }
+                Some(era_compiler_common::CodeSegment::Runtime) => {
+                    optimizer_settings.runtime_code_spill_area_size
+                }
+                None => None,
+            };
+            if let Some(size) = spill_area_size {
+                arguments.push(format!(
+                    "-evm-stack-region-offset={}",
+                    crate::evm::r#const::SOLC_GENERAL_MEMORY_OFFSET
+                ));
+                arguments.push(format!("-evm-stack-region-size={size}"));
+            }
+        }
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
             inkwell::support::parse_command_line_options(arguments.as_slice(), "LLVM options");
