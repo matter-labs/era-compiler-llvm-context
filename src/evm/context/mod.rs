@@ -253,15 +253,6 @@ impl<'ctx> Context<'ctx> {
     }
 
     ///
-    /// Returns the spill area size.
-    ///
-    /// The size must be non-zero after the build has failed with a stack-too-deep error.
-    ///
-    pub fn spill_area_size(&self) -> u64 {
-        self.llvm.get_spill_area_size()
-    }
-
-    ///
     /// Verifies the current LLVM IR module.
     ///
     pub fn verify(&self) -> anyhow::Result<()> {
