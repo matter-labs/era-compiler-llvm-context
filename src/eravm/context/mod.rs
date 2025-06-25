@@ -155,7 +155,6 @@ impl<'ctx> Context<'ctx> {
 
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EraVM,
-            self.code_segment,
             self.optimizer.settings(),
             self.llvm_options.as_slice(),
         )?;

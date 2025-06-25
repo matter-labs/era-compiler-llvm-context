@@ -32,7 +32,6 @@ impl TargetMachine {
     ///
     pub fn new(
         target: era_compiler_common::Target,
-        code_segment: Option<era_compiler_common::CodeSegment>,
         optimizer_settings: &OptimizerSettings,
         llvm_options: &[String],
     ) -> anyhow::Result<Self> {
@@ -40,16 +39,7 @@ impl TargetMachine {
         arguments.push(target.to_string());
         arguments.extend_from_slice(llvm_options);
         if let era_compiler_common::Target::EVM = target {
-            let spill_area_size = match code_segment {
-                Some(era_compiler_common::CodeSegment::Deploy) => {
-                    optimizer_settings.deploy_code_spill_area_size
-                }
-                Some(era_compiler_common::CodeSegment::Runtime) => {
-                    optimizer_settings.runtime_code_spill_area_size
-                }
-                None => None,
-            };
-            if let Some(size) = spill_area_size {
+            if let Some(size) = optimizer_settings.spill_area_size {
                 arguments.push(format!(
                     "-evm-stack-region-offset={}",
                     crate::evm::r#const::SOLC_GENERAL_MEMORY_OFFSET

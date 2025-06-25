@@ -132,7 +132,6 @@ impl<'ctx> Context<'ctx> {
 
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EVM,
-            Some(self.code_segment),
             self.optimizer.settings(),
             self.llvm_options.as_slice(),
         )?;
@@ -142,7 +141,7 @@ impl<'ctx> Context<'ctx> {
         let spill_area = self
             .optimizer
             .settings()
-            .spill_area_size(self.code_segment)
+            .spill_area_size()
             .map(|spill_area_size| {
                 (
                     crate::evm::r#const::SOLC_GENERAL_MEMORY_OFFSET,
