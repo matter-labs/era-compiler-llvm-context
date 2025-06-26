@@ -77,7 +77,7 @@ pub fn log<'ctx>(
             ],
             "log4",
         ),
-        length => panic!("The number of topics must be from 0 to 4, found {}", length),
+        length => panic!("The number of topics must be from 0 to 4, found {length}"),
     }?;
     Ok(())
 }
