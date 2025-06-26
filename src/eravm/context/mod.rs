@@ -219,7 +219,7 @@ impl<'ctx> Context<'ctx> {
             .unwrap_or_default();
 
         if bytecode_buffer.exceeds_size_limit_eravm(metadata_size) {
-            if self.optimizer.settings() != &OptimizerSettings::size()
+            if self.optimizer.settings() == &OptimizerSettings::cycles()
                 && self.optimizer.settings().is_fallback_to_size_enabled()
             {
                 self.optimizer = Optimizer::new(OptimizerSettings::size());
