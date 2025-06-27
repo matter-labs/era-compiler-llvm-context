@@ -98,9 +98,9 @@ pub fn get<'ctx>(
         pointer,
         &[context.field_const(0), offset],
         context.field_type().as_basic_type_enum(),
-        format!("{}_pointer", identifier).as_str(),
+        format!("{identifier}_pointer").as_str(),
     )?;
-    let value = context.build_load(pointer, format!("{}_value", identifier).as_str())?;
+    let value = context.build_load(pointer, format!("{identifier}_value").as_str())?;
 
     Ok(value)
 }

@@ -93,12 +93,16 @@ impl DebugConfig {
         contract_path: &str,
         module: &inkwell::module::Module,
         is_size_fallback: bool,
+        spill_area: Option<(u64, u64)>,
     ) -> anyhow::Result<()> {
         let llvm_code = module.print_to_string().to_string();
 
         let mut suffix = "unoptimized".to_owned();
         if is_size_fallback {
             suffix.push_str(".size_fallback");
+        }
+        if let Some((offset, size)) = spill_area {
+            suffix.push_str(format!(".o{offset}s{size}").as_str());
         }
 
         let mut file_path = self.output_directory.to_owned();
@@ -118,12 +122,16 @@ impl DebugConfig {
         contract_path: &str,
         module: &inkwell::module::Module,
         is_size_fallback: bool,
+        spill_area: Option<(u64, u64)>,
     ) -> anyhow::Result<()> {
         let llvm_code = module.print_to_string().to_string();
 
         let mut suffix = "optimized".to_owned();
         if is_size_fallback {
             suffix.push_str(".size_fallback");
+        }
+        if let Some((offset, size)) = spill_area {
+            suffix.push_str(format!(".o{offset}s{size}").as_str());
         }
 
         let mut file_path = self.output_directory.to_owned();

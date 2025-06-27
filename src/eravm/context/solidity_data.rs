@@ -20,7 +20,7 @@ pub struct SolidityData {
 }
 
 impl ISolidityData for SolidityData {
-    fn offsets(&self, _id: &str) -> Option<&BTreeSet<u64>> {
+    fn offsets(&mut self, _id: &str) -> Option<BTreeSet<u64>> {
         None
     }
 }
