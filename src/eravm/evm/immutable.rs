@@ -78,50 +78,50 @@ pub fn store<'ctx>(
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()> {
     match context.code_segment() {
-        None => {
-            anyhow::bail!("code segment is undefined");
-        }
-        Some(era_compiler_common::CodeSegment::Deploy) => {
-            let index_double = context.builder().build_int_mul(
-                index,
-                context.field_const(2),
-                "immutable_load_index_double",
-            )?;
-            let index_offset_absolute = context.builder().build_int_add(
-                index_double,
-                context.field_const(
-                    crate::eravm::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA
-                        + (2 * era_compiler_common::BYTE_LENGTH_FIELD) as u64,
-                ),
-                "index_offset_absolute",
-            )?;
-            let index_offset_pointer = Pointer::new_with_offset(
-                context,
-                AddressSpace::HeapAuxiliary,
-                context.field_type(),
-                index_offset_absolute,
-                "immutable_index_pointer",
-            )?;
-            context.build_store(index_offset_pointer, index)?;
-
-            let value_offset_absolute = context.builder().build_int_add(
-                index_offset_absolute,
-                context.field_const(era_compiler_common::BYTE_LENGTH_FIELD as u64),
-                "value_offset_absolute",
-            )?;
-            let value_offset_pointer = Pointer::new_with_offset(
-                context,
-                AddressSpace::HeapAuxiliary,
-                context.field_type(),
-                value_offset_absolute,
-                "immutable_value_pointer",
-            )?;
-            context.build_store(value_offset_pointer, value)?;
-
-            Ok(())
-        }
+        Some(era_compiler_common::CodeSegment::Deploy) => {}
         Some(era_compiler_common::CodeSegment::Runtime) => {
-            anyhow::bail!("immutable writes are not available in runtime code");
+            anyhow::bail!("Setting immutables is only allowed in deploy code");
+        }
+        None => {
+            anyhow::bail!("Code segment is undefined");
         }
     }
+
+    let index_double = context.builder().build_int_mul(
+        index,
+        context.field_const(2),
+        "immutable_load_index_double",
+    )?;
+    let index_offset_absolute = context.builder().build_int_add(
+        index_double,
+        context.field_const(
+            crate::eravm::HEAP_AUX_OFFSET_CONSTRUCTOR_RETURN_DATA
+                + (2 * era_compiler_common::BYTE_LENGTH_FIELD) as u64,
+        ),
+        "index_offset_absolute",
+    )?;
+    let index_offset_pointer = Pointer::new_with_offset(
+        context,
+        AddressSpace::HeapAuxiliary,
+        context.field_type(),
+        index_offset_absolute,
+        "immutable_index_pointer",
+    )?;
+    context.build_store(index_offset_pointer, index)?;
+
+    let value_offset_absolute = context.builder().build_int_add(
+        index_offset_absolute,
+        context.field_const(era_compiler_common::BYTE_LENGTH_FIELD as u64),
+        "value_offset_absolute",
+    )?;
+    let value_offset_pointer = Pointer::new_with_offset(
+        context,
+        AddressSpace::HeapAuxiliary,
+        context.field_type(),
+        value_offset_absolute,
+        "immutable_value_pointer",
+    )?;
+    context.build_store(value_offset_pointer, value)?;
+
+    Ok(())
 }

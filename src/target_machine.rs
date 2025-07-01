@@ -19,18 +19,16 @@ pub struct TargetMachine {
 }
 
 impl TargetMachine {
-    /// The LLVM target name.
-    pub const VM_TARGET_NAME: &'static str = "eravm";
-
-    /// The LLVM target triple.
-    pub const VM_TARGET_TRIPLE: &'static str = "eravm-unknown-unknown";
-
     ///
     /// A shortcut constructor.
     ///
-    /// Supported LLVM options:
+    /// Supported LLVM options for EraVM target:
     /// `-eravm-disable-sha3-sreq-cse`
     /// `-eravm-jump-table-density-threshold <value>`
+    ///
+    /// Supported LLVM options for EVM target:
+    /// `-evm-stack-region-size <value>`
+    /// `-evm-stack-region-offset <value>`
     ///
     pub fn new(
         target: era_compiler_common::Target,
@@ -40,6 +38,15 @@ impl TargetMachine {
         let mut arguments = Vec::with_capacity(1 + llvm_options.len());
         arguments.push(target.to_string());
         arguments.extend_from_slice(llvm_options);
+        if let era_compiler_common::Target::EVM = target {
+            if let Some(size) = optimizer_settings.spill_area_size {
+                arguments.push(format!(
+                    "-evm-stack-region-offset={}",
+                    crate::evm::r#const::SOLC_GENERAL_MEMORY_OFFSET
+                ));
+                arguments.push(format!("-evm-stack-region-size={size}"));
+            }
+        }
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
             inkwell::support::parse_command_line_options(arguments.as_slice(), "LLVM options");

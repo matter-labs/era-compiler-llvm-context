@@ -11,5 +11,5 @@ pub trait ISolidityData {
     ///
     /// Returns all runtime code offsets for the specified `id`.
     ///
-    fn offsets(&self, id: &str) -> Option<&BTreeSet<u64>>;
+    fn offsets(&mut self, id: &str) -> Option<BTreeSet<u64>>;
 }

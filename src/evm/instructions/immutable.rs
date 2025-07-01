@@ -37,15 +37,24 @@ pub fn store<'ctx>(
     base_offset: inkwell::values::IntValue<'ctx>,
     value: inkwell::values::IntValue<'ctx>,
 ) -> anyhow::Result<()> {
-    let offsets = match context.solidity().expect("Always exists").offsets(id) {
+    match context.code_segment() {
+        Some(era_compiler_common::CodeSegment::Deploy) => {}
+        Some(era_compiler_common::CodeSegment::Runtime) => {
+            anyhow::bail!("Setting immutables is only allowed in deploy code");
+        }
+        None => {
+            anyhow::bail!("Code segment is undefined");
+        }
+    }
+
+    let offsets = match context.solidity_mut().expect("Always exists").offsets(id) {
         Some(offsets) => offsets,
         None => return Ok(()),
     };
-
-    for offset in offsets.iter() {
+    for offset in offsets.into_iter() {
         let immutable_offset = context.builder().build_int_add(
             base_offset,
-            context.field_const(*offset),
+            context.field_const(offset),
             "setimmutable_offset",
         )?;
         let immutable_pointer = Pointer::new_with_offset(

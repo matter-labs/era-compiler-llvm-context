@@ -122,7 +122,7 @@ impl<'ctx> Context<'ctx> {
     /// Builds the LLVM IR module, returning the build artifacts.
     ///
     pub fn build(
-        mut self,
+        &mut self,
         output_assembly: bool,
         output_bytecode: bool,
         is_size_fallback: bool,
@@ -138,11 +138,23 @@ impl<'ctx> Context<'ctx> {
         target_machine.set_target_data(self.module());
         target_machine.set_asm_verbosity(true);
 
+        let spill_area = self
+            .optimizer
+            .settings()
+            .spill_area_size()
+            .map(|spill_area_size| {
+                (
+                    crate::evm::r#const::SOLC_GENERAL_MEMORY_OFFSET,
+                    spill_area_size,
+                )
+            });
+
         if let Some(ref debug_config) = self.debug_config {
             debug_config.dump_llvm_ir_unoptimized(
                 contract_path,
                 self.module(),
                 is_size_fallback,
+                spill_area,
             )?;
         }
         self.verify().map_err(|error| {
@@ -156,7 +168,12 @@ impl<'ctx> Context<'ctx> {
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_segment))?;
         if let Some(ref debug_config) = self.debug_config {
-            debug_config.dump_llvm_ir_optimized(contract_path, self.module(), is_size_fallback)?;
+            debug_config.dump_llvm_ir_optimized(
+                contract_path,
+                self.module(),
+                is_size_fallback,
+                spill_area,
+            )?;
         }
         self.verify().map_err(|error| {
             anyhow::anyhow!(
@@ -203,7 +220,7 @@ impl<'ctx> Context<'ctx> {
             let mut warnings = Vec::with_capacity(1);
             let bytecode_size = bytecode_buffer.as_slice().len();
             if bytecode_size > crate::evm::r#const::DEPLOY_CODE_SIZE_LIMIT {
-                if self.optimizer.settings() != &OptimizerSettings::size()
+                if self.optimizer.settings() == &OptimizerSettings::cycles()
                     && self.optimizer.settings().is_fallback_to_size_enabled()
                 {
                     self.optimizer = Optimizer::new(OptimizerSettings::size());
