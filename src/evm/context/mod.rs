@@ -217,9 +217,18 @@ impl<'ctx> Context<'ctx> {
                 }
             };
 
+            let bytecode_size_limit = match self.code_segment {
+                era_compiler_common::CodeSegment::Deploy => {
+                    crate::evm::r#const::DEPLOY_CODE_SIZE_LIMIT
+                }
+                era_compiler_common::CodeSegment::Runtime => {
+                    crate::evm::r#const::RUNTIME_CODE_SIZE_LIMIT
+                }
+            };
+
             let mut warnings = Vec::with_capacity(1);
             let bytecode_size = bytecode_buffer.as_slice().len();
-            if bytecode_size > crate::evm::r#const::DEPLOY_CODE_SIZE_LIMIT {
+            if bytecode_size > bytecode_size_limit {
                 if self.optimizer.settings() == &OptimizerSettings::cycles()
                     && self.optimizer.settings().is_fallback_to_size_enabled()
                 {
