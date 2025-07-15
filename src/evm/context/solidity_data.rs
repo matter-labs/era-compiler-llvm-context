@@ -25,8 +25,6 @@ pub struct SolidityData {
     /// but we still want to try compiling the deploy code to check for other errors including stack-too-deep.
     /// In this case, `immutables` is `None`, and `immutables_dummy` is used to allocated the offsets of the immutables.
     immutables_dummy: BTreeMap<String, u64>,
-    /// Spill area size. If set, the memory guard is translated to `128 + spill_area_size` bytes.
-    spill_area_size: Option<u64>,
 }
 
 impl ISolidityData for SolidityData {
@@ -40,14 +38,6 @@ impl ISolidityData for SolidityData {
             }
         }
     }
-
-    fn set_spill_area_size(&mut self, size: u64) {
-        self.spill_area_size = Some(size);
-    }
-
-    fn spill_area_size(&self) -> Option<u64> {
-        self.spill_area_size
-    }
 }
 
 impl SolidityData {
@@ -58,7 +48,6 @@ impl SolidityData {
         Self {
             immutables,
             immutables_dummy: BTreeMap::new(),
-            spill_area_size: None,
         }
     }
 

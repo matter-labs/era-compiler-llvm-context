@@ -16,6 +16,7 @@ use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
 use crate::debug_config::DebugConfig;
+use crate::optimizer::Optimizer;
 
 use self::function::declaration::Declaration as FunctionDeclaration;
 use self::pointer::Pointer;
@@ -80,6 +81,11 @@ pub trait IContext<'ctx> {
     /// Returns the current LLVM IR module reference.
     ///
     fn module(&self) -> &inkwell::module::Module<'ctx>;
+
+    ///
+    /// Returns the optimizer reference.
+    ///
+    fn optimizer(&self) -> &Optimizer;
 
     ///
     /// Returns the debug config reference.

@@ -436,6 +436,10 @@ impl<'ctx> IContext<'ctx> for Context<'ctx> {
         &self.module
     }
 
+    fn optimizer(&self) -> &Optimizer {
+        &self.optimizer
+    }
+
     fn debug_config(&self) -> Option<&DebugConfig> {
         self.debug_config.as_ref()
     }
