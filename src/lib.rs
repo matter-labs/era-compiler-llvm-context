@@ -8,7 +8,6 @@
 pub(crate) mod r#const;
 pub(crate) mod context;
 pub(crate) mod debug_config;
-pub(crate) mod debug_info;
 pub(crate) mod eravm;
 pub(crate) mod evm;
 pub(crate) mod optimizer;
@@ -31,7 +30,6 @@ pub use self::context::value::Value;
 pub use self::context::IContext;
 pub use self::debug_config::ir_type::IRType as DebugConfigIR;
 pub use self::debug_config::DebugConfig;
-pub use self::debug_info::DebugInfo;
 pub use self::eravm::assemble as eravm_assemble;
 pub use self::eravm::build as eravm_build;
 pub use self::eravm::build::Build as EraVMBuild;
