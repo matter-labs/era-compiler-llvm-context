@@ -26,6 +26,8 @@ pub use self::context::r#loop::Loop;
 pub use self::context::traits::address_space::IAddressSpace;
 pub use self::context::traits::evmla_data::IEVMLAData;
 pub use self::context::traits::evmla_function::IEVMLAFunction;
+pub use self::context::traits::solidity_data::ISolidityData;
+pub use self::context::traits::yul_data::IYulData;
 pub use self::context::value::Value;
 pub use self::context::IContext;
 pub use self::debug_config::ir_type::IRType as DebugConfigIR;
