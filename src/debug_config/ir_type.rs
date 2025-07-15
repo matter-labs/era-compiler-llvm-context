@@ -19,8 +19,10 @@ pub enum IRType {
     LLL,
     /// Whether to dump the LLVM IR code.
     LLVM,
-    /// Whether to dump the assembly code.
-    Assembly,
+    /// Whether to dump the EraVM assembly code.
+    EraVMAssembly,
+    /// Whether to dump the EVM assembly code.
+    EVMAssembly,
 }
 
 impl IRType {
@@ -34,7 +36,8 @@ impl IRType {
             Self::EVMLA => era_compiler_common::EXTENSION_EVMLA,
             Self::LLL => era_compiler_common::EXTENSION_LLL,
             Self::LLVM => era_compiler_common::EXTENSION_LLVM_SOURCE,
-            Self::Assembly => era_compiler_common::EXTENSION_ERAVM_ASSEMBLY,
+            Self::EraVMAssembly => era_compiler_common::EXTENSION_ERAVM_ASSEMBLY,
+            Self::EVMAssembly => era_compiler_common::EXTENSION_EVM_ASSEMBLY,
         }
     }
 }

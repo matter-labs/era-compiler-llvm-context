@@ -16,7 +16,6 @@ use inkwell::types::BasicType;
 use inkwell::values::BasicValue;
 
 use crate::debug_config::DebugConfig;
-use crate::debug_info::DebugInfo;
 
 use self::function::declaration::Declaration as FunctionDeclaration;
 use self::pointer::Pointer;
@@ -86,11 +85,6 @@ pub trait IContext<'ctx> {
     /// Returns the debug config reference.
     ///
     fn debug_config(&self) -> Option<&DebugConfig>;
-
-    ///
-    /// Returns the debug info reference.
-    ///
-    fn debug_info(&self) -> &DebugInfo;
 
     ///
     /// Sets the code type.

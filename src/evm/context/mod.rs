@@ -20,7 +20,6 @@ use crate::context::function::r#return::Return as FunctionReturn;
 use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_config::DebugConfig;
-use crate::debug_info::DebugInfo;
 use crate::evm::build::Build as EVMBuild;
 use crate::evm::warning::Warning;
 use crate::optimizer::settings::Settings as OptimizerSettings;
@@ -62,8 +61,6 @@ pub struct Context<'ctx> {
     /// The loop context stack.
     loop_stack: Vec<Loop<'ctx>>,
 
-    /// The debug info of the current module.
-    debug_info: DebugInfo<'ctx>,
     /// The debug configuration telling whether to dump the needed IRs.
     debug_config: Option<DebugConfig>,
 
@@ -95,7 +92,6 @@ impl<'ctx> Context<'ctx> {
     ) -> Self {
         let builder = llvm.create_builder();
         let intrinsics = Intrinsics::new(llvm, &module);
-        let debug_info = DebugInfo::new(&module);
 
         Self {
             llvm,
@@ -109,7 +105,6 @@ impl<'ctx> Context<'ctx> {
             current_function: None,
             loop_stack: Vec::with_capacity(Self::LOOP_STACK_INITIAL_CAPACITY),
 
-            debug_info,
             debug_config,
 
             solidity_data: None,
@@ -191,8 +186,10 @@ impl<'ctx> Context<'ctx> {
                 let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
                 debug_config.dump_assembly(
                     contract_path,
+                    era_compiler_common::Target::EVM,
                     assembly_text.as_ref(),
                     is_size_fallback,
+                    spill_area,
                 )?;
             }
 
@@ -437,10 +434,6 @@ impl<'ctx> IContext<'ctx> for Context<'ctx> {
 
     fn module(&self) -> &inkwell::module::Module<'ctx> {
         &self.module
-    }
-
-    fn debug_info(&self) -> &DebugInfo<'ctx> {
-        &self.debug_info
     }
 
     fn debug_config(&self) -> Option<&DebugConfig> {
