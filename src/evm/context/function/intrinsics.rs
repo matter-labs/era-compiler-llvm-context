@@ -51,6 +51,8 @@ pub struct Intrinsics<'ctx> {
     /// The corresponding intrinsic function name.
     pub linkersymbol: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
+    pub codecopybytes: FunctionDeclaration<'ctx>,
+    /// The corresponding intrinsic function name.
     pub loadimmutable: FunctionDeclaration<'ctx>,
     /// The corresponding intrinsic function name.
     pub pushdeployaddress: FunctionDeclaration<'ctx>,
@@ -186,6 +188,9 @@ impl<'ctx> Intrinsics<'ctx> {
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LINKER_SYMBOL: &'static str = "llvm.evm.linkersymbol";
+
+    /// The corresponding intrinsic function name.
+    pub const FUNCTION_CODECOPY_BYTES: &'static str = "llvm.evm.codecopybytes";
 
     /// The corresponding intrinsic function name.
     pub const FUNCTION_LOAD_IMMUTABLE: &'static str = "llvm.evm.loadimmutable";
@@ -471,6 +476,18 @@ impl<'ctx> Intrinsics<'ctx> {
             module,
             Self::FUNCTION_LINKER_SYMBOL,
             field_type.fn_type(&[llvm.metadata_type().into()], false),
+        );
+        let codecopybytes = Self::declare(
+            llvm,
+            module,
+            Self::FUNCTION_LINKER_SYMBOL,
+            void_type.fn_type(
+                &[
+                    heap_byte_pointer_type.as_basic_type_enum().into(),
+                    llvm.metadata_type().into(),
+                ],
+                false,
+            ),
         );
         let loadimmutable = Self::declare(
             llvm,
@@ -864,6 +881,7 @@ impl<'ctx> Intrinsics<'ctx> {
             datasize,
             dataoffset,
             linkersymbol,
+            codecopybytes,
             loadimmutable,
             pushdeployaddress,
 
