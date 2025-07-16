@@ -250,10 +250,17 @@ impl<'ctx> Context<'ctx> {
                 Some(bytecode_buffer.as_slice().to_vec()),
                 assembly,
                 immutables,
+                is_size_fallback,
                 warnings,
             ))
         } else {
-            Ok(EVMBuild::new(None, assembly, None, vec![]))
+            Ok(EVMBuild::new(
+                None,
+                assembly,
+                None,
+                is_size_fallback,
+                vec![],
+            ))
         }
     }
 

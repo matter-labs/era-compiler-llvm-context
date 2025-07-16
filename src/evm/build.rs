@@ -18,6 +18,8 @@ pub struct Build {
     pub assembly: Option<String>,
     /// Mapping with immutables.
     pub immutables: Option<BTreeMap<String, BTreeSet<u64>>>,
+    /// Whether the size fallback has been activated.
+    pub is_size_fallback: bool,
     /// Warnings produced during compilation.
     pub warnings: Vec<Warning>,
 }
@@ -30,12 +32,14 @@ impl Build {
         bytecode: Option<Vec<u8>>,
         assembly: Option<String>,
         immutables: Option<BTreeMap<String, BTreeSet<u64>>>,
+        is_size_fallback: bool,
         warnings: Vec<Warning>,
     ) -> Self {
         Self {
             bytecode,
             assembly,
             immutables,
+            is_size_fallback,
             warnings,
         }
     }
