@@ -113,6 +113,7 @@ pub use self::evm::r#const as evm_const;
 pub use self::evm::warning::Warning as EVMWarning;
 pub use self::evm::DummyLLVMWritable as EVMDummyLLVMWritable;
 pub use self::evm::WriteLLVM as EVMWriteLLVM;
+pub use self::evm::IS_SIZE_FALLBACK as EVM_IS_SIZE_FALLBACK;
 pub use self::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
 pub use self::optimizer::settings::Settings as OptimizerSettings;
 pub use self::optimizer::Optimizer;

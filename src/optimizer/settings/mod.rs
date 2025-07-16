@@ -203,8 +203,6 @@ impl Settings {
         let back_end_levels = match target {
             era_compiler_common::Target::EraVM => vec![
                 inkwell::OptimizationLevel::None,
-                inkwell::OptimizationLevel::Less,
-                inkwell::OptimizationLevel::Default,
                 inkwell::OptimizationLevel::Aggressive,
             ],
             era_compiler_common::Target::EVM => vec![inkwell::OptimizationLevel::Aggressive],
@@ -252,6 +250,16 @@ impl Settings {
     ///
     pub fn is_fallback_to_size_enabled(&self) -> bool {
         self.is_fallback_to_size_enabled
+    }
+
+    ///
+    /// Switches the optimization modes to the size fallback mode.
+    ///
+    pub fn switch_to_size_fallback(&mut self) {
+        self.level_middle_end = inkwell::OptimizationLevel::Default;
+        self.level_middle_end_size = SizeLevel::Z;
+        self.level_back_end = inkwell::OptimizationLevel::Aggressive;
+        self.enable_fallback_to_size();
     }
 
     ///

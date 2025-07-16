@@ -229,6 +229,14 @@ impl<'ctx> Context<'ctx> {
                 if self.optimizer.settings() == &OptimizerSettings::cycles()
                     && self.optimizer.settings().is_fallback_to_size_enabled()
                 {
+                    crate::evm::IS_SIZE_FALLBACK
+                        .compare_exchange(
+                            false,
+                            true,
+                            std::sync::atomic::Ordering::Relaxed,
+                            std::sync::atomic::Ordering::Relaxed,
+                        )
+                        .expect("Failed to set the global size fallback flag");
                     self.optimizer = Optimizer::new(OptimizerSettings::size());
                     self.module = module_clone;
                     for function in self.module.get_functions() {
