@@ -9,6 +9,7 @@ pub mod instructions;
 pub mod warning;
 
 use std::collections::BTreeMap;
+use std::sync::atomic::AtomicBool;
 
 use self::context::Context;
 
@@ -54,6 +55,10 @@ pub fn append_metadata(
         .append_metadata_evm(metadata.as_slice())
         .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))
 }
+
+/// Whether the size fallback is activated during the compilation.
+/// Only set once, as we're only compiling one traslation unit in a process.
+pub static IS_SIZE_FALLBACK: AtomicBool = AtomicBool::new(false);
 
 ///
 /// Assembles the main buffer and its dependencies from `bytecode_buffers`.

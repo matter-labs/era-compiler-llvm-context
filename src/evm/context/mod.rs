@@ -229,6 +229,14 @@ impl<'ctx> Context<'ctx> {
                 if self.optimizer.settings() == &OptimizerSettings::cycles()
                     && self.optimizer.settings().is_fallback_to_size_enabled()
                 {
+                    crate::evm::IS_SIZE_FALLBACK
+                        .compare_exchange(
+                            false,
+                            true,
+                            std::sync::atomic::Ordering::Relaxed,
+                            std::sync::atomic::Ordering::Relaxed,
+                        )
+                        .expect("Failed to set the global size fallback flag");
                     self.optimizer = Optimizer::new(OptimizerSettings::size());
                     self.module = module_clone;
                     for function in self.module.get_functions() {
@@ -250,10 +258,17 @@ impl<'ctx> Context<'ctx> {
                 Some(bytecode_buffer.as_slice().to_vec()),
                 assembly,
                 immutables,
+                is_size_fallback,
                 warnings,
             ))
         } else {
-            Ok(EVMBuild::new(None, assembly, None, vec![]))
+            Ok(EVMBuild::new(
+                None,
+                assembly,
+                None,
+                is_size_fallback,
+                vec![],
+            ))
         }
     }
 
@@ -434,6 +449,10 @@ impl<'ctx> IContext<'ctx> for Context<'ctx> {
 
     fn module(&self) -> &inkwell::module::Module<'ctx> {
         &self.module
+    }
+
+    fn optimizer(&self) -> &Optimizer {
+        &self.optimizer
     }
 
     fn debug_config(&self) -> Option<&DebugConfig> {
