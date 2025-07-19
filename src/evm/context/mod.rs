@@ -21,6 +21,7 @@ use crate::context::r#loop::Loop;
 use crate::context::IContext;
 use crate::debug_config::DebugConfig;
 use crate::evm::build::Build as EVMBuild;
+use crate::evm::profiler::Profiler;
 use crate::evm::warning::Warning;
 use crate::optimizer::settings::Settings as OptimizerSettings;
 use crate::optimizer::Optimizer;
@@ -121,10 +122,17 @@ impl<'ctx> Context<'ctx> {
         output_assembly: bool,
         output_bytecode: bool,
         is_size_fallback: bool,
+        profiler: &mut Profiler,
     ) -> anyhow::Result<EVMBuild> {
         let module_clone = self.module.clone();
         let contract_path = self.module.get_name().to_str().expect("Always valid");
 
+        let run_init_verify = profiler.start_evm_translation_unit(
+            contract_path,
+            self.code_segment,
+            "InitVerify",
+            self.optimizer.settings(),
+        );
         let target_machine = TargetMachine::new(
             era_compiler_common::Target::EVM,
             self.optimizer.settings(),
@@ -158,7 +166,14 @@ impl<'ctx> Context<'ctx> {
                 self.code_segment,
             )
         })?;
+        run_init_verify.borrow_mut().finish();
 
+        let run_optimize_verify = profiler.start_evm_translation_unit(
+            contract_path,
+            self.code_segment,
+            "OptimizeVerify",
+            self.optimizer.settings(),
+        );
         self.optimizer
             .run(&target_machine, self.module())
             .map_err(|error| anyhow::anyhow!("{} code optimizing: {error}", self.code_segment))?;
@@ -176,8 +191,15 @@ impl<'ctx> Context<'ctx> {
                 self.code_segment,
             )
         })?;
+        run_optimize_verify.borrow_mut().finish();
 
         let assembly_buffer = if output_assembly || self.debug_config.is_some() {
+            let run_emit_llvm_assembly = profiler.start_evm_translation_unit(
+                contract_path,
+                self.code_segment,
+                "EmitLLVMAssembly",
+                self.optimizer.settings(),
+            );
             let assembly_buffer = target_machine
                 .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Assembly)
                 .map_err(|error| anyhow::anyhow!("assembly emitting: {error}"))?;
@@ -193,6 +215,7 @@ impl<'ctx> Context<'ctx> {
                 )?;
             }
 
+            run_emit_llvm_assembly.borrow_mut().finish();
             Some(assembly_buffer)
         } else {
             None
@@ -201,11 +224,18 @@ impl<'ctx> Context<'ctx> {
             .map(|assembly_buffer| String::from_utf8_lossy(assembly_buffer.as_slice()).to_string());
 
         if output_bytecode {
+            let run_emit_bytecode = profiler.start_evm_translation_unit(
+                contract_path,
+                self.code_segment,
+                "EmitBytecode",
+                self.optimizer.settings(),
+            );
             let bytecode_buffer = target_machine
                 .write_to_memory_buffer(self.module(), inkwell::targets::FileType::Object)
                 .map_err(|error| {
                     anyhow::anyhow!("{} bytecode emitting: {error}", self.code_segment)
                 })?;
+            run_emit_bytecode.borrow_mut().finish();
 
             let immutables = match self.code_segment {
                 era_compiler_common::CodeSegment::Deploy => None,
@@ -242,7 +272,7 @@ impl<'ctx> Context<'ctx> {
                     for function in self.module.get_functions() {
                         Function::set_size_attributes(self.llvm, function);
                     }
-                    return self.build(output_assembly, output_bytecode, true);
+                    return self.build(output_assembly, output_bytecode, true, profiler);
                 } else {
                     warnings.push(match self.code_segment {
                         era_compiler_common::CodeSegment::Deploy => Warning::DeployCodeSize {
