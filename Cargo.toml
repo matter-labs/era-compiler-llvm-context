@@ -15,9 +15,10 @@ doctest = false
 anyhow = "1.0"
 thiserror = "2.0"
 semver = "1.0"
-serde = { version = "1.0", "features" = [ "derive" ] }
+serde = { version = "1.0", features = [ "derive" ] }
 num = "0.4"
 itertools = "0.14"
+indexmap = { version = "2.10", features = ["serde"] }
 
 zkevm_opcode_defs = "=0.150.6"
 
