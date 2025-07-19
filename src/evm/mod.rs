@@ -6,6 +6,7 @@ pub mod build;
 pub mod r#const;
 pub mod context;
 pub mod instructions;
+pub mod profiler;
 pub mod warning;
 
 use std::collections::BTreeMap;

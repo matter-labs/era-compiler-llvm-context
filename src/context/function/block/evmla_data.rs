@@ -10,14 +10,14 @@
 #[derive(Debug, Clone)]
 pub struct EVMLAData {
     /// The initial hashes of the allowed stack states.
-    pub stack_hashes: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>,
+    pub stack_hashes: Vec<u64>,
 }
 
 impl EVMLAData {
     ///
     /// A shortcut constructor.
     ///
-    pub fn new(stack_hashes: Vec<[u8; era_compiler_common::BYTE_LENGTH_FIELD]>) -> Self {
+    pub fn new(stack_hashes: Vec<u64>) -> Self {
         Self { stack_hashes }
     }
 }
