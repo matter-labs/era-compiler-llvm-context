@@ -14,9 +14,5 @@ pub trait IEVMLAFunction<'ctx> {
     ///
     /// If there is only one block, it is returned unconditionally.
     ///
-    fn find_block(
-        &self,
-        key: &BlockKey,
-        stack_hash: &[u8; era_compiler_common::BYTE_LENGTH_FIELD],
-    ) -> anyhow::Result<Block<'ctx>>;
+    fn find_block(&self, key: &BlockKey, stack_hash: &u64) -> anyhow::Result<Block<'ctx>>;
 }
