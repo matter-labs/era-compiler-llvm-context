@@ -3,6 +3,7 @@
 //!
 
 use crate::context::IContext;
+use crate::evm::attribute::Attribute;
 use crate::evm::context::Context;
 use crate::evm::WriteLLVM;
 
@@ -38,12 +39,18 @@ where
 {
     fn declare(&mut self, context: &mut Context) -> anyhow::Result<()> {
         let function_type = context.function_type::<inkwell::types::BasicTypeEnum>(vec![], 0);
-        context.add_function(
+        let function = context.add_function(
             crate::r#const::ENTRY_FUNCTION_NAME,
             function_type,
             0,
             Some(inkwell::module::Linkage::External),
         )?;
+        function.borrow().declaration().value.add_attribute(
+            inkwell::attributes::AttributeLoc::Function,
+            context
+                .llvm()
+                .create_string_attribute(Attribute::EVMEntryFunction.to_string().as_str(), ""),
+        );
 
         self.inner.declare(context)
     }
