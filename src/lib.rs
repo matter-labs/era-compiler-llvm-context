@@ -81,6 +81,7 @@ pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
 pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
 pub use self::evm::append_metadata as evm_append_metadata;
 pub use self::evm::assemble as evm_assemble;
+pub use self::evm::attribute::Attribute as EVMAttribute;
 pub use self::evm::build::Build as EVMBuild;
 pub use self::evm::context::address_space::AddressSpace as EVMAddressSpace;
 pub use self::evm::context::evmla_data::EVMLAData as EVMContextEVMLAData;
