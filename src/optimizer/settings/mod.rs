@@ -24,6 +24,8 @@ pub struct Settings {
 
     /// Size of the spill area used for stack-too-deep mitigation.
     pub spill_area_size: Option<u64>,
+    /// Metadata size, used for LLVM for gas/size tradeoffs.
+    pub metadata_size: Option<u64>,
 
     /// Whether the LLVM `verify each` option is enabled.
     pub is_verify_each_enabled: bool,
@@ -43,17 +45,13 @@ impl Settings {
         level_middle_end_size: SizeLevel,
         level_back_end: inkwell::OptimizationLevel,
     ) -> Self {
-        Self {
+        Self::new_debug(
             level_middle_end,
             level_middle_end_size,
             level_back_end,
-            is_fallback_to_size_enabled: false,
-
-            spill_area_size: None,
-
-            is_verify_each_enabled: false,
-            is_debug_logging_enabled: false,
-        }
+            false,
+            false,
+        )
     }
 
     ///
@@ -74,6 +72,7 @@ impl Settings {
             is_fallback_to_size_enabled: false,
 
             spill_area_size: None,
+            metadata_size: None,
 
             is_verify_each_enabled,
             is_debug_logging_enabled,
@@ -274,6 +273,20 @@ impl Settings {
     ///
     pub fn spill_area_size(&self) -> Option<u64> {
         self.spill_area_size
+    }
+
+    ///
+    /// Sets the metadata size.
+    ///
+    pub fn set_metadata_size(&mut self, size: u64) {
+        self.metadata_size = Some(size);
+    }
+
+    ///
+    /// Returns the metadata size.
+    ///
+    pub fn metadata_size(&self) -> Option<u64> {
+        self.metadata_size
     }
 }
 

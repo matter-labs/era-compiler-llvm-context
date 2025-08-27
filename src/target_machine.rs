@@ -29,6 +29,7 @@ impl TargetMachine {
     /// Supported LLVM options for EVM target:
     /// `-evm-stack-region-size <value>`
     /// `-evm-stack-region-offset <value>`
+    /// `-evm-metadata-size <value>`
     ///
     pub fn new(
         target: era_compiler_common::Target,
@@ -45,6 +46,9 @@ impl TargetMachine {
                     crate::evm::r#const::SOLC_GENERAL_MEMORY_OFFSET
                 ));
                 arguments.push(format!("-evm-stack-region-size={size}"));
+            }
+            if let Some(size) = optimizer_settings.metadata_size {
+                arguments.push(format!("-evm-metadata-size={size}"));
             }
         }
         if arguments.len() > 1 {
