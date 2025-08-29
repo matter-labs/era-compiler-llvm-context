@@ -27,34 +27,14 @@ pub fn initialize_target() {
 ///
 pub fn append_metadata(
     bytecode_buffer: inkwell::memory_buffer::MemoryBuffer,
-    metadata_hash: Option<Vec<u8>>,
-    cbor_data: Option<(String, Vec<(String, semver::Version)>)>,
+    metadata: &[u8],
 ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
-    let metadata = match (metadata_hash, cbor_data) {
-        (Some(hash), Some((cbor_key, cbor_data))) => {
-            let cbor = era_compiler_common::CBOR::new(
-                Some((
-                    era_compiler_common::EVMMetadataHashType::IPFS,
-                    hash.as_slice(),
-                )),
-                cbor_key,
-                cbor_data,
-            );
-            cbor.to_vec()
-        }
-        (None, Some((cbor_key, cbor_data))) => {
-            let cbor = era_compiler_common::CBOR::<'_, String>::new(None, cbor_key, cbor_data);
-            cbor.to_vec()
-        }
-        (_, None) => vec![],
-    };
-
     if metadata.is_empty() {
         return Ok(bytecode_buffer);
     }
 
     bytecode_buffer
-        .append_metadata_evm(metadata.as_slice())
+        .append_metadata_evm(metadata)
         .map_err(|error| anyhow::anyhow!("bytecode metadata appending error: {error}"))
 }
 
