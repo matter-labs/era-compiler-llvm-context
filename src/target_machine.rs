@@ -10,8 +10,6 @@ use crate::optimizer::settings::Settings as OptimizerSettings;
 ///
 #[derive(Debug)]
 pub struct TargetMachine {
-    /// The LLVM target.
-    target: era_compiler_common::Target,
     /// The LLVM target machine reference.
     target_machine: inkwell::targets::TargetMachine,
     /// The optimizer settings.
@@ -22,14 +20,9 @@ impl TargetMachine {
     ///
     /// A shortcut constructor.
     ///
-    /// Supported LLVM options for EraVM target:
+    /// Supported LLVM options:
     /// `-eravm-disable-sha3-sreq-cse`
     /// `-eravm-jump-table-density-threshold <value>`
-    ///
-    /// Supported LLVM options for EVM target:
-    /// `-evm-stack-region-size <value>`
-    /// `-evm-stack-region-offset <value>`
-    /// `-evm-metadata-size <value>`
     ///
     pub fn new(
         target: era_compiler_common::Target,
@@ -39,18 +32,6 @@ impl TargetMachine {
         let mut arguments = Vec::with_capacity(1 + llvm_options.len());
         arguments.push(target.to_string());
         arguments.extend_from_slice(llvm_options);
-        if let era_compiler_common::Target::EVM = target {
-            if let Some(size) = optimizer_settings.spill_area_size {
-                arguments.push(format!(
-                    "-evm-stack-region-offset={}",
-                    crate::evm::r#const::SOLC_GENERAL_MEMORY_OFFSET
-                ));
-                arguments.push(format!("-evm-stack-region-size={size}"));
-            }
-            if let Some(size) = optimizer_settings.metadata_size {
-                arguments.push(format!("-evm-metadata-size={size}"));
-            }
-        }
         if arguments.len() > 1 {
             let arguments: Vec<&str> = arguments.iter().map(|argument| argument.as_str()).collect();
             inkwell::support::parse_command_line_options(arguments.as_slice(), "LLVM options");
@@ -71,7 +52,6 @@ impl TargetMachine {
             })?;
 
         Ok(Self {
-            target,
             target_machine,
             optimizer_settings: optimizer_settings.to_owned(),
         })
@@ -137,14 +117,10 @@ impl TargetMachine {
         let pass_builder_options = inkwell::passes::PassBuilderOptions::create();
         pass_builder_options.set_verify_each(self.optimizer_settings.is_verify_each_enabled);
         pass_builder_options.set_debug_logging(self.optimizer_settings.is_debug_logging_enabled);
-
-        if let era_compiler_common::Target::EraVM = self.target {
-            pass_builder_options.set_loop_unrolling(
-                self.optimizer_settings.level_middle_end_size == OptimizerSettingsSizeLevel::Zero,
-            );
-            pass_builder_options.set_merge_functions(true);
-        }
-
+        pass_builder_options.set_loop_unrolling(
+            self.optimizer_settings.level_middle_end_size == OptimizerSettingsSizeLevel::Zero,
+        );
+        pass_builder_options.set_merge_functions(true);
         module.run_passes(passes, &self.target_machine, pass_builder_options)
     }
 

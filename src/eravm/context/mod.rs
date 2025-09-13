@@ -189,7 +189,6 @@ impl<'ctx> Context<'ctx> {
                 let assembly_text = String::from_utf8_lossy(assembly_buffer.as_slice());
                 debug_config.dump_assembly(
                     contract_path,
-                    era_compiler_common::Target::EraVM,
                     assembly_text.as_ref(),
                     is_size_fallback,
                     None,

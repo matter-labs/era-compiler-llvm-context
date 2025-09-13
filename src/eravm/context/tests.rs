@@ -11,7 +11,7 @@ use crate::optimizer::Optimizer;
 pub fn create_context(
     llvm: &inkwell::context::Context,
     optimizer_settings: OptimizerSettings,
-) -> Context {
+) -> Context<'_> {
     crate::eravm::initialize_target();
 
     let module = llvm.create_module("test");

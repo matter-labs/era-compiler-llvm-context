@@ -9,7 +9,6 @@ pub(crate) mod r#const;
 pub(crate) mod context;
 pub(crate) mod debug_config;
 pub(crate) mod eravm;
-pub(crate) mod evm;
 pub(crate) mod optimizer;
 pub(crate) mod target_machine;
 
@@ -74,61 +73,14 @@ pub use self::eravm::extensions::call as eravm_call;
 pub use self::eravm::extensions::general as eravm_general;
 pub use self::eravm::extensions::math as eravm_math;
 pub use self::eravm::hash as eravm_hash;
+pub use self::eravm::initialize_target;
 pub use self::eravm::link as eravm_link;
 pub use self::eravm::r#const as eravm_const;
 pub use self::eravm::utils as eravm_utils;
 pub use self::eravm::DummyLLVMWritable as EraVMDummyLLVMWritable;
 pub use self::eravm::WriteLLVM as EraVMWriteLLVM;
-pub use self::evm::append_metadata as evm_append_metadata;
-pub use self::evm::assemble as evm_assemble;
-pub use self::evm::attribute::Attribute as EVMAttribute;
-pub use self::evm::build::Build as EVMBuild;
-pub use self::evm::context::address_space::AddressSpace as EVMAddressSpace;
-pub use self::evm::context::evmla_data::EVMLAData as EVMContextEVMLAData;
-pub use self::evm::context::function::intrinsics::Intrinsics as EVMIntrinsicFunction;
-pub use self::evm::context::function::runtime::entry::Entry as EVMEntryFunction;
-pub use self::evm::context::function::vyper_data::VyperData as EVMFunctionVyperData;
-pub use self::evm::context::function::Function as EVMFunction;
-pub use self::evm::context::solidity_data::SolidityData as EVMContextSolidityData;
-pub use self::evm::context::yul_data::YulData as EVMContextYulData;
-pub use self::evm::context::Context as EVMContext;
-pub use self::evm::instructions::arithmetic as evm_arithmetic;
-pub use self::evm::instructions::bitwise as evm_bitwise;
-pub use self::evm::instructions::call as evm_call;
-pub use self::evm::instructions::calldata as evm_calldata;
-pub use self::evm::instructions::code as evm_code;
-pub use self::evm::instructions::comparison as evm_comparison;
-pub use self::evm::instructions::context as evm_contract_context;
-pub use self::evm::instructions::create as evm_create;
-pub use self::evm::instructions::ether_gas as evm_ether_gas;
-pub use self::evm::instructions::event as evm_event;
-pub use self::evm::instructions::immutable as evm_immutable;
-pub use self::evm::instructions::math as evm_math;
-pub use self::evm::instructions::memory as evm_memory;
-pub use self::evm::instructions::r#return as evm_return;
-pub use self::evm::instructions::return_data as evm_return_data;
-pub use self::evm::instructions::storage as evm_storage;
-pub use self::evm::link as evm_link;
-pub use self::evm::minimal_deploy_code as evm_minimal_deploy_code;
-pub use self::evm::profiler::run::Run as EVMProfilerRun;
-pub use self::evm::profiler::Profiler as EVMProfiler;
-pub use self::evm::r#const as evm_const;
-pub use self::evm::warning::Warning as EVMWarning;
-pub use self::evm::DummyLLVMWritable as EVMDummyLLVMWritable;
-pub use self::evm::WriteLLVM as EVMWriteLLVM;
-pub use self::evm::IS_SIZE_FALLBACK as EVM_IS_SIZE_FALLBACK;
 pub use self::optimizer::settings::size_level::SizeLevel as OptimizerSettingsSizeLevel;
 pub use self::optimizer::settings::Settings as OptimizerSettings;
 pub use self::optimizer::Optimizer;
 pub use self::r#const::*;
 pub use self::target_machine::TargetMachine;
-
-///
-/// Initializes the target machine.
-///
-pub fn initialize_target(target: era_compiler_common::Target) {
-    match target {
-        era_compiler_common::Target::EraVM => self::eravm::initialize_target(),
-        era_compiler_common::Target::EVM => self::evm::initialize_target(),
-    }
-}

@@ -36,13 +36,7 @@ pub fn assemble(
     debug_config: Option<&DebugConfig>,
 ) -> anyhow::Result<inkwell::memory_buffer::MemoryBuffer> {
     if let Some(debug_config) = debug_config {
-        debug_config.dump_assembly(
-            contract_path,
-            era_compiler_common::Target::EraVM,
-            assembly_text,
-            false,
-            None,
-        )?;
+        debug_config.dump_assembly(contract_path, assembly_text, false, None)?;
     }
 
     let assembly_buffer = inkwell::memory_buffer::MemoryBuffer::create_from_memory_range(
@@ -140,10 +134,7 @@ pub fn build(
     let metadata = match (metadata_hash, cbor_data) {
         (Some(era_compiler_common::Hash::IPFS(hash)), Some((cbor_key, cbor_data))) => {
             let cbor = era_compiler_common::CBOR::new(
-                Some((
-                    era_compiler_common::EraVMMetadataHashType::IPFS,
-                    hash.as_bytes(),
-                )),
+                Some((era_compiler_common::MetadataHashType::IPFS, hash.as_bytes())),
                 cbor_key,
                 cbor_data,
             );
