@@ -50,4 +50,16 @@ impl YulData {
     pub fn insert_constant(&mut self, name: String, value: BigUint) {
         self.constants.insert(name, value);
     }
+
+    ///
+    /// Drops the constant associated with `name`, if any.
+    ///
+    /// The annotation attached to a Yul value must equal that value on every
+    /// control-flow path. Whenever a variable is given a new value that is not a
+    /// known constant, the cached entry has to be dropped, or a later reader
+    /// re-attaches a stale constant to the new value.
+    ///
+    pub fn remove_constant(&mut self, name: &str) {
+        self.constants.remove(name);
+    }
 }
